@@ -1,3 +1,3 @@
 #!/bin/bash
 source config.sh;
-python ./main.py # $1
+python ./write_out.py
