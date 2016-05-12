@@ -13,28 +13,28 @@ with open('bc/noop.bc', 'w') as fd:
                 v = basic_block.constant(struct.pack('>B', 0))
                 basic_block.ret(v)
 
-#with open('bc/add.bc', 'w') as fd:
-#    writer = bytecode_writer.BytecodeWriter(fd)
+with open('bc/add.bc', 'w') as fd:
+    writer = bytecode_writer.BytecodeWriter(fd)
 
-#    with writer as program:
-#        with program.function('main', []) as function:
-#            with function.basic_block() as basic_block:
-#                a = basic_block.constant(struct.pack('>B', 40))
-#                b = basic_block.constant(struct.pack('>B', 50))
-#                c = basic_block.syscall('add', [a, b])
+    with writer as program:
+        with program.function('main', []) as function:
+            with function.basic_block() as basic_block:
+                a = basic_block.constant(struct.pack('>B', 40))
+                b = basic_block.constant(struct.pack('>B', 50))
+                c = basic_block.syscall('add', [a, b])
 
-#                v = basic_block.constant(struct.pack('>B', 0))
-#                basic_block.ret(v)
+                v = basic_block.constant(struct.pack('>B', 0))
+                basic_block.ret(v)
 
-#with open('bc/sub.bc', 'w') as fd:
-#    writer = bytecode_writer.BytecodeWriter(fd)
+with open('bc/sub.bc', 'w') as fd:
+    writer = bytecode_writer.BytecodeWriter(fd)
 
-#    with writer as program:
-#        with program.function('main', []) as function:
-#            with function.basic_block() as basic_block:
-#                a = basic_block.constant(struct.pack('>B', 40))
-#                b = basic_block.constant(struct.pack('>B', 50))
-#                c = basic_block.syscall('sub', [a, b])
+    with writer as program:
+        with program.function('main', []) as function:
+            with function.basic_block() as basic_block:
+                a = basic_block.constant(struct.pack('>B', 40))
+                b = basic_block.constant(struct.pack('>B', 50))
+                c = basic_block.syscall('sub', [a, b])
 
-#                v = basic_block.constant(struct.pack('>B', 0))
-#                basic_block.ret(v)
+                v = basic_block.constant(struct.pack('>B', 0))
+                basic_block.ret(v)

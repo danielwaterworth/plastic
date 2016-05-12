@@ -1,5 +1,12 @@
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+import bytecode_read
+import bytecode_printer
+
 def entry_point(argv):
-    print "Hello, world!"
+    with open('bc/noop.bc') as fd:
+        bytecode_read.read_bytecode(fd, bytecode_printer.BytecodePrinter())
     return 0
 
 def target(*args):

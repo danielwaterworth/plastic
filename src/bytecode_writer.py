@@ -1,21 +1,8 @@
 import struct
 import StringIO
-from rpython.rlib.rstruct.runpack import runpack
-from rpython.rlib.rarithmetic import r_ulonglong, r_int, intmask
 import binascii
 
-MAGIC_START = r_ulonglong(17810926409145293181)
-
-# Top level
-SYMBOL = struct.pack('>B', 1)
-FUNCTION_START = struct.pack('>B', 2)
-
-# Instructions
-CONST = struct.pack('>B', 1)
-SYSCALL = struct.pack('>B', 2)
-FUNCTION_CALL = struct.pack('>B', 3)
-
-RET = struct.pack('>B', 129)
+from bytecode_format import *
 
 class BasicBlockWriter(object):
     def __init__(self, function, writer):
@@ -33,14 +20,14 @@ class BasicBlockWriter(object):
 
     def constant(self, value):
         assert not self.terminated
-        self.block_writer.write(CONST)
+        self.block_writer.write(struct.pack('>B', CONST))
         self.block_writer.write(struct.pack('>Q', len(value)))
         self.block_writer.write(value)
         return self.function.create_variable()
 
     def syscall(self, function, arguments):
         assert not self.terminated
-        self.block_writer.write(SYSCALL)
+        self.block_writer.write(struct.pack('>B', SYSCALL))
         self.block_writer.write(self.writer.symbol(function))
 
         self.block_writer.write(struct.pack('>Q', len(arguments)))
@@ -51,7 +38,8 @@ class BasicBlockWriter(object):
     def ret(self, variable):
         assert not self.terminated
         self.terminated = True
-        self.block_writer.write(RET)
+        self.block_writer.write(struct.pack('>B', RET))
+        self.block_writer.write(struct.pack('>Q', variable))
 
     def write_out(self):
         self.writer.write(self.block_writer.getvalue())
@@ -75,7 +63,7 @@ class FunctionWriter(object):
     def __exit__(self, type, value, traceback):
         if not value:
             name_symbol = self.writer.symbol(self.name)
-            self.writer.write(FUNCTION_START)
+            self.writer.write(struct.pack('>B', FUNCTION_START))
             self.writer.write(name_symbol)
 
             self.writer.write(struct.pack('>Q', len(self.arguments)))
@@ -112,7 +100,7 @@ class BytecodeWriter(object):
     def symbol(self, name):
         if name in self.symbols:
             return self.symbols[name]
-        self.write(SYMBOL)
+        self.write(struct.pack('>B', SYMBOL))
         self.write(struct.pack('>Q', len(name)))
         self.write(name)
         n = struct.pack('>Q', len(self.symbols))
