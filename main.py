@@ -1,13 +1,13 @@
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
-import bytecode_read
-import bytecode_constructor
+import bytecode.read
+import bytecode.constructor
 
 def entry_point(argv):
-    constructor = bytecode_constructor.BytecodeConstructor()
+    constructor = bytecode.constructor.BytecodeConstructor()
     with open('bc/noop.bc') as fd:
-        bytecode_read.read_bytecode(fd, constructor)
+        bytecode.read.read_bytecode(fd, constructor)
 
     program = constructor.get_program()
     print program

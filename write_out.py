@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 import struct
-import bytecode_writer
+import bytecode.writer as bytecode_writer
 
 with open('bc/noop.bc', 'w') as fd:
     writer = bytecode_writer.BytecodeWriter(fd)

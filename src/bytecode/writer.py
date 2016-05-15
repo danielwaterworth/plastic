@@ -2,7 +2,7 @@ import struct
 import StringIO
 import binascii
 
-from bytecode_format import *
+from bytecode.format import *
 
 class BasicBlockWriter(object):
     def __init__(self, function, writer):
