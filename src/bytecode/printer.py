@@ -15,9 +15,14 @@ class BasicBlockPrinter(object):
         print ("CONSTANT", value, var)
         return var
 
-    def syscall(self, name, arguments):
+    def sys_call(self, name, arguments):
         var = self.function.create_variable()
-        print ("SYSCALL", name, arguments, var)
+        print ("SYS_CALL", name, arguments, var)
+        return var
+
+    def fun_call(self, name, arguments):
+        var = self.function.create_variable()
+        print ("FUN_CALL", name, arguments, var)
         return var
 
     def ret(self, variable):

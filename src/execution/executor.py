@@ -4,15 +4,15 @@ import bytecode
 import data
 
 class ActivationRecord(object):
-    def __init__(self, function):
+    def __init__(self, function, arguments):
         self.function = function
 
         n_values = 0
         for block in function.blocks:
             n_values += len(block.instructions)
 
-        self.values = ['' for i in xrange(n_values)]
-        self.next_value = 0
+        self.values = arguments + ['' for i in xrange(n_values)]
+        self.next_value = len(arguments)
         self.current_block = function.blocks[0]
         self.pc = 0
 
@@ -41,14 +41,14 @@ class Executor(object):
     def __init__(self, program):
         self.program = program
         self.memory = [r_ulonglong(0) for i in xrange(1024**2)]
-        self.stack = [ActivationRecord(program.functions['main'])]
+        self.stack = [ActivationRecord(program.functions['main'], [])]
 
     def run(self):
         while True:
             instr = self.stack[-1].next_instruction()
             if instr:
                 if isinstance(instr, bytecode.FunctionCall):
-                    raise NotImplementedError()
+                    self.stack.append(ActivationRecord(self.program.functions[instr.function], []))
                 elif isinstance(instr, bytecode.SysCall):
                     if instr.function == 'hello_world':
                         print 'Hello, world!'
@@ -56,7 +56,7 @@ class Executor(object):
                     elif instr.function == 'exit':
                         return None
                     else:
-                        raise NotImplementedError()
+                        raise NotImplementedError('sys_call not implemented: %s' % instr.function)
                 elif isinstance(instr, bytecode.Constant):
                     self.stack[-1].retire(instr.value)
                 else:

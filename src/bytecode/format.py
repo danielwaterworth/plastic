@@ -9,7 +9,7 @@ FUNCTION_START = 2
 
 # Instructions
 CONST = 1
-SYSCALL = 2
-FUNCTION_CALL = 3
+SYS_CALL = 2
+FUN_CALL = 3
 
 RET = 129

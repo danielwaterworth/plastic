@@ -25,9 +25,19 @@ class BasicBlockWriter(object):
         self.block_writer.write(value)
         return self.function.create_variable()
 
-    def syscall(self, function, arguments):
+    def sys_call(self, function, arguments):
         assert not self.terminated
-        self.block_writer.write(struct.pack('>B', SYSCALL))
+        self.block_writer.write(struct.pack('>B', SYS_CALL))
+        self.block_writer.write(self.writer.symbol(function))
+
+        self.block_writer.write(struct.pack('>Q', len(arguments)))
+        for arg in arguments:
+            self.block_writer.write(struct.pack('>Q', arg))
+        return self.function.create_variable()
+
+    def fun_call(self, function, arguments):
+        assert not self.terminated
+        self.block_writer.write(struct.pack('>B', FUN_CALL))
         self.block_writer.write(self.writer.symbol(function))
 
         self.block_writer.write(struct.pack('>Q', len(arguments)))

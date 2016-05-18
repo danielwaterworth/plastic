@@ -1,7 +1,7 @@
 from rpython.rlib.rstruct.runpack import runpack
 from rpython.rlib.rarithmetic import r_ulonglong, r_int, intmask
 
-from bytecode_format import *
+from bytecode.format import *
 
 def read_bytecode(fd, receiver):
     magic_start = fd.read(8)
@@ -36,14 +36,22 @@ def read_bytecode(fd, receiver):
                                 if instruction_type == CONST:
                                     length = intmask(runpack('>Q', fd.read(8)))
                                     basic_block_receiver.constant(fd.read(length))
-                                elif instruction_type == SYSCALL:
+                                elif instruction_type == FUN_CALL:
                                     function_name_n = intmask(runpack('>Q', fd.read(8)))
                                     function_name = symbols[function_name_n]
                                     arguments_n = intmask(runpack('>Q', fd.read(8)))
                                     arguments = []
                                     for i in xrange(arguments_n):
                                         arguments.append(runpack('>Q', fd.read(8)))
-                                    basic_block_receiver.syscall(function_name, arguments)
+                                    basic_block_receiver.fun_call(function_name, arguments)
+                                elif instruction_type == SYS_CALL:
+                                    function_name_n = intmask(runpack('>Q', fd.read(8)))
+                                    function_name = symbols[function_name_n]
+                                    arguments_n = intmask(runpack('>Q', fd.read(8)))
+                                    arguments = []
+                                    for i in xrange(arguments_n):
+                                        arguments.append(runpack('>Q', fd.read(8)))
+                                    basic_block_receiver.sys_call(function_name, arguments)
                                 elif instruction_type == RET:
                                     variable = runpack('>Q', fd.read(8))
                                     basic_block_receiver.ret(variable)
