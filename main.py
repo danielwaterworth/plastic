@@ -3,14 +3,17 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 import bytecode.read
 import bytecode.constructor
+import execution.executor as executor
 
 def entry_point(argv):
     constructor = bytecode.constructor.BytecodeConstructor()
-    with open('bc/noop.bc') as fd:
+
+    with open(argv[1], 'r') as fd:
         bytecode.read.read_bytecode(fd, constructor)
 
-    program = constructor.get_program()
-    print program
+    ex = executor.Executor(constructor.get_program())
+    ex.run()
+
     return 0
 
 def target(*args):

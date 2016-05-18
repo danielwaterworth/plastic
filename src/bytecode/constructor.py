@@ -64,7 +64,10 @@ class ProgramConstructor(object):
 
     def get_program(self):
         functions = [function.get_function() for function in self.functions]
-        return bytecode.Program(functions)
+        function_map = {}
+        for function in functions:
+            function_map[function.name] = function
+        return bytecode.Program(function_map)
 
 class BytecodeConstructor(object):
     def __init__(self):

@@ -38,3 +38,13 @@ with open('bc/sub.bc', 'w') as fd:
 
                 v = basic_block.constant(struct.pack('>B', 0))
                 basic_block.ret(v)
+
+with open('bc/hello.bc', 'w') as fd:
+    writer = bytecode_writer.BytecodeWriter(fd)
+
+    with writer as program:
+        with program.function('main', []) as function:
+            with function.basic_block() as basic_block:
+                basic_block.syscall('hello_world', [])
+                v = basic_block.constant(struct.pack('>B', 0))
+                basic_block.ret(v)
