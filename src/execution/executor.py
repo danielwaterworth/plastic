@@ -7,11 +7,14 @@ class ActivationRecord(object):
     def __init__(self, function, arguments):
         self.function = function
 
+        block_value_offsets = []
         n_values = 0
         for block in function.blocks:
+            block_value_offsets.append(len(arguments) + n_values)
             n_values += len(block.instructions)
 
         self.values = arguments + ['' for i in xrange(n_values)]
+        self.block_value_offsets = block_value_offsets
         self.next_value = len(arguments)
         self.current_block = function.blocks[0]
         self.pc = 0
@@ -31,7 +34,10 @@ class ActivationRecord(object):
         self.pc += 1
 
     def goto(self, block):
-        pass
+        assert block < len(self.function.blocks)
+        self.next_value = self.block_value_offsets[block]
+        self.pc = 0
+        self.current_block = self.function.blocks[block]
 
     def lookup_var(self, var):
         assert var < len(self.values)
@@ -71,7 +77,7 @@ class Executor(object):
                     else:
                         return value
                 elif isinstance(term, bytecode.Goto):
-                    raise NotImplementedError()
+                    self.stack[-1].goto(term.block_index)
                 elif isinstance(term, bytecode.Conditional):
                     raise NotImplementedError()
                 else:

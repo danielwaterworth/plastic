@@ -45,9 +45,11 @@ with open('bc/hello.bc', 'w') as fd:
     with writer as program:
         with program.function('foo', []) as function:
             with function.basic_block() as basic_block:
+                basic_block.goto(1)
+
+            with function.basic_block() as basic_block:
                 basic_block.sys_call('hello_world', [])
-                v = basic_block.constant(struct.pack('>B', 0))
-                basic_block.ret(v)
+                basic_block.goto(1)
 
         with program.function('main', []) as function:
             with function.basic_block() as basic_block:

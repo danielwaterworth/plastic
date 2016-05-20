@@ -45,11 +45,19 @@ class BasicBlockWriter(object):
             self.block_writer.write(struct.pack('>Q', arg))
         return self.function.create_variable()
 
-    def ret(self, variable):
+    def terminator(self):
         assert not self.terminated
         self.terminated = True
+
+    def ret(self, variable):
+        self.terminator()
         self.block_writer.write(struct.pack('>B', RET))
         self.block_writer.write(struct.pack('>Q', variable))
+
+    def goto(self, block):
+        self.terminator()
+        self.block_writer.write(struct.pack('>B', GOTO))
+        self.block_writer.write(struct.pack('>Q', block))
 
     def write_out(self):
         self.writer.write(self.block_writer.getvalue())

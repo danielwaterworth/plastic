@@ -27,6 +27,9 @@ class BasicBlockConstructor(object):
     def ret(self, variable):
         self.terminal = bytecode.Return(variable)
 
+    def goto(self, block):
+        self.terminal = bytecode.Goto(block)
+
     def get_basic_block(self):
         return bytecode.BasicBlock([], self.instructions, self.terminal)
 

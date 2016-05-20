@@ -56,6 +56,10 @@ def read_bytecode(fd, receiver):
                                     variable = runpack('>Q', fd.read(8))
                                     basic_block_receiver.ret(variable)
                                     break
+                                elif instruction_type == GOTO:
+                                    block = runpack('>Q', fd.read(8))
+                                    basic_block_receiver.goto(block)
+                                    break
                                 else:
                                     raise NotImplementedError()
             else:
