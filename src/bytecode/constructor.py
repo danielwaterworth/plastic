@@ -30,6 +30,9 @@ class BasicBlockConstructor(object):
     def goto(self, block):
         self.terminal = bytecode.Goto(block)
 
+    def conditional(self, variable, true_block, false_block):
+        self.terminal = bytecode.Conditional(variable, true_block, false_block)
+
     def get_basic_block(self):
         return bytecode.BasicBlock([], self.instructions, self.terminal)
 

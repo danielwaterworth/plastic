@@ -28,6 +28,12 @@ class BasicBlockPrinter(object):
     def ret(self, variable):
         print ("RET", variable)
 
+    def goto(self, block):
+        print ("GOTO", block)
+
+    def conditional(self, variable, true_block, false_block):
+        print ("CONDITIONAL", variable, true_block, false_block)
+
 class FunctionPrinter(object):
     def __init__(self, name, num_arguments):
         self.name = name

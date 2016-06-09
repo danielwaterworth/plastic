@@ -59,6 +59,13 @@ class BasicBlockWriter(object):
         self.block_writer.write(struct.pack('>B', GOTO))
         self.block_writer.write(struct.pack('>Q', block))
 
+    def conditional(self, variable, true_block, false_block):
+        self.terminator()
+        self.block_writer.write(struct.pack('>B', CONDITIONAL))
+        self.block_writer.write(struct.pack('>Q', variable))
+        self.block_writer.write(struct.pack('>Q', true_block))
+        self.block_writer.write(struct.pack('>Q', false_block))
+
     def write_out(self):
         self.writer.write(self.block_writer.getvalue())
 

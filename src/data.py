@@ -5,7 +5,14 @@ def pack_uint(n):
     for i in xrange(8):
         output.append(chr(n & 0xff))
         n = n >> 8
-    return ''.join(reversed(output))
+    output.reverse()
+    return ''.join(output)
+
+def pack_bool(b):
+    if b:
+        return chr(1)
+    else:
+        return chr(0)
 
 def sub(a, b):
     assert len(a) == 8
@@ -20,4 +27,4 @@ def add(a, b):
 def lt(a, b):
     assert len(a) == 8
     assert len(b) == 8
-    return pack_uint(runpack('>Q', a) < runpack('>Q', b))
+    return pack_bool(runpack('>Q', a) < runpack('>Q', b))

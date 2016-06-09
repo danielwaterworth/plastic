@@ -79,3 +79,28 @@ with open('bc/function_call.bc', 'w') as fd:
                 
                 v = basic_block.constant(struct.pack('>B', 0))
                 basic_block.ret(v)
+
+with open('bc/condition.bc', 'w') as fd:
+    writer = bytecode_writer.BytecodeWriter(fd)
+
+    with writer as program:
+        with program.function('main', 0) as (function, _):
+            with function.basic_block() as basic_block:
+                a = basic_block.constant(struct.pack('>Q', 40))
+                b = basic_block.constant(struct.pack('>Q', 50))
+                c = basic_block.sys_call('lt', [a, b])
+                basic_block.conditional(c, 1, 2)
+
+            with function.basic_block() as basic_block:
+                v = basic_block.constant(struct.pack('>Q', 1))
+                basic_block.sys_call('print_num', [v])
+                basic_block.goto(3)
+
+            with function.basic_block() as basic_block:
+                v = basic_block.constant(struct.pack('>Q', 2))
+                basic_block.sys_call('print_num', [v])
+                basic_block.goto(3)
+
+            with function.basic_block() as basic_block:
+                v = basic_block.constant(struct.pack('>B', 0))
+                basic_block.ret(v)

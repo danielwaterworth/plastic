@@ -20,8 +20,11 @@ class ActivationRecord(object):
         self.current_block = function.blocks[0]
         self.pc = 0
 
-    def resolve_arguments(self, arguments):
-        return [self.values[arg] for arg in arguments]
+    def resolve_variable(self, var):
+        return self.values[var]
+
+    def resolve_variable_list(self, variables):
+        return [self.resolve_variable(var) for var in variables]
 
     def next_instruction(self):
         if len(self.current_block.instructions) <= self.pc:
@@ -58,10 +61,10 @@ class Executor(object):
             instr = self.stack[-1].next_instruction()
             if instr:
                 if isinstance(instr, bytecode.FunctionCall):
-                    arguments = self.stack[-1].resolve_arguments(instr.arguments)
+                    arguments = self.stack[-1].resolve_variable_list(instr.arguments)
                     self.stack.append(ActivationRecord(self.program.functions[instr.function], arguments))
                 elif isinstance(instr, bytecode.SysCall):
-                    arguments = self.stack[-1].resolve_arguments(instr.arguments)
+                    arguments = self.stack[-1].resolve_variable_list(instr.arguments)
                     if instr.function == 'exit':
                         return None
                     elif instr.function == 'sub':
@@ -100,6 +103,11 @@ class Executor(object):
                 elif isinstance(term, bytecode.Goto):
                     self.stack[-1].goto(term.block_index)
                 elif isinstance(term, bytecode.Conditional):
-                    raise NotImplementedError()
+                    v = self.stack[-1].resolve_variable(term.condition_variable)
+                    assert len(v) == 1
+                    if v != chr(0):
+                        self.stack[-1].goto(term.true_block)
+                    else:
+                        self.stack[-1].goto(term.false_block)
                 else:
                     raise NotImplementedError('missing terminator implementation')
