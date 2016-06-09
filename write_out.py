@@ -19,9 +19,10 @@ with open('bc/add.bc', 'w') as fd:
     with writer as program:
         with program.function('main', []) as function:
             with function.basic_block() as basic_block:
-                a = basic_block.constant(struct.pack('>B', 40))
-                b = basic_block.constant(struct.pack('>B', 50))
+                a = basic_block.constant(struct.pack('>Q', 40))
+                b = basic_block.constant(struct.pack('>Q', 50))
                 c = basic_block.sys_call('add', [a, b])
+                basic_block.sys_call('print_num', [c])
 
                 v = basic_block.constant(struct.pack('>B', 0))
                 basic_block.ret(v)
@@ -32,9 +33,10 @@ with open('bc/sub.bc', 'w') as fd:
     with writer as program:
         with program.function('main', []) as function:
             with function.basic_block() as basic_block:
-                a = basic_block.constant(struct.pack('>B', 40))
-                b = basic_block.constant(struct.pack('>B', 50))
+                a = basic_block.constant(struct.pack('>Q', 50))
+                b = basic_block.constant(struct.pack('>Q', 40))
                 c = basic_block.sys_call('sub', [a, b])
+                basic_block.sys_call('print_num', [c])
 
                 v = basic_block.constant(struct.pack('>B', 0))
                 basic_block.ret(v)
@@ -48,7 +50,8 @@ with open('bc/hello.bc', 'w') as fd:
                 basic_block.goto(1)
 
             with function.basic_block() as basic_block:
-                basic_block.sys_call('hello_world', [])
+                a = basic_block.constant(struct.pack('>Q', 100))
+                basic_block.sys_call('print_num', [a])
                 basic_block.goto(1)
 
         with program.function('main', []) as function:

@@ -1,4 +1,5 @@
 from rpython.rlib.rarithmetic import r_ulonglong
+from rpython.rlib.rstruct.runpack import runpack
 
 import bytecode
 import data
@@ -18,6 +19,9 @@ class ActivationRecord(object):
         self.next_value = len(arguments)
         self.current_block = function.blocks[0]
         self.pc = 0
+
+    def resolve_arguments(self, arguments):
+        return [self.values[arg] for arg in arguments]
 
     def next_instruction(self):
         if len(self.current_block.instructions) <= self.pc:
@@ -56,11 +60,26 @@ class Executor(object):
                 if isinstance(instr, bytecode.FunctionCall):
                     self.stack.append(ActivationRecord(self.program.functions[instr.function], []))
                 elif isinstance(instr, bytecode.SysCall):
-                    if instr.function == 'hello_world':
-                        print 'Hello, world!'
-                        self.stack[-1].retire('')
-                    elif instr.function == 'exit':
+                    arguments = self.stack[-1].resolve_arguments(instr.arguments)
+                    if instr.function == 'exit':
                         return None
+                    elif instr.function == 'sub':
+                        assert len(arguments) == 2
+                        a, b = arguments
+                        self.stack[-1].retire(data.sub(a, b))
+                    elif instr.function == 'add':
+                        assert len(arguments) == 2
+                        a, b = arguments
+                        self.stack[-1].retire(data.add(a, b))
+                    elif instr.function == 'lt':
+                        assert len(arguments) == 2
+                        a, b = arguments
+                        self.stack[-1].retire(data.lt(a, b))
+                    elif instr.function == 'print_num':
+                        assert len(arguments) == 1
+                        a = arguments[0]
+                        print runpack('>Q', a)
+                        self.stack[-1].retire('')
                     else:
                         raise NotImplementedError('sys_call not implemented: %s' % instr.function)
                 elif isinstance(instr, bytecode.Constant):
