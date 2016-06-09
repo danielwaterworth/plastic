@@ -31,6 +31,14 @@ class BasicBlockConstructor(object):
         self.instructions.append(bytecode.SysCall(function, arguments))
         return self.function.create_variable()
 
+    def load(self, address):
+        self.instructions.append(bytecode.Load(address))
+        return self.function.create_variable()
+
+    def store(self, address, variable):
+        self.instructions.append(bytecode.Store(address, variable))
+        return self.function.create_variable()
+
     def ret(self, variable):
         self.terminal = bytecode.Return(variable)
 

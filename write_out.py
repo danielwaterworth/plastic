@@ -127,3 +127,17 @@ with open('bc/loop.bc', 'w') as fd:
             with function.basic_block() as basic_block:
                 v = basic_block.constant(struct.pack('>B', 0))
                 basic_block.ret(v)
+
+with open('bc/store_load.bc', 'w') as fd:
+    writer = bytecode_writer.BytecodeWriter(fd)
+
+    with writer as program:
+        with program.function('main', 0) as (function, _):
+            with function.basic_block() as basic_block:
+                a = basic_block.constant(struct.pack('>Q', 100))
+                b = basic_block.constant(struct.pack('>Q', 42))
+                basic_block.store(a, b)
+                c = basic_block.load(a)
+                basic_block.sys_call('print_num', [c])
+                v = basic_block.constant(struct.pack('>B', 0))
+                basic_block.ret(v)

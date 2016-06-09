@@ -87,6 +87,19 @@ class BasicBlockWriter(object):
             arg.write(self.block_writer)
         return self.function.create_variable()
 
+    def load(self, address):
+        assert not self.terminated
+        self.block_writer.write(struct.pack('>B', LOAD))
+        address.write(self.block_writer)
+        return self.function.create_variable()
+
+    def store(self, address, value):
+        assert not self.terminated
+        self.block_writer.write(struct.pack('>B', STORE))
+        address.write(self.block_writer)
+        value.write(self.block_writer)
+        return self.function.create_variable()
+
     def terminator(self):
         assert not self.terminated
         self.terminated = True

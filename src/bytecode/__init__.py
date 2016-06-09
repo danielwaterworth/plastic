@@ -35,14 +35,13 @@ class Constant(Instruction):
         self.value = value
 
 class Load(Instruction):
-    def __init__(self, address, size):
+    def __init__(self, address):
         self.address = address
-        self.size = size
 
 class Store(Instruction):
-    def __init__(self, address, value):
+    def __init__(self, address, variable):
         self.address = address
-        self.value = value
+        self.variable = variable
 
 class Terminator(object):
     pass

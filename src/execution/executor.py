@@ -97,6 +97,17 @@ class Executor(object):
                         raise NotImplementedError('sys_call not implemented: %s' % instr.function)
                 elif isinstance(instr, bytecode.Constant):
                     self.stack[-1].retire(instr.value)
+                elif isinstance(instr, bytecode.Load):
+                    address_bytes = self.stack[-1].resolve_variable(instr.address)
+                    assert len(address_bytes) == 8
+                    self.stack[-1].retire(data.pack_uint(self.memory[runpack('>Q', address_bytes)]))
+                elif isinstance(instr, bytecode.Store):
+                    address_bytes = self.stack[-1].resolve_variable(instr.address)
+                    value = self.stack[-1].resolve_variable(instr.variable)
+                    assert len(address_bytes) == 8
+                    assert len(value) == 8
+                    self.memory[runpack('>Q', address_bytes)] = runpack('>Q', value)
+                    self.stack[-1].retire('')
                 else:
                     raise NotImplementedError('missing instruction implementation')
             else:
