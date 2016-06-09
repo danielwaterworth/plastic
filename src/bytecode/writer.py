@@ -4,6 +4,13 @@ import binascii
 
 from bytecode.format import *
 
+class Variable(object):
+    def __init__(self, n):
+        self.n = n
+
+    def write(self, block_writer):
+        block_writer.write(struct.pack('>Q', self.n))
+
 class BasicBlockWriter(object):
     def __init__(self, function, writer):
         self.function = function
@@ -32,7 +39,7 @@ class BasicBlockWriter(object):
 
         self.block_writer.write(struct.pack('>Q', len(arguments)))
         for arg in arguments:
-            self.block_writer.write(struct.pack('>Q', arg))
+            arg.write(self.block_writer)
         return self.function.create_variable()
 
     def fun_call(self, function, arguments):
@@ -42,7 +49,7 @@ class BasicBlockWriter(object):
 
         self.block_writer.write(struct.pack('>Q', len(arguments)))
         for arg in arguments:
-            self.block_writer.write(struct.pack('>Q', arg))
+            arg.write(self.block_writer)
         return self.function.create_variable()
 
     def terminator(self):
@@ -52,7 +59,7 @@ class BasicBlockWriter(object):
     def ret(self, variable):
         self.terminator()
         self.block_writer.write(struct.pack('>B', RET))
-        self.block_writer.write(struct.pack('>Q', variable))
+        variable.write(self.block_writer)
 
     def goto(self, block):
         self.terminator()
@@ -62,7 +69,7 @@ class BasicBlockWriter(object):
     def conditional(self, variable, true_block, false_block):
         self.terminator()
         self.block_writer.write(struct.pack('>B', CONDITIONAL))
-        self.block_writer.write(struct.pack('>Q', variable))
+        variable.write(self.block_writer)
         self.block_writer.write(struct.pack('>Q', true_block))
         self.block_writer.write(struct.pack('>Q', false_block))
 
@@ -80,10 +87,10 @@ class FunctionWriter(object):
     def create_variable(self):
         v = self.next_variable
         self.next_variable += 1
-        return v
+        return Variable(v)
 
     def __enter__(self):
-        return (self, range(self.num_arguments))
+        return (self, [Variable(i) for i in xrange(self.num_arguments)])
 
     def __exit__(self, type, value, traceback):
         if not value:

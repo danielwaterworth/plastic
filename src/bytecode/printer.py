@@ -1,3 +1,10 @@
+class Variable(object):
+    def __init__(self, n):
+        self.n = n
+
+    def __repr__(self):
+        return "<Var %i>" % self.n
+
 class BasicBlockPrinter(object):
     def __init__(self, function):
         self.function = function
@@ -43,11 +50,11 @@ class FunctionPrinter(object):
     def create_variable(self):
         i = self.next_variable
         self.next_variable += 1
-        return i
+        return Variable(i)
 
     def __enter__(self):
         print ("FUNCTION START", self.name, self.num_arguments)
-        return (self, range(self.num_arguments))
+        return (self, [Variable(i) for i in xrange(self.num_arguments)])
 
     def __exit__(self, type, value, traceback):
         if not value:
