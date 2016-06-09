@@ -9,13 +9,16 @@ class Function(object):
         self.blocks = blocks
 
 class BasicBlock(object):
-    def __init__(self, phi_nodes, instructions, terminator):
-        self.phi_nodes = phi_nodes
+    def __init__(self, instructions, terminator):
         self.instructions = instructions
         self.terminator = terminator
 
 class Instruction(object):
     pass
+
+class Phi(Instruction):
+    def __init__(self, inputs):
+        self.inputs = inputs
 
 class FunctionCall(Instruction):
     def __init__(self, function, arguments):

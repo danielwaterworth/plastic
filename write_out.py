@@ -104,3 +104,26 @@ with open('bc/condition.bc', 'w') as fd:
             with function.basic_block() as basic_block:
                 v = basic_block.constant(struct.pack('>B', 0))
                 basic_block.ret(v)
+
+with open('bc/loop.bc', 'w') as fd:
+    writer = bytecode_writer.BytecodeWriter(fd)
+
+    with writer as program:
+        with program.function('main', 0) as (function, _):
+            with function.basic_block() as basic_block:
+                a = basic_block.constant(struct.pack('>Q', 0))
+                b = basic_block.constant(struct.pack('>Q', 1))
+                c = basic_block.constant(struct.pack('>Q', 4))
+                basic_block.goto(1)
+
+            with function.basic_block() as basic_block:
+                i_next = basic_block.forward()
+                i = basic_block.phi([(0, a), (1, i_next)])
+                i_next.assign(basic_block.sys_call('add', [i, b]))
+                c = basic_block.sys_call('lt', [i_next, c])
+                basic_block.sys_call('print_num', [i])
+                basic_block.conditional(c, 1, 2)
+
+            with function.basic_block() as basic_block:
+                v = basic_block.constant(struct.pack('>B', 0))
+                basic_block.ret(v)

@@ -8,9 +8,10 @@ SYMBOL = 1
 FUNCTION_START = 2
 
 # Instructions
-CONST = 1
-SYS_CALL = 2
-FUN_CALL = 3
+PHI = 1
+CONST = 2
+SYS_CALL = 3
+FUN_CALL = 4
 
 RET = 129
 GOTO = 130

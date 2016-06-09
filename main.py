@@ -3,6 +3,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 import bytecode.read
 import bytecode.constructor
+import bytecode.printer
 import execution.executor as executor
 
 def entry_point(argv):

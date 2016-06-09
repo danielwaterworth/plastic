@@ -17,6 +17,8 @@ class ActivationRecord(object):
         self.values = arguments + ['' for i in xrange(n_values)]
         self.block_value_offsets = block_value_offsets
         self.next_value = len(arguments)
+        self.last_block_index = 0
+        self.current_block_index = 0
         self.current_block = function.blocks[0]
         self.pc = 0
 
@@ -42,6 +44,10 @@ class ActivationRecord(object):
 
     def goto(self, block):
         assert block < len(self.function.blocks)
+
+        self.last_block_index = self.current_block_index
+        self.current_block_index = block
+
         self.next_value = self.block_value_offsets[block]
         self.pc = 0
         self.current_block = self.function.blocks[block]
@@ -60,7 +66,9 @@ class Executor(object):
         while True:
             instr = self.stack[-1].next_instruction()
             if instr:
-                if isinstance(instr, bytecode.FunctionCall):
+                if isinstance(instr, bytecode.Phi):
+                    self.stack[-1].retire(self.stack[-1].resolve_variable(instr.inputs[self.stack[-1].last_block_index]))
+                elif isinstance(instr, bytecode.FunctionCall):
                     arguments = self.stack[-1].resolve_variable_list(instr.arguments)
                     self.stack.append(ActivationRecord(self.program.functions[instr.function], arguments))
                 elif isinstance(instr, bytecode.SysCall):

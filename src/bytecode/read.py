@@ -30,7 +30,15 @@ def read_bytecode(fd, receiver):
                         with function_receiver.basic_block() as basic_block_receiver:
                             while True:
                                 instruction_type = runpack('>B', fd.read(1))
-                                if instruction_type == CONST:
+                                if instruction_type == PHI:
+                                    length = intmask(runpack('>Q', fd.read(8)))
+                                    inputs = []
+                                    for i in xrange(length):
+                                        block = runpack('>Q', fd.read(8))
+                                        var = runpack('>Q', fd.read(8))
+                                        inputs.append((block, var))
+                                    basic_block_receiver.phi(inputs)
+                                elif instruction_type == CONST:
                                     length = intmask(runpack('>Q', fd.read(8)))
                                     basic_block_receiver.constant(fd.read(length))
                                 elif instruction_type == FUN_CALL:
@@ -64,6 +72,6 @@ def read_bytecode(fd, receiver):
                                     basic_block_receiver.conditional(variable, true_block, false_block)
                                     break
                                 else:
-                                    raise NotImplementedError()
+                                    raise NotImplementedError("unknown instruction type: %d" % instruction_type)
             else:
                 raise NotImplementedError()

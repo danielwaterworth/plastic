@@ -12,6 +12,13 @@ class BasicBlockConstructor(object):
     def __exit__(self, type, value, traceback):
         pass
 
+    def phi(self, inputs):
+        input_hash = {}
+        for block, var in inputs:
+            input_hash[block] = var
+        self.instructions.append(bytecode.Phi(input_hash))
+        return self.function.create_variable()
+
     def constant(self, value):
         self.instructions.append(bytecode.Constant(value))
         return self.function.create_variable()
@@ -34,7 +41,7 @@ class BasicBlockConstructor(object):
         self.terminal = bytecode.Conditional(variable, true_block, false_block)
 
     def get_basic_block(self):
-        return bytecode.BasicBlock([], self.instructions, self.terminal)
+        return bytecode.BasicBlock(self.instructions, self.terminal)
 
 class FunctionConstructor(object):
     def __init__(self, name, num_arguments):
