@@ -58,7 +58,8 @@ class Executor(object):
             instr = self.stack[-1].next_instruction()
             if instr:
                 if isinstance(instr, bytecode.FunctionCall):
-                    self.stack.append(ActivationRecord(self.program.functions[instr.function], []))
+                    arguments = self.stack[-1].resolve_arguments(instr.arguments)
+                    self.stack.append(ActivationRecord(self.program.functions[instr.function], arguments))
                 elif isinstance(instr, bytecode.SysCall):
                     arguments = self.stack[-1].resolve_arguments(instr.arguments)
                     if instr.function == 'exit':
@@ -78,6 +79,7 @@ class Executor(object):
                     elif instr.function == 'print_num':
                         assert len(arguments) == 1
                         a = arguments[0]
+                        assert len(a) == 8
                         print runpack('>Q', a)
                         self.stack[-1].retire('')
                     else:

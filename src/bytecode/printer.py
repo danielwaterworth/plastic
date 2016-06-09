@@ -29,10 +29,10 @@ class BasicBlockPrinter(object):
         print ("RET", variable)
 
 class FunctionPrinter(object):
-    def __init__(self, name, arguments):
+    def __init__(self, name, num_arguments):
         self.name = name
-        self.arguments = arguments
-        self.next_variable = len(arguments)
+        self.num_arguments = num_arguments
+        self.next_variable = num_arguments
 
     def create_variable(self):
         i = self.next_variable
@@ -40,8 +40,8 @@ class FunctionPrinter(object):
         return i
 
     def __enter__(self):
-        print ("FUNCTION START", self.name, self.arguments)
-        return self
+        print ("FUNCTION START", self.name, self.num_arguments)
+        return (self, range(self.num_arguments))
 
     def __exit__(self, type, value, traceback):
         if not value:

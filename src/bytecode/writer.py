@@ -63,12 +63,12 @@ class BasicBlockWriter(object):
         self.writer.write(self.block_writer.getvalue())
 
 class FunctionWriter(object):
-    def __init__(self, writer, name, arguments):
+    def __init__(self, writer, name, num_arguments):
         self.writer = writer
         self.name = name
-        self.arguments = arguments
         self.basic_blocks = []
-        self.next_variable = len(arguments)
+        self.num_arguments = num_arguments
+        self.next_variable = num_arguments
 
     def create_variable(self):
         v = self.next_variable
@@ -76,7 +76,7 @@ class FunctionWriter(object):
         return v
 
     def __enter__(self):
-        return self
+        return (self, range(self.num_arguments))
 
     def __exit__(self, type, value, traceback):
         if not value:
@@ -84,9 +84,7 @@ class FunctionWriter(object):
             self.writer.write(struct.pack('>B', FUNCTION_START))
             self.writer.write(name_symbol)
 
-            self.writer.write(struct.pack('>Q', len(self.arguments)))
-            for arg in self.arguments:
-                self.writer.write(struct.pack('>Q', arg))
+            self.writer.write(struct.pack('>Q', self.num_arguments))
 
             self.writer.write(struct.pack('>Q', len(self.basic_blocks)))
             for basic_block in self.basic_blocks:
@@ -101,8 +99,8 @@ class ProgramWriter(object):
     def __init__(self, writer):
         self.writer = writer
 
-    def function(self, name, arguments):
-        return FunctionWriter(self.writer, name, arguments)
+    def function(self, name, num_arguments):
+        return FunctionWriter(self.writer, name, num_arguments)
 
 class BytecodeWriter(object):
     def __init__(self, fd):

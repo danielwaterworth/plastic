@@ -3,9 +3,9 @@ class Program(object):
         self.functions = functions
 
 class Function(object):
-    def __init__(self, name, arguments, blocks):
+    def __init__(self, name, num_arguments, blocks):
         self.name = name
-        self.arguments = arguments
+        self.num_arguments = num_arguments
         self.blocks = blocks
 
 class BasicBlock(object):
