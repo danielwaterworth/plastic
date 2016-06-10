@@ -20,6 +20,11 @@ class Phi(Instruction):
     def __init__(self, inputs):
         self.inputs = inputs
 
+class Operation(Instruction):
+    def __init__(self, operator, arguments):
+        self.operator = operator
+        self.arguments = arguments
+
 class FunctionCall(Instruction):
     def __init__(self, function, arguments):
         self.function = function

@@ -22,7 +22,7 @@ with open('bc/add.bc', 'w') as fd:
             with function.basic_block() as basic_block:
                 a = basic_block.constant(struct.pack('>Q', 40))
                 b = basic_block.constant(struct.pack('>Q', 50))
-                c = basic_block.sys_call('add', [a, b])
+                c = basic_block.operation('add', [a, b])
                 basic_block.sys_call('print_num', [c])
 
                 v = basic_block.constant(struct.pack('>B', 0))
@@ -36,7 +36,7 @@ with open('bc/sub.bc', 'w') as fd:
             with function.basic_block() as basic_block:
                 a = basic_block.constant(struct.pack('>Q', 50))
                 b = basic_block.constant(struct.pack('>Q', 40))
-                c = basic_block.sys_call('sub', [a, b])
+                c = basic_block.operation('sub', [a, b])
                 basic_block.sys_call('print_num', [c])
 
                 v = basic_block.constant(struct.pack('>B', 0))
@@ -88,7 +88,7 @@ with open('bc/condition.bc', 'w') as fd:
             with function.basic_block() as basic_block:
                 a = basic_block.constant(struct.pack('>Q', 40))
                 b = basic_block.constant(struct.pack('>Q', 50))
-                c = basic_block.sys_call('lt', [a, b])
+                c = basic_block.operation('lt', [a, b])
                 basic_block.conditional(c, 1, 2)
 
             with function.basic_block() as basic_block:
@@ -119,8 +119,8 @@ with open('bc/loop.bc', 'w') as fd:
             with function.basic_block() as basic_block:
                 i_next = basic_block.forward()
                 i = basic_block.phi([(0, a), (1, i_next)])
-                i_next.assign(basic_block.sys_call('add', [i, b]))
-                c = basic_block.sys_call('lt', [i_next, c])
+                i_next.assign(basic_block.operation('add', [i, b]))
+                c = basic_block.operation('lt', [i_next, c])
                 basic_block.sys_call('print_num', [i])
                 basic_block.conditional(c, 1, 2)
 

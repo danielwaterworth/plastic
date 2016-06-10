@@ -67,6 +67,16 @@ class BasicBlockWriter(object):
         self.block_writer.write(value)
         return self.function.create_variable()
 
+    def operation(self, operator, arguments):
+        assert not self.terminated
+        self.block_writer.write(struct.pack('>B', OPERATION))
+        self.block_writer.write(self.writer.symbol(operator))
+
+        self.block_writer.write(struct.pack('>Q', len(arguments)))
+        for arg in arguments:
+            arg.write(self.block_writer)
+        return self.function.create_variable()
+
     def sys_call(self, function, arguments):
         assert not self.terminated
         self.block_writer.write(struct.pack('>B', SYS_CALL))

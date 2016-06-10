@@ -68,25 +68,26 @@ class Executor(object):
             if instr:
                 if isinstance(instr, bytecode.Phi):
                     self.stack[-1].retire(self.stack[-1].resolve_variable(instr.inputs[self.stack[-1].last_block_index]))
-                elif isinstance(instr, bytecode.FunctionCall):
+                elif isinstance(instr, bytecode.Operation):
                     arguments = self.stack[-1].resolve_variable_list(instr.arguments)
-                    self.stack.append(ActivationRecord(self.program.functions[instr.function], arguments))
+                    if instr.operator == 'sub':
+                        assert len(arguments) == 2
+                        a, b = arguments
+                        self.stack[-1].retire(data.sub(a, b))
+                    elif instr.operator == 'add':
+                        assert len(arguments) == 2
+                        a, b = arguments
+                        self.stack[-1].retire(data.add(a, b))
+                    elif instr.operator == 'lt':
+                        assert len(arguments) == 2
+                        a, b = arguments
+                        self.stack[-1].retire(data.lt(a, b))
+                    else:
+                        raise NotImplementedError('operator not implemented: %s' % instr.operator)
                 elif isinstance(instr, bytecode.SysCall):
                     arguments = self.stack[-1].resolve_variable_list(instr.arguments)
                     if instr.function == 'exit':
                         return None
-                    elif instr.function == 'sub':
-                        assert len(arguments) == 2
-                        a, b = arguments
-                        self.stack[-1].retire(data.sub(a, b))
-                    elif instr.function == 'add':
-                        assert len(arguments) == 2
-                        a, b = arguments
-                        self.stack[-1].retire(data.add(a, b))
-                    elif instr.function == 'lt':
-                        assert len(arguments) == 2
-                        a, b = arguments
-                        self.stack[-1].retire(data.lt(a, b))
                     elif instr.function == 'print_num':
                         assert len(arguments) == 1
                         a = arguments[0]
@@ -95,6 +96,9 @@ class Executor(object):
                         self.stack[-1].retire('')
                     else:
                         raise NotImplementedError('sys_call not implemented: %s' % instr.function)
+                elif isinstance(instr, bytecode.FunctionCall):
+                    arguments = self.stack[-1].resolve_variable_list(instr.arguments)
+                    self.stack.append(ActivationRecord(self.program.functions[instr.function], arguments))
                 elif isinstance(instr, bytecode.Constant):
                     self.stack[-1].retire(instr.value)
                 elif isinstance(instr, bytecode.Load):

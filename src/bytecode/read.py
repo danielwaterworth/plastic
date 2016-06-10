@@ -41,6 +41,14 @@ def read_bytecode(fd, receiver):
                                 elif instruction_type == CONST:
                                     length = intmask(runpack('>Q', fd.read(8)))
                                     basic_block_receiver.constant(fd.read(length))
+                                elif instruction_type == OPERATION:
+                                    operator_n = intmask(runpack('>Q', fd.read(8)))
+                                    operator = symbols[operator_n]
+                                    arguments_n = intmask(runpack('>Q', fd.read(8)))
+                                    arguments = []
+                                    for i in xrange(arguments_n):
+                                        arguments.append(runpack('>Q', fd.read(8)))
+                                    basic_block_receiver.operation(operator, arguments)
                                 elif instruction_type == FUN_CALL:
                                     function_name_n = intmask(runpack('>Q', fd.read(8)))
                                     function_name = symbols[function_name_n]

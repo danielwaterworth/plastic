@@ -41,6 +41,11 @@ class BasicBlockPrinter(object):
         print ("CONSTANT", value, var)
         return var
 
+    def operation(self, name, arguments):
+        var = self.function.create_variable()
+        print ("OPERATION", name, arguments, var)
+        return var
+
     def sys_call(self, name, arguments):
         var = self.function.create_variable()
         print ("SYS_CALL", name, arguments, var)

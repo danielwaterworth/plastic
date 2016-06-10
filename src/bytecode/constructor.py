@@ -23,6 +23,10 @@ class BasicBlockConstructor(object):
         self.instructions.append(bytecode.Constant(value))
         return self.function.create_variable()
 
+    def operation(self, operator, arguments):
+        self.instructions.append(bytecode.Operation(operator, arguments))
+        return self.function.create_variable()
+
     def fun_call(self, function, arguments):
         self.instructions.append(bytecode.FunctionCall(function, arguments))
         return self.function.create_variable()
