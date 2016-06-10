@@ -1,0 +1,9 @@
+define main()
+    a := 100;
+    b := 42;
+    store a b;
+    c := load a;
+    sys print_num(c);
+    v := 0;
+    return v;
+end

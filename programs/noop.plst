@@ -1,0 +1,4 @@
+define main()
+    v := 0;
+    return v;
+end

@@ -1,0 +1,14 @@
+define foo()
+    goto loop;
+
+loop:
+    a := 100;
+    sys print_num(a);
+    goto loop;
+end
+
+define main()
+    foo();
+    v := 0;
+    return v;
+end

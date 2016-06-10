@@ -1,0 +1,13 @@
+define foo(a)
+    sys print_num(a);
+    v := 0;
+    return v;
+end
+
+define main()
+    a := 100;
+    foo(a);
+
+    v := 0;
+    return v;
+end

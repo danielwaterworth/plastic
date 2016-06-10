@@ -1,0 +1,9 @@
+define main()
+    a := 50;
+    b := 40;
+    value := a - b;
+    sys print_num(value);
+
+    v := 0;
+    return 0;
+end
