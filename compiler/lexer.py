@@ -31,7 +31,9 @@ keywords = {
     'store' : 'STORE',
     'load' : 'LOAD',
     'condition' : 'CONDITION',
-    'goto' : 'GOTO'
+    'goto' : 'GOTO',
+    'phi' : 'PHI',
+    'return' : 'RETURN'
 }
 tokens += keywords.values()
 
