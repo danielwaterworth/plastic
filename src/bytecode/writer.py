@@ -99,9 +99,6 @@ class BasicBlockWriter(object):
         self.block_writer.write(struct.pack('>Q', true_block))
         self.block_writer.write(struct.pack('>Q', false_block))
 
-    def forward(self):
-        return Forward()
-
     def write_out(self):
         self.writer.write(self.block_writer.getvalue())
 
