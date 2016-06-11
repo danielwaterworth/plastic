@@ -5,5 +5,5 @@ define main()
     sys print_num(value);
 
     v := 0;
-    return 0;
+    return v;
 end

@@ -11,7 +11,7 @@ true:
 
 false:
     v1 := 2;
-    sys print_num(v1)
+    sys print_num(v1);
     goto exit;
 
 exit:
