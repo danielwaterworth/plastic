@@ -30,10 +30,13 @@ keywords = {
     'sys' : 'SYS',
     'store' : 'STORE',
     'load' : 'LOAD',
-    'condition' : 'CONDITION',
-    'goto' : 'GOTO',
-    'phi' : 'PHI',
-    'return' : 'RETURN'
+    'return' : 'RETURN',
+    'do': 'DO',
+    'while': 'WHILE',
+    'if': 'IF',
+    'else': 'ELSE',
+    'true': 'TRUE',
+    'false': 'FALSE'
 }
 tokens += keywords.values()
 

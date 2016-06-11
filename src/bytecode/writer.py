@@ -5,11 +5,12 @@ import binascii
 from bytecode.format import *
 
 class BasicBlockWriter(object):
-    def __init__(self, function, writer):
+    def __init__(self, function, writer, index):
         self.function = function
         self.writer = writer
         self.block_writer = StringIO.StringIO()
         self.terminated = False
+        self.index = index
 
     def __enter__(self):
         return self
@@ -19,6 +20,7 @@ class BasicBlockWriter(object):
             assert self.terminated
 
     def phi(self, inputs):
+        assert isinstance(inputs, list)
         assert not self.terminated
         self.block_writer.write(struct.pack('>B', PHI))
         self.block_writer.write(struct.pack('>Q', len(inputs)))
@@ -131,7 +133,7 @@ class FunctionWriter(object):
                 basic_block.write_out()
 
     def basic_block(self):
-        bb = BasicBlockWriter(self, self.writer)
+        bb = BasicBlockWriter(self, self.writer, len(self.basic_blocks))
         self.basic_blocks.append(bb)
         return bb
 

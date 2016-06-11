@@ -2,19 +2,15 @@ define main()
     a := 40;
     b := 50;
     c := a < b;
-    condition c true false;
 
-true:
-    v0 := 1;
-    sys print_num(v0);
-    goto exit;
+    if (c)
+        v0 := 1;
+        sys print_num(v0);
+    else
+        v1 := 2;
+        sys print_num(v1);
+    end
 
-false:
-    v1 := 2;
-    sys print_num(v1);
-    goto exit;
-
-exit:
     v := 0;
     return v;
 end

@@ -1,10 +1,11 @@
 import bytecode
 
 class BasicBlockConstructor(object):
-    def __init__(self, function):
+    def __init__(self, function, index):
         self.function = function
         self.instructions = []
         self.terminal = None
+        self.index = index
 
     def __enter__(self):
         return self
@@ -12,12 +13,17 @@ class BasicBlockConstructor(object):
     def __exit__(self, type, value, traceback):
         pass
 
-    def phi(self, inputs):
+    # Only available for constructor
+    def special_phi(self, inputs):
         input_hash = {}
         for block, var in inputs:
             input_hash[block] = var
-        self.instructions.append(bytecode.Phi(input_hash))
-        return self.function.create_variable()
+        instruction = bytecode.Phi(input_hash)
+        self.instructions.append(instruction)
+        return (self.function.create_variable(), instruction)
+
+    def phi(self, inputs):
+        return self.special_phi(inputs)[0]
 
     def constant(self, value):
         self.instructions.append(bytecode.Constant(value))
@@ -46,11 +52,21 @@ class BasicBlockConstructor(object):
     def ret(self, variable):
         self.terminal = bytecode.Return(variable)
 
-    def goto(self, block):
+    # Only available for constructor
+    def special_goto(self, block):
         self.terminal = bytecode.Goto(block)
+        return self.terminal
+
+    def goto(self, block):
+        self.special_goto(block)
+
+    # Only available for constructor
+    def special_conditional(self, variable, true_block, false_block):
+        self.terminal = bytecode.Conditional(variable, true_block, false_block)
+        return self.terminal
 
     def conditional(self, variable, true_block, false_block):
-        self.terminal = bytecode.Conditional(variable, true_block, false_block)
+        self.special_conditional(variable, true_block, false_block)
 
     def get_basic_block(self):
         return bytecode.BasicBlock(self.instructions, self.terminal)
@@ -74,7 +90,7 @@ class FunctionConstructor(object):
         pass
 
     def basic_block(self):
-        basic_block = BasicBlockConstructor(self)
+        basic_block = BasicBlockConstructor(self, len(self.basic_blocks))
         self.basic_blocks.append(basic_block)
         return basic_block
 

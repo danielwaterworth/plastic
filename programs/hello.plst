@@ -1,10 +1,11 @@
 define foo()
-    goto loop;
-
-loop:
-    a := 100;
-    sys print_num(a);
-    goto loop;
+    v := true;
+    do
+        a := 100;
+        sys print_num(a);
+    while (v)
+    status := 0;
+    return status;
 end
 
 define main()

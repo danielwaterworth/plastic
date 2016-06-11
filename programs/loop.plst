@@ -1,18 +1,14 @@
 define main()
-initial:
-    a := 0;
     b := 1;
     c := 4;
-    goto body;
 
-body:
-    i := phi (initial, a), (body, i_next);
-    i_next := i + b;
-    exit := i_next < c;
-    sys print_num(i);
-    condition exit body exit;
+    i := 0;
+    do
+        stay := i < c;
+        sys print_num(i);
+        i := i + b;
+    while (stay)
 
-exit:
     v := 0;
     return v;
 end

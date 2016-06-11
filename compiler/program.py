@@ -1,20 +1,13 @@
 class Function(object):
-    def __init__(self, name, parameters, basic_blocks):
+    def __init__(self, name, parameters, body):
         self.name = name
         self.parameters = parameters
-        self.basic_blocks = basic_blocks
+        self.body = body
 
-class BasicBlock(object):
-    def __init__(self, terminator, label=None, phi_nodes=[], statements=[]):
-        self.label = label
-        self.phi_nodes = phi_nodes
+class CodeBlock(object):
+    def __init__(self, statements, ret=None):
         self.statements = statements
-        self.terminator = terminator
-
-class Phi(object):
-    def __init__(self, name, items):
-        self.name = name
-        self.items = items
+        self.ret = ret
 
 class Statement(object):
     pass
@@ -38,6 +31,17 @@ class Store(Statement):
     def __init__(self, address, value):
         self.address = address
         self.value = value
+
+class Conditional(Statement):
+    def __init__(self, variable, true_block, false_block):
+        self.variable = variable
+        self.true_block = true_block
+        self.false_block = false_block
+
+class While(Statement):
+    def __init__(self, body, variable):
+        self.variable = variable
+        self.body = body
 
 class Expression(object):
     pass
@@ -66,19 +70,10 @@ class NumberLiteral(Expression):
     def __init__(self, n):
         self.n = n
 
-class Terminator(object):
-    pass
+class BoolLiteral(Expression):
+    def __init__(self, b):
+        self.b = b
 
-class Return(Terminator):
+class Return(object):
     def __init__(self, variable):
         self.variable = variable
-
-class Goto(Terminator):
-    def __init__(self, block):
-        self.block = block
-
-class Condition(Terminator):
-    def __init__(self, variable, true_block, false_block):
-        self.variable = variable
-        self.true_block = true_block
-        self.false_block = false_block

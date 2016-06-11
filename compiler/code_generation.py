@@ -2,44 +2,17 @@ import itertools
 import struct
 import program
 
-class FunctionContext(object):
-    def __init__(self, variables, blocks):
+class GenerationContext(object):
+    def __init__(self, function_writer, basic_block, variables):
+        self.function_writer = function_writer
+        self.basic_block = basic_block
         self.variables = variables
-        self.blocks = blocks
 
-    def lookup_variable(self, name):
+    def add(self, name, variable):
+        self.variables[name] = variable
+
+    def lookup(self, name):
         return self.variables[name]
-
-    def lookup_block(self, name):
-        return self.blocks[name]
-
-def create_function_context(function):
-    assert len(function.parameters) == len(set(function.parameters))
-    variables = dict(zip(function.parameters, itertools.count()))
-    blocks = {}
-    next_variable = len(function.parameters)
-
-    for basic_block, basic_block_index in zip(function.basic_blocks, itertools.count()):
-        if basic_block.label:
-            assert not basic_block.label in blocks
-            blocks[basic_block.label] = basic_block_index
-
-        for phi_node in basic_block.phi_nodes:
-            assert not phi_node.name in variables
-            variables[phi_node.name] = next_variable
-            next_variable += 1
-
-        for statement in basic_block.statements:
-            if isinstance(statement, program.Assignment):
-                assert not statement.name in variables
-                variables[statement.name] = next_variable
-            next_variable += 1
-
-    return FunctionContext(variables, blocks)
-
-def generate_phi_node(writer, context, phi_node):
-    items = [(context.lookup_block(block), context.lookup_variable(variable)) for block, variable in phi_node.items]
-    writer.phi(items)
 
 operator_names = {
     '<': 'lt',
@@ -54,70 +27,127 @@ operator_names = {
     '/': 'div'
 }
 
-def generate_expression(writer, context, expression):
+def generate_expression(context, expression):
     if isinstance(expression, program.NumberLiteral):
-        writer.constant(struct.pack('>Q', expression.n))
+        return context.basic_block.constant(struct.pack('>Q', expression.n))
+    elif isinstance(expression, program.BoolLiteral):
+        return context.basic_block.constant(struct.pack('>B', 1 if expression.b else 0))
     elif isinstance(expression, program.Load):
-        address = context.lookup_variable(expression.address)
-        writer.load(address)
+        address = context.lookup(expression.address)
+        return context.basic_block.load(address)
     elif isinstance(expression, program.BinOp):
-        lhs = context.lookup_variable(expression.lhs)
-        rhs = context.lookup_variable(expression.rhs)
+        lhs = context.lookup(expression.lhs)
+        rhs = context.lookup(expression.rhs)
         operator = operator_names[expression.operator]
-        writer.operation(operator, [lhs, rhs])
+        return context.basic_block.operation(operator, [lhs, rhs])
     elif isinstance(expression, program.FunctionCallExpression):
-        arguments = [context.lookup_variable(argument) for argument in expression.arguments]
-        writer.fun_call(expression.name, arguments)
+        arguments = [context.lookup(argument) for argument in expression.arguments]
+        return context.basic_block.fun_call(expression.name, arguments)
     elif isinstance(expression, program.SysCallExpression):
-        arguments = [context.lookup_variable(argument) for argument in expression.arguments]
-        writer.sys_call(expression.name, arguments)
+        arguments = [context.lookup(argument) for argument in expression.arguments]
+        return context.basic_block.sys_call(expression.name, arguments)
     else:
         raise NotImplementedError('unknown expression type: %s' % type(expression))
 
-def generate_statement(writer, context, statement):
+def generate_statement(context, statement):
     if isinstance(statement, program.Assignment):
-        generate_expression(writer, context, statement.expression)
+        var = generate_expression(context, statement.expression)
+        context.add(statement.name, var)
     elif isinstance(statement, program.FunctionCallStatement):
-        arguments = [context.lookup_variable(argument) for argument in statement.arguments]
-        writer.fun_call(statement.name, arguments)
+        arguments = [context.lookup(argument) for argument in statement.arguments]
+        context.basic_block.fun_call(statement.name, arguments)
     elif isinstance(statement, program.SysCallStatement):
-        arguments = [context.lookup_variable(argument) for argument in statement.arguments]
-        writer.sys_call(statement.name, arguments)
+        arguments = [context.lookup(argument) for argument in statement.arguments]
+        context.basic_block.sys_call(statement.name, arguments)
     elif isinstance(statement, program.Store):
-        address = context.lookup_variable(statement.address)
-        value = context.lookup_variable(statement.value)
-        writer.store(address, value)
+        address = context.lookup(statement.address)
+        value = context.lookup(statement.value)
+        context.basic_block.store(address, value)
+    elif isinstance(statement, program.Conditional):
+        # FIXME
+        assert not statement.true_block.ret
+        assert not statement.false_block.ret
+
+        current_index = context.basic_block.index
+
+        entry_conditional = context.basic_block.special_conditional(context.lookup(statement.variable), 0, 0)
+
+        true_block = context.function_writer.basic_block()
+        entry_conditional.true_block = true_block.index
+        true_context = GenerationContext(context.function_writer, true_block, dict(context.variables))
+
+        for true_statement in statement.true_block.statements:
+            generate_statement(true_context, true_statement)
+
+        last_true_block = true_context.basic_block.index
+        true_goto = true_context.basic_block.special_goto(0)
+
+        false_block = context.function_writer.basic_block()
+        entry_conditional.false_block = false_block.index
+        false_context = GenerationContext(context.function_writer, false_block, dict(context.variables))
+
+        for false_statement in statement.false_block.statements:
+            generate_statement(false_context, false_statement)
+
+        last_false_block = false_context.basic_block.index
+        false_goto = false_block.special_goto(0)
+
+        context.basic_block = context.function_writer.basic_block()
+        true_goto.block_index = context.basic_block.index
+        false_goto.block_index = context.basic_block.index
+
+        variables = {}
+        for variable in set(true_context.variables.keys()) & set(false_context.variables.keys()):
+            true_variable = true_context.lookup(variable)
+            false_variable = false_context.lookup(variable)
+            if true_variable == false_variable:
+                variables[variable] = true_variable
+            else:
+                variables[variable] = context.basic_block.phi([(last_true_block, true_variable), (last_false_block, false_variable)])
+
+        context.variables = variables
+    elif isinstance(statement, program.While):
+        assert not statement.body.ret
+
+        current_index = context.basic_block.index
+        entry_goto = context.basic_block.special_goto(0)
+        context.basic_block = context.function_writer.basic_block()
+        entry_goto.block_index = context.basic_block.index
+
+        variables = {}
+        phis = {}
+        for name, variable in context.variables.iteritems():
+            inputs = [(current_index, variable)]
+            variable, phi = context.basic_block.special_phi(inputs)
+            phis[name] = phi
+            variables[name] = variable
+        context.variables = variables
+
+        for body_statement in statement.body.statements:
+            generate_statement(context, body_statement)
+
+        last_body_index = context.basic_block.index
+
+        for name, phi in phis.iteritems():
+            phi.inputs[last_body_index] = context.lookup(name)
+
+        body_conditional = context.basic_block.special_conditional(context.lookup(statement.variable), last_body_index, 0)
+        context.basic_block = context.function_writer.basic_block()
+        body_conditional.false_block = context.basic_block.index
     else:
         raise NotImplementedError('unknown statement type: %s' % type(statement))
 
-def generate_terminator(writer, context, terminator):
-    if isinstance(terminator, program.Return):
-        writer.ret(context.lookup_variable(terminator.variable))
-    elif isinstance(terminator, program.Goto):
-        writer.goto(context.lookup_block(terminator.block))
-    elif isinstance(terminator, program.Condition):
-        variable = context.lookup_variable(terminator.variable)
-        true_block = context.lookup_block(terminator.true_block)
-        false_block = context.lookup_block(terminator.false_block)
-        writer.conditional(variable, true_block, false_block)
-    else:
-        raise NotImplementedError('unknown terminator type: %s' % type(terminator))
-
-def generate_basic_block(writer, context, basic_block):
-    with writer.basic_block() as basic_block_writer:
-        for phi_node in basic_block.phi_nodes:
-            generate_phi_node(basic_block_writer, context, phi_node)
-
-        for statement in basic_block.statements:
-            generate_statement(basic_block_writer, context, statement)
-
-        generate_terminator(basic_block_writer, context, basic_block.terminator)
-
 def generate_function(program_writer, function):
-    with program_writer.function(function.name, len(function.parameters)) as (function_writer, _):
-        context = create_function_context(function)
-        for basic_block in function.basic_blocks:
-            generate_basic_block(function_writer, context, basic_block)
+    with program_writer.function(function.name, len(function.parameters)) as (function_writer, variables):
+        variables = dict(zip(function.parameters, variables))
+        basic_block = function_writer.basic_block()
+        context = GenerationContext(function_writer, basic_block, variables)
+
+        for statement in function.body.statements:
+            generate_statement(context, statement)
+
+        if function.body.ret:
+            context.basic_block.ret(context.lookup(function.body.ret.variable))
 
 def generate_code(writer, functions):
     with writer as program_writer:

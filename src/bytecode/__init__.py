@@ -18,6 +18,7 @@ class Instruction(object):
 
 class Phi(Instruction):
     def __init__(self, inputs):
+        assert isinstance(inputs, dict)
         self.inputs = inputs
 
 class Operation(Instruction):
