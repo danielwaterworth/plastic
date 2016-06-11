@@ -14,20 +14,24 @@ class FunctionContext(object):
         return self.blocks[name]
 
 def create_function_context(function):
+    assert len(function.parameters) == len(set(function.parameters))
     variables = dict(zip(function.parameters, itertools.count()))
     blocks = {}
     next_variable = len(function.parameters)
 
     for basic_block, basic_block_index in zip(function.basic_blocks, itertools.count()):
         if basic_block.label:
+            assert not basic_block.label in blocks
             blocks[basic_block.label] = basic_block_index
 
         for phi_node in basic_block.phi_nodes:
+            assert not phi_node.name in variables
             variables[phi_node.name] = next_variable
             next_variable += 1
 
         for statement in basic_block.statements:
             if isinstance(statement, program.Assignment):
+                assert not statement.name in variables
                 variables[statement.name] = next_variable
             next_variable += 1
 
