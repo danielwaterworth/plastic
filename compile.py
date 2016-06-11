@@ -7,4 +7,4 @@ import parse
 with open(sys.argv[1], 'r') as fd:
     source = fd.read()
 
-parse.parser.parse(source)
+print parse.parser.parse(source)
