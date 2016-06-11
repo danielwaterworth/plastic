@@ -4,38 +4,6 @@ import binascii
 
 from bytecode.format import *
 
-class Variable(object):
-    pass
-
-class Concrete(Variable):
-    def __init__(self, n):
-        self.n = n
-
-    def write(self, block_writer):
-        block_writer.write(struct.pack('>Q', self.n))
-
-class Forward(Variable):
-    def __init__(self):
-        self.places = []
-        self.n = 0
-        self.instantiated = False
-
-    def write(self, block_writer):
-        if not self.instantiated:
-            self.places.append((block_writer, block_writer.tell()))
-        block_writer.write(struct.pack('>Q', self.n))
-
-    def assign(self, var):
-        assert isinstance(var, Concrete)
-        self.instantiated = True
-        self.n = var.n
-        for block_writer, pos in self.places:
-            before = block_writer.tell()
-            block_writer.seek(pos)
-            block_writer.write(struct.pack('>Q', self.n))
-            block_writer.seek(before)
-        del self.places[:]
-
 class BasicBlockWriter(object):
     def __init__(self, function, writer):
         self.function = function
@@ -57,7 +25,7 @@ class BasicBlockWriter(object):
 
         for block, var in inputs:
             self.block_writer.write(struct.pack('>Q', block))
-            var.write(self.block_writer)
+            self.block_writer.write(struct.pack('>Q', var))
         return self.function.create_variable()
 
     def constant(self, value):
@@ -74,7 +42,7 @@ class BasicBlockWriter(object):
 
         self.block_writer.write(struct.pack('>Q', len(arguments)))
         for arg in arguments:
-            arg.write(self.block_writer)
+            self.block_writer.write(struct.pack('>Q', arg))
         return self.function.create_variable()
 
     def sys_call(self, function, arguments):
@@ -84,7 +52,7 @@ class BasicBlockWriter(object):
 
         self.block_writer.write(struct.pack('>Q', len(arguments)))
         for arg in arguments:
-            arg.write(self.block_writer)
+            self.block_writer.write(struct.pack('>Q', arg))
         return self.function.create_variable()
 
     def fun_call(self, function, arguments):
@@ -94,20 +62,20 @@ class BasicBlockWriter(object):
 
         self.block_writer.write(struct.pack('>Q', len(arguments)))
         for arg in arguments:
-            arg.write(self.block_writer)
+            self.block_writer.write(struct.pack('>Q', arg))
         return self.function.create_variable()
 
     def load(self, address):
         assert not self.terminated
         self.block_writer.write(struct.pack('>B', LOAD))
-        address.write(self.block_writer)
+        self.block_writer.write(struct.pack('>Q', address))
         return self.function.create_variable()
 
     def store(self, address, value):
         assert not self.terminated
         self.block_writer.write(struct.pack('>B', STORE))
-        address.write(self.block_writer)
-        value.write(self.block_writer)
+        self.block_writer.write(struct.pack('>Q', address))
+        self.block_writer.write(struct.pack('>Q', value))
         return self.function.create_variable()
 
     def terminator(self):
@@ -117,7 +85,7 @@ class BasicBlockWriter(object):
     def ret(self, variable):
         self.terminator()
         self.block_writer.write(struct.pack('>B', RET))
-        variable.write(self.block_writer)
+        self.block_writer.write(struct.pack('>Q', variable))
 
     def goto(self, block):
         self.terminator()
@@ -127,7 +95,7 @@ class BasicBlockWriter(object):
     def conditional(self, variable, true_block, false_block):
         self.terminator()
         self.block_writer.write(struct.pack('>B', CONDITIONAL))
-        variable.write(self.block_writer)
+        self.block_writer.write(struct.pack('>Q', variable))
         self.block_writer.write(struct.pack('>Q', true_block))
         self.block_writer.write(struct.pack('>Q', false_block))
 
@@ -148,10 +116,10 @@ class FunctionWriter(object):
     def create_variable(self):
         v = self.next_variable
         self.next_variable += 1
-        return Concrete(v)
+        return v
 
     def __enter__(self):
-        return (self, [Concrete(i) for i in xrange(self.num_arguments)])
+        return (self, [i for i in xrange(self.num_arguments)])
 
     def __exit__(self, type, value, traceback):
         if not value:

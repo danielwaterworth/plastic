@@ -43,10 +43,10 @@ class Expression(object):
     pass
 
 class BinOp(Expression):
-    def __init__(self, lhs, rhs, op):
+    def __init__(self, lhs, rhs, operator):
         self.lhs = lhs
         self.rhs = rhs
-        self.op = op
+        self.operator = operator
 
 class SysCallExpression(Expression):
     def __init__(self, name, arguments):

@@ -8,9 +8,9 @@ initial:
 body:
     i := phi (initial, a), (body, i_next);
     i_next := i + b;
-    c := i_next < c;
+    exit := i_next < c;
     sys print_num(i);
-    condition c body exit;
+    condition exit body exit;
 
 exit:
     v := 0;
