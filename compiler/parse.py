@@ -39,15 +39,15 @@ def p_parameter(p):
 
 def p_type_void(p):
     '''type : VOID'''
-    p[0] = 0
+    p[0] = program.void
 
 def p_type_bool(p):
     '''type : BOOL'''
-    p[0] = 1
+    p[0] = program.bool
 
 def p_type_uint(p):
     '''type : UINT'''
-    p[0] = 8
+    p[0] = program.uint
 
 def p_code_block(p):
     '''code_block : statement_list block_end'''

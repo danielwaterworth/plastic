@@ -1,8 +1,32 @@
+class Type(object):
+    pass
+
+class Void(Type):
+    @property
+    def size(self):
+        return 0
+
+void = Void()
+
+class Bool(Type):
+    @property
+    def size(self):
+        return 1
+
+bool = Bool()
+
+class UInt(Type):
+    @property
+    def size(self):
+        return 8
+
+uint = UInt()
+
 class Function(object):
-    def __init__(self, name, parameters, return_size, body):
+    def __init__(self, name, parameters, return_type, body):
         self.name = name
         self.parameters = parameters
-        self.return_size = return_size
+        self.return_type = return_type
         self.body = body
 
 class CodeBlock(object):
