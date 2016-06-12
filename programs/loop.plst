@@ -9,6 +9,5 @@ define main() -> bool do
         i := i + b;
     while (stay)
 
-    v := false;
-    return v;
+    return false;
 end

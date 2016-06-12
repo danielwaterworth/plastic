@@ -4,6 +4,5 @@ define main() -> bool do
     value := a + b;
     sys print_num(value);
 
-    v := false;
-    return v;
+    return false;
 end

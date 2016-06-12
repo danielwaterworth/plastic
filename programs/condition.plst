@@ -11,6 +11,5 @@ define main() -> bool do
         sys print_num(v1);
     end
 
-    v := false;
-    return v;
+    return false;
 end

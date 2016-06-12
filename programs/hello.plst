@@ -4,12 +4,10 @@ define foo() -> bool do
         a := 100;
         sys print_num(a);
     while (v)
-    status := false;
-    return status;
+    return false;
 end
 
 define main() -> bool do
     foo();
-    v := false;
-    return v;
+    return false;
 end

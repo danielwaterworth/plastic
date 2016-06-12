@@ -152,7 +152,8 @@ def generate_function(program_writer, function):
             generate_statement(context, statement)
 
         if function.body.ret:
-            context.basic_block.ret(context.lookup(function.body.ret.variable))
+            variable = generate_expression(context, function.body.ret.expression)
+            context.basic_block.ret(variable)
 
 def generate_code(writer, functions):
     with writer as program_writer:

@@ -80,5 +80,5 @@ class BoolLiteral(Expression):
         self.b = b
 
 class Return(object):
-    def __init__(self, variable):
-        self.variable = variable
+    def __init__(self, expression):
+        self.expression = expression

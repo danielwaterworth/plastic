@@ -149,7 +149,7 @@ def p_expression_binop(p):
     p[0] = program.BinOp(p[1], p[3], p[2])
 
 def p_return(p):
-    '''block_end : RETURN LOWER_NAME SEMICOLON'''
+    '''block_end : RETURN expression SEMICOLON'''
     p[0] = program.Return(p[2])
 
 def p_end(p):

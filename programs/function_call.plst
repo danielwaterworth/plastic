@@ -1,13 +1,11 @@
 define foo(a : uint) -> bool do
     sys print_num(a);
-    v := false;
-    return v;
+    return false;
 end
 
 define main() -> bool do
     a := 100;
     foo(a);
 
-    v := false;
-    return v;
+    return false;
 end

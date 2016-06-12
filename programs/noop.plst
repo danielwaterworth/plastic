@@ -1,4 +1,3 @@
 define main() -> bool do
-    v := false;
-    return v;
+    return false;
 end

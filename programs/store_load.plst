@@ -4,6 +4,5 @@ define main() -> bool do
     store a b;
     c := load a;
     sys print_num(c);
-    v := false;
-    return v;
+    return false;
 end
