@@ -124,6 +124,7 @@ class Executor(object):
                 term = self.stack[-1].terminator()
                 if isinstance(term, bytecode.Return):
                     value = self.stack[-1].lookup_var(term.variable)
+                    assert len(value) == self.stack[-1].function.return_size
                     self.stack.pop()
                     if self.stack:
                         self.stack[-1].retire(value)
