@@ -35,12 +35,15 @@ def p_non_empty_parameter_list(p):
 
 def p_parameter(p):
     '''parameter : LOWER_NAME COLON type'''
-    p[0] = p[1]
+    p[0] = (p[1], p[3])
 
-def p_type(p):
-    '''type : BOOL
-            | UINT'''
-    pass
+def p_type_bool(p):
+    '''type : BOOL'''
+    p[0] = 1
+
+def p_type_uint(p):
+    '''type : UINT'''
+    p[0] = 8
 
 def p_code_block(p):
     '''code_block : statement_list block_end'''

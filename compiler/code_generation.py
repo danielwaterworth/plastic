@@ -138,8 +138,10 @@ def generate_statement(context, statement):
         raise NotImplementedError('unknown statement type: %s' % type(statement))
 
 def generate_function(program_writer, function):
-    with program_writer.function(function.name, len(function.parameters)) as (function_writer, variables):
-        variables = dict(zip(function.parameters, variables))
+    parameter_names = [parameter[0] for parameter in function.parameters]
+    parameter_sizes = [parameter[1] for parameter in function.parameters]
+    with program_writer.function(function.name, parameter_sizes) as (function_writer, variables):
+        variables = dict(zip(parameter_names, variables))
         basic_block = function_writer.basic_block()
         context = GenerationContext(function_writer, basic_block, variables)
 

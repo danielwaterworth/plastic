@@ -45,10 +45,10 @@ class BasicBlockPrinter(object):
         print ("CONDITIONAL", variable, true_block, false_block)
 
 class FunctionPrinter(object):
-    def __init__(self, name, num_arguments):
+    def __init__(self, name, argument_sizes):
         self.name = name
-        self.num_arguments = num_arguments
-        self.next_variable = num_arguments
+        self.argument_sizes = argument_sizes
+        self.next_variable = len(argument_sizes)
 
     def create_variable(self):
         i = self.next_variable
@@ -56,8 +56,8 @@ class FunctionPrinter(object):
         return i
 
     def __enter__(self):
-        print ("FUNCTION START", self.name, self.num_arguments)
-        return (self, [i for i in xrange(self.num_arguments)])
+        print ("FUNCTION START", self.name, self.arguments_sizes)
+        return (self, [i for i in xrange(len(self.argument_sizes))])
 
     def __exit__(self, type, value, traceback):
         if not value:
