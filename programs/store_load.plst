@@ -1,7 +1,5 @@
 define main() -> bool do
-    a := 100;
-    b := 42;
-    store a b;
-    sys print_num(load a);
+    store 100, 42;
+    sys print_num(load 100);
     return false;
 end

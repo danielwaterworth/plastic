@@ -96,8 +96,8 @@ def p_statement_sys_call(p):
     p[0] = program.SysCallStatement(p[2], p[3])
 
 def p_statement_store(p):
-    '''statement : STORE LOWER_NAME LOWER_NAME SEMICOLON'''
-    p[0] = program.Store(p[2], p[3])
+    '''statement : STORE expression COMMA expression SEMICOLON'''
+    p[0] = program.Store(p[2], p[4])
 
 def p_conditional(p):
     '''statement : IF OPEN_PARENS expression CLOSE_PARENS code_block ELSE code_block END'''
@@ -132,7 +132,7 @@ def p_expression_call(p):
     p[0] = program.FunctionCallExpression(p[1], p[2])
 
 def p_expression_load(p):
-    '''expression : LOAD LOWER_NAME'''
+    '''expression : LOAD expression'''
     p[0] = program.Load(p[2])
 
 def p_expression_binop(p):

@@ -35,7 +35,7 @@ def generate_expression(context, expression):
     elif isinstance(expression, program.BoolLiteral):
         return context.basic_block.constant(struct.pack('>B', 1 if expression.b else 0))
     elif isinstance(expression, program.Load):
-        address = context.lookup(expression.address)
+        address = generate_expression(context, expression.address)
         return context.basic_block.load(address)
     elif isinstance(expression, program.BinOp):
         lhs = context.lookup(expression.lhs)
@@ -62,8 +62,8 @@ def generate_statement(context, statement):
         arguments = [generate_expression(context, argument) for argument in statement.arguments]
         context.basic_block.sys_call(statement.name, arguments)
     elif isinstance(statement, program.Store):
-        address = context.lookup(statement.address)
-        value = context.lookup(statement.value)
+        address = generate_expression(context, statement.address)
+        value = generate_expression(context, statement.value)
         context.basic_block.store(address, value)
     elif isinstance(statement, program.Conditional):
         # FIXME
