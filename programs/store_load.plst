@@ -1,9 +1,9 @@
-define main()
+define main() -> bool do
     a := 100;
     b := 42;
     store a b;
     c := load a;
     sys print_num(c);
-    v := 0;
+    v := false;
     return v;
 end

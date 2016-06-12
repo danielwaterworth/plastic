@@ -1,9 +1,9 @@
-define main()
+define main() -> bool do
     a := 40;
     b := 50;
     value := a + b;
     sys print_num(value);
 
-    v := 0;
+    v := false;
     return v;
 end

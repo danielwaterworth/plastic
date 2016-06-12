@@ -1,4 +1,4 @@
-define main()
-    v := 0;
+define main() -> bool do
+    v := false;
     return v;
 end

@@ -13,8 +13,8 @@ def p_program(p):
     p[0] = p[1]
 
 def p_function(p):
-    '''function : DEFINE LOWER_NAME OPEN_PARENS parameter_list CLOSE_PARENS code_block END'''
-    p[0] = program.Function(p[2], p[4], p[6])
+    '''function : DEFINE LOWER_NAME OPEN_PARENS parameter_list CLOSE_PARENS ARROW type DO code_block END'''
+    p[0] = program.Function(p[2], p[4], p[7], p[9])
 
 def p_parameter_list_empty(p):
     '''parameter_list : empty'''
@@ -36,6 +36,10 @@ def p_non_empty_parameter_list(p):
 def p_parameter(p):
     '''parameter : LOWER_NAME COLON type'''
     p[0] = (p[1], p[3])
+
+def p_type_void(p):
+    '''type : VOID'''
+    p[0] = 0
 
 def p_type_bool(p):
     '''type : BOOL'''

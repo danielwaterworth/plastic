@@ -6,6 +6,7 @@ tokens = [
     "SEMICOLON",
     "COMMA",
     "ASSIGNMENT",
+    "ARROW",
     "OPEN_PARENS",
     "CLOSE_PARENS",
     "UPPER_NAME",
@@ -38,7 +39,8 @@ keywords = {
     'true': 'TRUE',
     'false': 'FALSE',
     'bool': 'BOOL',
-    'uint': 'UINT'
+    'uint': 'UINT',
+    'void': 'VOID',
 }
 tokens += keywords.values()
 
@@ -47,6 +49,7 @@ t_COLON = r':'
 t_SEMICOLON = r';'
 t_COMMA = r','
 t_ASSIGNMENT = r':='
+t_ARROW = r'->'
 t_OPEN_PARENS = r'\('
 t_CLOSE_PARENS = r'\)'
 t_UPPER_NAME = r'[A-Z][a-zA-Z]*'

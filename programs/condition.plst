@@ -1,4 +1,4 @@
-define main()
+define main() -> bool do
     a := 40;
     b := 50;
     c := a < b;
@@ -11,6 +11,6 @@ define main()
         sys print_num(v1);
     end
 
-    v := 0;
+    v := false;
     return v;
 end

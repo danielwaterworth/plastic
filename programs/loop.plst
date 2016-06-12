@@ -1,4 +1,4 @@
-define main()
+define main() -> bool do
     b := 1;
     c := 4;
 
@@ -9,6 +9,6 @@ define main()
         i := i + b;
     while (stay)
 
-    v := 0;
+    v := false;
     return v;
 end

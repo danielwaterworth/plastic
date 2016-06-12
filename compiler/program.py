@@ -1,7 +1,8 @@
 class Function(object):
-    def __init__(self, name, parameters, body):
+    def __init__(self, name, parameters, return_size, body):
         self.name = name
         self.parameters = parameters
+        self.return_size = return_size
         self.body = body
 
 class CodeBlock(object):

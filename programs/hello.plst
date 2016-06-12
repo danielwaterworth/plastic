@@ -1,15 +1,15 @@
-define foo()
+define foo() -> bool do
     v := true;
     do
         a := 100;
         sys print_num(a);
     while (v)
-    status := 0;
+    status := false;
     return status;
 end
 
-define main()
+define main() -> bool do
     foo();
-    v := 0;
+    v := false;
     return v;
 end
