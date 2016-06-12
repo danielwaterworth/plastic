@@ -1,7 +1,6 @@
 define foo() -> bool do
     do
-        a := 100;
-        sys print_num(a);
+        sys print_num(100);
     while (true)
     return false;
 end

@@ -4,8 +4,7 @@ define foo(a : uint) -> bool do
 end
 
 define main() -> bool do
-    a := 100;
-    foo(a);
+    foo(100);
 
     return false;
 end

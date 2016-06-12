@@ -43,10 +43,10 @@ def generate_expression(context, expression):
         operator = operator_names[expression.operator]
         return context.basic_block.operation(operator, [lhs, rhs])
     elif isinstance(expression, program.FunctionCallExpression):
-        arguments = [context.lookup(argument) for argument in expression.arguments]
+        arguments = [generate_expression(context, argument) for argument in expression.arguments]
         return context.basic_block.fun_call(expression.name, arguments)
     elif isinstance(expression, program.SysCallExpression):
-        arguments = [context.lookup(argument) for argument in expression.arguments]
+        arguments = [generate_expression(context, argument) for argument in expression.arguments]
         return context.basic_block.sys_call(expression.name, arguments)
     else:
         raise NotImplementedError('unknown expression type: %s' % type(expression))
@@ -56,10 +56,10 @@ def generate_statement(context, statement):
         var = generate_expression(context, statement.expression)
         context.add(statement.name, var)
     elif isinstance(statement, program.FunctionCallStatement):
-        arguments = [context.lookup(argument) for argument in statement.arguments]
+        arguments = [generate_expression(context, argument) for argument in statement.arguments]
         context.basic_block.fun_call(statement.name, arguments)
     elif isinstance(statement, program.SysCallStatement):
-        arguments = [context.lookup(argument) for argument in statement.arguments]
+        arguments = [generate_expression(context, argument) for argument in statement.arguments]
         context.basic_block.sys_call(statement.name, arguments)
     elif isinstance(statement, program.Store):
         address = context.lookup(statement.address)

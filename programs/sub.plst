@@ -1,8 +1,7 @@
 define main() -> bool do
     a := 50;
     b := 40;
-    value := a - b;
-    sys print_num(value);
+    sys print_num(a - b);
 
     return false;
 end

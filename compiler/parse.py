@@ -75,11 +75,11 @@ def p_argument_list(p):
     p[0] = p[1]
 
 def p_non_empty_argument_list_initial(p):
-    '''non_empty_argument_list : LOWER_NAME'''
+    '''non_empty_argument_list : expression'''
     p[0] = [p[1]]
 
 def p_non_empty_argument_list(p):
-    '''non_empty_argument_list : non_empty_argument_list COMMA LOWER_NAME'''
+    '''non_empty_argument_list : non_empty_argument_list COMMA expression'''
     p[1].append(p[3])
     p[0] = p[1]
 

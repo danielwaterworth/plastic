@@ -3,11 +3,9 @@ define main() -> bool do
     b := 50;
 
     if (a < b)
-        v0 := 1;
-        sys print_num(v0);
+        sys print_num(1);
     else
-        v1 := 2;
-        sys print_num(v1);
+        sys print_num(2);
     end
 
     return false;
