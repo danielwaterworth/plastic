@@ -25,13 +25,22 @@ def p_parameter_list(p):
     p[0] = p[1]
 
 def p_non_empty_parameter_list_initial(p):
-    '''non_empty_parameter_list : LOWER_NAME'''
+    '''non_empty_parameter_list : parameter'''
     p[0] = [p[1]]
 
 def p_non_empty_parameter_list(p):
-    '''non_empty_parameter_list : non_empty_parameter_list COMMA LOWER_NAME'''
+    '''non_empty_parameter_list : non_empty_parameter_list COMMA parameter'''
     p[1].append(p[3])
     p[0] = p[1]
+
+def p_parameter(p):
+    '''parameter : LOWER_NAME COLON type'''
+    p[0] = p[1]
+
+def p_type(p):
+    '''type : BOOL
+            | UINT'''
+    pass
 
 def p_code_block(p):
     '''code_block : statement_list block_end'''

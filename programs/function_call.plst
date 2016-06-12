@@ -1,4 +1,4 @@
-define foo(a)
+define foo(a : uint)
     sys print_num(a);
     v := 0;
     return v;

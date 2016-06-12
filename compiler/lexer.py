@@ -36,7 +36,9 @@ keywords = {
     'if': 'IF',
     'else': 'ELSE',
     'true': 'TRUE',
-    'false': 'FALSE'
+    'false': 'FALSE',
+    'bool': 'BOOL',
+    'uint': 'UINT'
 }
 tokens += keywords.values()
 
