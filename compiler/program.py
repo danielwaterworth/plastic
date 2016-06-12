@@ -47,6 +47,10 @@ class While(Statement):
 class Expression(object):
     pass
 
+class Variable(Expression):
+    def __init__(self, name):
+        self.name = name
+
 class BinOp(Expression):
     def __init__(self, lhs, rhs, operator):
         self.lhs = lhs

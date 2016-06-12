@@ -107,6 +107,10 @@ def p_while(p):
     '''statement : DO code_block WHILE OPEN_PARENS LOWER_NAME CLOSE_PARENS'''
     p[0] = program.While(p[2], p[5])
 
+def p_expression_variable(p):
+    '''expression : LOWER_NAME'''
+    p[0] = program.Variable(p[1])
+
 def p_expression_number(p):
     '''expression : NUMBER'''
     p[0] = program.NumberLiteral(int(p[1]))
