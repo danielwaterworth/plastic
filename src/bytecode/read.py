@@ -27,7 +27,9 @@ def read_bytecode(fd, receiver):
                 for i in xrange(arguments_n):
                     sizes.append(runpack('>Q', fd.read(8)))
 
-                with program_receiver.function(name, sizes) as (function_receiver, _):
+                return_size = runpack('>Q', fd.read(8))
+
+                with program_receiver.function(name, sizes, return_size) as (function_receiver, _):
                     basic_block_n = intmask(runpack('>Q', fd.read(8)))
                     for i in xrange(basic_block_n):
                         with function_receiver.basic_block() as basic_block_receiver:

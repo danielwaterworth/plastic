@@ -45,9 +45,10 @@ class BasicBlockPrinter(object):
         print ("CONDITIONAL", variable, true_block, false_block)
 
 class FunctionPrinter(object):
-    def __init__(self, name, argument_sizes):
+    def __init__(self, name, argument_sizes, return_size):
         self.name = name
         self.argument_sizes = argument_sizes
+        self.return_size = return_size
         self.next_variable = len(argument_sizes)
 
     def create_variable(self):
@@ -56,7 +57,7 @@ class FunctionPrinter(object):
         return i
 
     def __enter__(self):
-        print ("FUNCTION START", self.name, self.arguments_sizes)
+        print ("FUNCTION START", self.name, self.arguments_sizes, self.return_size)
         return (self, [i for i in xrange(len(self.argument_sizes))])
 
     def __exit__(self, type, value, traceback):
@@ -67,8 +68,8 @@ class FunctionPrinter(object):
         return BasicBlockPrinter(self)
 
 class ProgramPrinter(object):
-    def function(self, name, arguments):
-        return FunctionPrinter(name, arguments)
+    def function(self, name, argument_sizes, return_size):
+        return FunctionPrinter(name, argument_sizes, return_size)
 
 class BytecodePrinter(object):
     def __enter__(self):

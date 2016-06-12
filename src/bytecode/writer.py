@@ -105,11 +105,12 @@ class BasicBlockWriter(object):
         self.writer.write(self.block_writer.getvalue())
 
 class FunctionWriter(object):
-    def __init__(self, writer, name, argument_sizes):
+    def __init__(self, writer, name, argument_sizes, return_size):
         self.writer = writer
         self.name = name
         self.basic_blocks = []
         self.argument_sizes = argument_sizes
+        self.return_size = return_size
         self.next_variable = len(argument_sizes)
 
     def create_variable(self):
@@ -130,6 +131,8 @@ class FunctionWriter(object):
             for size in self.argument_sizes:
                 self.writer.write(struct.pack('>Q', size))
 
+            self.writer.write(struct.pack('>Q', self.return_size))
+
             self.writer.write(struct.pack('>Q', len(self.basic_blocks)))
             for basic_block in self.basic_blocks:
                 basic_block.write_out()
@@ -143,8 +146,8 @@ class ProgramWriter(object):
     def __init__(self, writer):
         self.writer = writer
 
-    def function(self, name, argument_sizes):
-        return FunctionWriter(self.writer, name, argument_sizes)
+    def function(self, name, argument_sizes, return_size):
+        return FunctionWriter(self.writer, name, argument_sizes, return_size)
 
 class BytecodeWriter(object):
     def __init__(self, fd):

@@ -140,7 +140,8 @@ def generate_statement(context, statement):
 def generate_function(program_writer, function):
     parameter_names = [parameter[0] for parameter in function.parameters]
     parameter_sizes = [parameter[1] for parameter in function.parameters]
-    with program_writer.function(function.name, parameter_sizes) as (function_writer, variables):
+    return_size = function.return_size
+    with program_writer.function(function.name, parameter_sizes, return_size) as (function_writer, variables):
         variables = dict(zip(parameter_names, variables))
         basic_block = function_writer.basic_block()
         context = GenerationContext(function_writer, basic_block, variables)

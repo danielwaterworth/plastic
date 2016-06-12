@@ -72,10 +72,11 @@ class BasicBlockConstructor(object):
         return bytecode.BasicBlock(self.instructions, self.terminal)
 
 class FunctionConstructor(object):
-    def __init__(self, name, argument_sizes):
+    def __init__(self, name, argument_sizes, return_size):
         self.name = name
         self.basic_blocks = []
         self.argument_sizes = argument_sizes
+        self.return_size = return_size
         self.next_variable = len(argument_sizes)
 
     def create_variable(self):
@@ -96,14 +97,14 @@ class FunctionConstructor(object):
 
     def get_function(self):
         basic_blocks = [basic_block.get_basic_block() for basic_block in self.basic_blocks]
-        return bytecode.Function(self.name, self.argument_sizes, basic_blocks)
+        return bytecode.Function(self.name, self.argument_sizes, self.return_size, basic_blocks)
 
 class ProgramConstructor(object):
     def __init__(self):
         self.functions = []
 
-    def function(self, name, arguments):
-        function = FunctionConstructor(name, arguments)
+    def function(self, name, argument_sizes, return_size):
+        function = FunctionConstructor(name, argument_sizes, return_size)
         self.functions.append(function)
         return function
 
