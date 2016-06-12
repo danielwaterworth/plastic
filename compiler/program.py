@@ -34,14 +34,14 @@ class Store(Statement):
         self.value = value
 
 class Conditional(Statement):
-    def __init__(self, variable, true_block, false_block):
-        self.variable = variable
+    def __init__(self, expression, true_block, false_block):
+        self.expression = expression
         self.true_block = true_block
         self.false_block = false_block
 
 class While(Statement):
-    def __init__(self, body, variable):
-        self.variable = variable
+    def __init__(self, body, expression):
+        self.expression = expression
         self.body = body
 
 class Expression(object):

@@ -1,9 +1,8 @@
 define main() -> bool do
     a := 40;
     b := 50;
-    c := a < b;
 
-    if (c)
+    if (a < b)
         v0 := 1;
         sys print_num(v0);
     else

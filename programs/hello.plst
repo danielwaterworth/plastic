@@ -1,9 +1,8 @@
 define foo() -> bool do
-    v := true;
     do
         a := 100;
         sys print_num(a);
-    while (v)
+    while (true)
     return false;
 end
 

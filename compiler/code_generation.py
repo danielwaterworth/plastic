@@ -70,9 +70,8 @@ def generate_statement(context, statement):
         assert not statement.true_block.ret
         assert not statement.false_block.ret
 
-        current_index = context.basic_block.index
-
-        entry_conditional = context.basic_block.special_conditional(context.lookup(statement.variable), 0, 0)
+        condition_variable = generate_expression(context, statement.expression)
+        entry_conditional = context.basic_block.special_conditional(condition_variable, 0, 0)
 
         true_block = context.function_writer.basic_block()
         entry_conditional.true_block = true_block.index
@@ -133,7 +132,8 @@ def generate_statement(context, statement):
         for name, phi in phis.iteritems():
             phi.inputs[last_body_index] = context.lookup(name)
 
-        body_conditional = context.basic_block.special_conditional(context.lookup(statement.variable), last_body_index, 0)
+        condition_variable = generate_expression(context, statement.expression)
+        body_conditional = context.basic_block.special_conditional(condition_variable, last_body_index, 0)
         context.basic_block = context.function_writer.basic_block()
         body_conditional.false_block = context.basic_block.index
     else:

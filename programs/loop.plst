@@ -4,10 +4,9 @@ define main() -> bool do
 
     i := 0;
     do
-        stay := i < c;
         sys print_num(i);
         i := i + b;
-    while (stay)
+    while (i < c)
 
     return false;
 end

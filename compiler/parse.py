@@ -100,11 +100,11 @@ def p_statement_store(p):
     p[0] = program.Store(p[2], p[3])
 
 def p_conditional(p):
-    '''statement : IF OPEN_PARENS LOWER_NAME CLOSE_PARENS code_block ELSE code_block END'''
+    '''statement : IF OPEN_PARENS expression CLOSE_PARENS code_block ELSE code_block END'''
     p[0] = program.Conditional(p[3], p[5], p[7])
 
 def p_while(p):
-    '''statement : DO code_block WHILE OPEN_PARENS LOWER_NAME CLOSE_PARENS'''
+    '''statement : DO code_block WHILE OPEN_PARENS expression CLOSE_PARENS'''
     p[0] = program.While(p[2], p[5])
 
 def p_expression_variable(p):
