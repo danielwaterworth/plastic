@@ -38,8 +38,8 @@ def generate_expression(context, expression):
         address = generate_expression(context, expression.address)
         return context.basic_block.load(address)
     elif isinstance(expression, program.BinOp):
-        lhs = context.lookup(expression.lhs)
-        rhs = context.lookup(expression.rhs)
+        lhs = generate_expression(context, expression.lhs)
+        rhs = generate_expression(context, expression.rhs)
         operator = operator_names[expression.operator]
         return context.basic_block.operation(operator, [lhs, rhs])
     elif isinstance(expression, program.FunctionCallExpression):

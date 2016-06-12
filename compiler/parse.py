@@ -135,17 +135,28 @@ def p_expression_load(p):
     '''expression : LOAD expression'''
     p[0] = program.Load(p[2])
 
+def p_bracketed_expr(p):
+    '''expression : OPEN_PARENS expression CLOSE_PARENS'''
+    p[0] = p[2]
+
+precedence = (
+    ('nonassoc', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE'),
+    ('left', 'PLUS', 'MINUS'),
+    ('left', 'MUL', 'DIV'),
+    ('right', 'LOAD'),
+)
+
 def p_expression_binop(p):
-    '''expression : LOWER_NAME PLUS LOWER_NAME
-                  | LOWER_NAME MINUS LOWER_NAME
-                  | LOWER_NAME MUL LOWER_NAME
-                  | LOWER_NAME DIV LOWER_NAME
-                  | LOWER_NAME LT LOWER_NAME
-                  | LOWER_NAME LE LOWER_NAME
-                  | LOWER_NAME GT LOWER_NAME
-                  | LOWER_NAME GE LOWER_NAME
-                  | LOWER_NAME EQ LOWER_NAME
-                  | LOWER_NAME NE LOWER_NAME'''
+    '''expression : expression PLUS expression
+                  | expression MINUS expression
+                  | expression MUL expression
+                  | expression DIV expression
+                  | expression LT expression
+                  | expression LE expression
+                  | expression GT expression
+                  | expression GE expression
+                  | expression EQ expression
+                  | expression NE expression'''
     p[0] = program.BinOp(p[1], p[3], p[2])
 
 def p_return(p):

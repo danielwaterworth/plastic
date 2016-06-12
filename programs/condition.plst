@@ -1,8 +1,5 @@
 define main() -> bool do
-    a := 40;
-    b := 50;
-
-    if (a < b)
+    if (40 < 50)
         sys print_num(1);
     else
         sys print_num(2);

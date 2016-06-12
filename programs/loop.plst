@@ -1,12 +1,9 @@
 define main() -> bool do
-    b := 1;
-    c := 4;
-
     i := 0;
     do
         sys print_num(i);
-        i := i + b;
-    while (i < c)
+        i := i + 1;
+    while (i < 4)
 
     return false;
 end
