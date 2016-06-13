@@ -1,7 +1,8 @@
 import program
+import program_types
 
 sys_call_signatures = {
-    'print_num': ([program.uint], program.void)
+    'print_num': ([program_types.uint], program_types.void)
 }
 
 class TypeCheckingContext(object):
@@ -37,18 +38,18 @@ arithmetic_operators = ['+', '-', '*', '/']
 
 def operator_type(operator, rhs_type, lhs_type):
     if operator in comparison_operators:
-        assert rhs_type == program.uint
-        assert lhs_type == program.uint
-        return program.bool
+        assert rhs_type == program_types.uint
+        assert lhs_type == program_types.uint
+        return program_types.bool
     elif operator in ['==', '!=']:
-        assert lhs_type == program.uint
-        assert rhs_type == program.uint
+        assert lhs_type == program_types.uint
+        assert rhs_type == program_types.uint
         if operator == '==':
-            return program.bool
+            return program_types.bool
         else:
-            return program.bool
+            return program_types.bool
     elif operator in arithmetic_operators:
-        return program.uint
+        return program_types.uint
     else:
         raise NotImplementedError('unknown operator: %s' % operator)
 
@@ -60,20 +61,37 @@ def type_check(functions):
 
         def infer_expression_type(expression):
             if isinstance(expression, program.Variable):
-                return context.lookup(expression.name)
+                expression.type = context.lookup(expression.name)
             elif isinstance(expression, program.NumberLiteral):
-                return program.uint
+                expression.type = program_types.uint
             elif isinstance(expression, program.BoolLiteral):
-                return program.bool
+                expression.type = program_types.bool
             elif isinstance(expression, program.Load):
-                assert infer_expression_type(expression.address) == program.uint
-                return program.uint
+                assert infer_expression_type(expression.address) == program_types.uint
+                expression.type = program_types.uint
             elif isinstance(expression, program.BinOp):
                 rhs_type = infer_expression_type(expression.rhs)
                 lhs_type = infer_expression_type(expression.lhs)
-                return operator_type(expression.operator, rhs_type, lhs_type)
+                expression.type = operator_type(expression.operator, rhs_type, lhs_type)
+            elif isinstance(expression, program.FunctionCallExpression):
+                expected_arg_types, return_type = function_signatures[statement.name]
+                argument_types = [infer_expression_type(argument) for argument in expression.arguments]
+                assert expected_arg_types == argument_types
+                expression.type = return_type
+            elif isinstance(expression, program.SysCallExpression):
+                expected_arg_types, return_type = sys_call_signatures[statement.name]
+                argument_types = [infer_expression_type(argument) for argument in expression.arguments]
+                assert expected_arg_types == argument_types
+                expression.type = return_type
+            elif isinstance(expression, program.MethodCallExpression):
+                object_type = infer_expression_type(expression.obj)
+                expected_arg_types, return_type = object_type.method_signature(expression.name)
+                argument_types = [infer_expression_type(argument) for argument in expression.arguments]
+                assert expected_arg_types == argument_types
+                expression.type = return_type
             else:
                 raise NotImplementedError('unknown expression type: %s' % type(expression))
+            return expression.type
 
         def type_check_statement(statement):
             if isinstance(statement, program.Assignment):
@@ -90,13 +108,13 @@ def type_check(functions):
             elif isinstance(statement, program.Store):
                 address_type = infer_expression_type(statement.address)
                 value_type = infer_expression_type(statement.value)
-                assert address_type == program.uint
-                assert value_type == program.uint
+                assert address_type == program_types.uint
+                assert value_type == program_types.uint
             elif isinstance(statement, program.Conditional):
                 assert not statement.true_block.ret
                 assert not statement.false_block.ret
 
-                assert infer_expression_type(statement.expression) == program.bool
+                assert infer_expression_type(statement.expression) == program_types.bool
 
                 before_context = context.copy_types()
 
@@ -115,7 +133,7 @@ def type_check(functions):
                 for body_statement in statement.body.statements:
                     type_check_statement(body_statement)
 
-                assert infer_expression_type(statement.expression) == program.bool
+                assert infer_expression_type(statement.expression) == program_types.bool
             else:
                 raise NotImplementedError('unknown statement type: %s' % type(statement))
 

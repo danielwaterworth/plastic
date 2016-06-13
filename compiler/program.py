@@ -1,27 +1,3 @@
-class Type(object):
-    pass
-
-class Void(Type):
-    @property
-    def size(self):
-        return 0
-
-void = Void()
-
-class Bool(Type):
-    @property
-    def size(self):
-        return 1
-
-bool = Bool()
-
-class UInt(Type):
-    @property
-    def size(self):
-        return 8
-
-uint = UInt()
-
 class Function(object):
     def __init__(self, name, parameters, return_type, body):
         self.name = name
@@ -88,6 +64,12 @@ class SysCallExpression(Expression):
 
 class FunctionCallExpression(Expression):
     def __init__(self, name, arguments):
+        self.name = name
+        self.arguments = arguments
+
+class MethodCallExpression(Expression):
+    def __init__(self, obj, name, arguments):
+        self.obj = obj
         self.name = name
         self.arguments = arguments
 

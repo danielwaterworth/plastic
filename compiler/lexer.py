@@ -5,6 +5,7 @@ tokens = [
     "COLON",
     "SEMICOLON",
     "COMMA",
+    "DOT",
     "ASSIGNMENT",
     "ARROW",
     "OPEN_PARENS",
@@ -47,6 +48,7 @@ tokens += keywords.values()
 t_NUMBER = r'\d+'
 t_COLON = r':'
 t_SEMICOLON = r';'
+t_DOT = r'\.'
 t_COMMA = r','
 t_ASSIGNMENT = r':='
 t_ARROW = r'->'

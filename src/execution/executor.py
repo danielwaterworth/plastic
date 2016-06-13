@@ -88,6 +88,10 @@ class Executor(object):
                         assert len(arguments) == 2
                         a, b = arguments
                         self.stack[-1].retire(data.lt(a, b))
+                    elif instr.operator == 'and':
+                        assert len(arguments) == 2
+                        a, b = arguments
+                        self.stack[-1].retire(data.and_(a, b))
                     else:
                         raise NotImplementedError('operator not implemented: %s' % instr.operator)
                 elif isinstance(instr, bytecode.SysCall):

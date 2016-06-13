@@ -48,6 +48,10 @@ def generate_expression(context, expression):
     elif isinstance(expression, program.SysCallExpression):
         arguments = [generate_expression(context, argument) for argument in expression.arguments]
         return context.basic_block.sys_call(expression.name, arguments)
+    elif isinstance(expression, program.MethodCallExpression):
+        arguments = [generate_expression(context, argument) for argument in expression.arguments]
+        object_variable = generate_expression(context, expression.obj)
+        return expression.type.method(context.basic_block, object_variable, expression.name, arguments)
     else:
         raise NotImplementedError('unknown expression type: %s' % type(expression))
 

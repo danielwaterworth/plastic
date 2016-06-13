@@ -2,6 +2,7 @@ import ply.yacc as yacc
 
 from lexer import tokens
 import program
+import program_types
 
 def p_program_empty(p):
     '''program : empty'''
@@ -39,15 +40,15 @@ def p_parameter(p):
 
 def p_type_void(p):
     '''type : VOID'''
-    p[0] = program.void
+    p[0] = program_types.void
 
 def p_type_bool(p):
     '''type : BOOL'''
-    p[0] = program.bool
+    p[0] = program_types.bool
 
 def p_type_uint(p):
     '''type : UINT'''
-    p[0] = program.uint
+    p[0] = program_types.uint
 
 def p_code_block(p):
     '''code_block : statement_list block_end'''
@@ -144,6 +145,7 @@ precedence = (
     ('left', 'PLUS', 'MINUS'),
     ('left', 'MUL', 'DIV'),
     ('right', 'LOAD'),
+    ('right', 'DOT')
 )
 
 def p_expression_binop(p):
@@ -158,6 +160,10 @@ def p_expression_binop(p):
                   | expression EQ expression
                   | expression NE expression'''
     p[0] = program.BinOp(p[1], p[3], p[2])
+
+def p_method_call_expression(p):
+    '''expression : expression DOT LOWER_NAME function_call'''
+    p[0] = program.MethodCallExpression(p[1], p[3], p[4])
 
 def p_return(p):
     '''block_end : RETURN expression SEMICOLON'''

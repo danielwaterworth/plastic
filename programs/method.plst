@@ -1,0 +1,9 @@
+define main() -> bool do
+    if (true.and(true).and(true))
+        sys print_num(1);
+    else
+        sys print_num(2);
+    end
+
+    return false;
+end
