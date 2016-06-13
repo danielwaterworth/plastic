@@ -57,7 +57,7 @@ class FunctionPrinter(object):
         return i
 
     def __enter__(self):
-        print ("FUNCTION START", self.name, self.arguments_sizes, self.return_size)
+        print ("FUNCTION START", self.name, self.argument_sizes, self.return_size)
         return (self, [i for i in xrange(len(self.argument_sizes))])
 
     def __exit__(self, type, value, traceback):
