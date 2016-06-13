@@ -9,12 +9,12 @@ def p_program_empty(p):
     p[0] = []
 
 def p_program(p):
-    '''program : program function'''
+    '''program : program top_level_decl'''
     p[1].append(p[2])
     p[0] = p[1]
 
 def p_function(p):
-    '''function : DEFINE LOWER_NAME OPEN_PARENS parameter_list CLOSE_PARENS ARROW type DO code_block END'''
+    '''top_level_decl : DEFINE LOWER_NAME OPEN_PARENS parameter_list CLOSE_PARENS ARROW type DO code_block END'''
     p[0] = program.Function(p[2], p[4], p[7], p[9])
 
 def p_parameter_list_empty(p):
@@ -38,6 +38,31 @@ def p_parameter(p):
     '''parameter : LOWER_NAME COLON type'''
     p[0] = (p[1], p[3])
 
+def p_record(p):
+    '''top_level_decl : RECORD UPPER_NAME record_decl_list END'''
+    p[0] = program.Record(p[2], p[3])
+
+def p_record_decl_list_empty(p):
+    '''record_decl_list : empty'''
+    p[0] = []
+
+def p_record_decl_list(p):
+    '''record_decl_list : record_decl_list record_decl'''
+    p[1].append(p[2])
+    p[0] = p[1]
+
+def p_attr(p):
+    '''record_decl : ATTR LOWER_NAME COLON type SEMICOLON'''
+    p[0] = program.Attr(p[2], p[4])
+
+def p_constructor(p):
+    '''record_decl : CONSTRUCTOR LOWER_NAME OPEN_PARENS parameter_list CLOSE_PARENS code_block END'''
+    p[0] = program.Constructor(p[2], p[4], p[6])
+
+def p_method(p):
+    '''record_decl : DEFINE LOWER_NAME OPEN_PARENS parameter_list CLOSE_PARENS ARROW type DO code_block END'''
+    p[0] = program.Method(p[2], p[4], p[7], p[9])
+
 def p_type_void(p):
     '''type : VOID'''
     p[0] = program_types.void
@@ -49,6 +74,10 @@ def p_type_bool(p):
 def p_type_uint(p):
     '''type : UINT'''
     p[0] = program_types.uint
+
+def p_type_named(p):
+    '''type : UPPER_NAME'''
+    p[0] = program_types.NamedType(p[1])
 
 def p_code_block(p):
     '''code_block : statement_list block_end'''
@@ -92,6 +121,10 @@ def p_assignment_statement(p):
     '''statement : LOWER_NAME ASSIGNMENT expression SEMICOLON'''
     p[0] = program.Assignment(p[1], p[3])
 
+def p_attr_assignment(p):
+    '''statement : ATTR LOWER_NAME ASSIGNMENT expression SEMICOLON'''
+    p[0] = program.AttrStore(p[2], p[4])
+
 def p_statement_store(p):
     '''statement : STORE expression COMMA expression SEMICOLON'''
     p[0] = program.Store(p[2], p[4])
@@ -128,9 +161,17 @@ def p_expression_call(p):
     '''expression : LOWER_NAME function_call'''
     p[0] = program.FunctionCall(p[1], p[2])
 
+def p_expression_constructor(p):
+    '''expression : UPPER_NAME DOT LOWER_NAME function_call'''
+    p[0] = program.ConstructorCall(p[1], p[3], p[4])
+
 def p_expression_load(p):
     '''expression : LOAD expression'''
     p[0] = program.Load(p[2])
+
+def p_expression_attr(p):
+    '''expression : ATTR LOWER_NAME'''
+    p[0] = program.AttrLoad(p[2])
 
 def p_bracketed_expr(p):
     '''expression : OPEN_PARENS expression CLOSE_PARENS'''
@@ -140,7 +181,7 @@ precedence = (
     ('nonassoc', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE'),
     ('left', 'PLUS', 'MINUS'),
     ('left', 'MUL', 'DIV'),
-    ('right', 'LOAD'),
+    ('right', 'LOAD', 'ATTR'),
     ('right', 'DOT')
 )
 

@@ -2,13 +2,16 @@ import program
 import program_types
 
 sys_call_signatures = {
-    'print_num': ([program_types.uint], program_types.void)
+    'print_num': ([program_types.uint], program_types.void),
+    'print_bool': ([program_types.bool], program_types.void)
 }
 
 class TypeCheckingContext(object):
-    def __init__(self, function_name, types):
-        self.function_name = function_name
+    def __init__(self, return_type, types, attrs, attr_store):
+        self.return_type = return_type
         self.types = types
+        self.attrs = attrs
+        self.attr_store = attr_store
 
     def add(self, name, type):
         if name in self.types:
@@ -20,14 +23,17 @@ class TypeCheckingContext(object):
     def lookup(self, name):
         return self.types[name]
 
+    def lookup_attr(self, name):
+        return self.attrs[name]
+
     def copy_types(self):
         return dict(self.types)
 
 def merge_contexts(a, b):
     types = {}
     for name in set(a) & set(b):
-        a_type = a.types[name]
-        b_type = b.types[name]
+        a_type = a[name]
+        b_type = b[name]
         if a_type != b_type:
             raise TypeError('%s receives different types, %s and %s, in the branchs of a conditional' % (name, a_type, b_type))
         types[name] = a_type
@@ -53,12 +59,17 @@ def operator_type(operator, rhs_type, lhs_type):
     else:
         raise NotImplementedError('unknown operator: %s' % operator)
 
-def type_check(functions):
+def type_check(decls):
     function_signatures = {}
+    record_types = {}
 
-    def type_check_function(function):
-        context = TypeCheckingContext(function.name, dict(function.parameters))
+    def resolve_type(t):
+        if isinstance(t, program_types.NamedType):
+            return record_types[t.name]
+        else:
+            return t
 
+    def type_check_code_block(context, code_block):
         def infer_expression_type(expression):
             if isinstance(expression, program.Variable):
                 expression.type = context.lookup(expression.name)
@@ -69,6 +80,8 @@ def type_check(functions):
             elif isinstance(expression, program.Load):
                 assert infer_expression_type(expression.address) == program_types.uint
                 expression.type = program_types.uint
+            elif isinstance(expression, program.AttrLoad):
+                expression.type = context.lookup_attr(expression.attr)
             elif isinstance(expression, program.BinOp):
                 rhs_type = infer_expression_type(expression.rhs)
                 lhs_type = infer_expression_type(expression.lhs)
@@ -89,6 +102,12 @@ def type_check(functions):
                 argument_types = [infer_expression_type(argument) for argument in expression.arguments]
                 assert expected_arg_types == argument_types
                 expression.type = return_type
+            elif isinstance(expression, program.ConstructorCall):
+                record_type = record_types[expression.ty]
+                expected_arg_types = record_type.constructors[expression.name]
+                argument_types = [infer_expression_type(argument) for argument in expression.arguments]
+                assert expected_arg_types == argument_types
+                expression.type = record_type
             else:
                 raise NotImplementedError('unknown expression type: %s' % type(expression))
             return expression.type
@@ -102,6 +121,12 @@ def type_check(functions):
                 value_type = infer_expression_type(statement.value)
                 assert address_type == program_types.uint
                 assert value_type == program_types.uint
+            elif isinstance(statement, program.AttrStore):
+                if not context.attr_store:
+                    raise Exception('Attributes cannot be stored in this context')
+                expected_type = context.lookup_attr(statement.attr)
+                actual_type = infer_expression_type(statement.value)
+                assert expected_type == actual_type
             elif isinstance(statement, program.Conditional):
                 assert not statement.true_block.ret
                 assert not statement.false_block.ret
@@ -131,16 +156,66 @@ def type_check(functions):
             else:
                 raise NotImplementedError('unknown statement type: %s' % type(statement))
 
-        for statement in function.body.statements:
+        for statement in code_block.statements:
             type_check_statement(statement)
 
-        if function.body.ret:
-            return_type = infer_expression_type(function.body.ret.expression)
-            assert return_type == function.return_type
+        if code_block.ret:
+            return_type = infer_expression_type(code_block.ret.expression)
+            assert return_type == context.return_type
+
+    def type_check_function(function):
+        context = TypeCheckingContext(function.return_type, dict(function.parameters), {}, False)
+
+        type_check_code_block(context, function.body)
+
+    def type_check_constructor(attr_types, constructor):
+        context = TypeCheckingContext(program_types.void, dict(constructor.parameters), attr_types, True)
+
+        type_check_code_block(context, constructor.body)
+
+    def type_check_method(attr_types, method):
+        context = TypeCheckingContext(method.return_type, dict(method.parameters), attr_types, False)
+
+        type_check_code_block(context, method.body)
+
+    functions = []
+    records = []
+    for decl in decls:
+        if isinstance(decl, program.Function):
+            functions.append(decl)
+        elif isinstance(decl, program.Record):
+            records.append(decl)
+
+    for record in records:
+        constructors = {}
+        methods = {}
+        attrs = []
+
+        for decl in record.decls:
+            if isinstance(decl, program.Attr):
+                attrs.append((decl.name, resolve_type(decl.type)))
+            elif isinstance(decl, program.Constructor):
+                parameter_types = [resolve_type(param[1]) for param in decl.parameters]
+                constructors[decl.name] = parameter_types
+            elif isinstance(decl, program.Method):
+                parameter_types = [resolve_type(param[1]) for param in decl.parameters]
+                return_type = resolve_type(decl.return_type)
+                methods[decl.name] = (parameter_types, return_type)
+
+        record.type = program_types.Record(record.name, attrs, constructors, methods)
+        assert not record.name in record_types
+        record_types[record.name] = record.type
+
+    for record in records:
+        for decl in record.decls:
+            if isinstance(decl, program.Constructor):
+                type_check_constructor(dict(record.type.attrs), decl)
+            elif isinstance(decl, program.Method):
+                type_check_method(dict(record.type.attrs), decl)
 
     for function in functions:
         assert not function.name in function_signatures
-        arg_types = [arg[1] for arg in function.parameters]
+        arg_types = [resolve_type(arg[1]) for arg in function.parameters]
         function_signatures[function.name] = (arg_types, function.return_type)
 
     for function in functions:

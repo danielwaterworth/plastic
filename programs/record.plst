@@ -1,0 +1,18 @@
+record Foo
+    attr foo : uint;
+    attr bar : uint;
+
+    constructor new(a : uint)
+        attr foo := a;
+        attr bar := a;
+    end
+
+    define plah(a : uint) -> bool do
+        return a < attr bar;
+    end
+end
+
+define main() -> bool do
+    sys print_bool(Foo.new(6).plah(5));
+    return false;
+end

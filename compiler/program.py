@@ -1,4 +1,33 @@
-class Function(object):
+class TopLevelDecl(object):
+    pass
+
+class Function(TopLevelDecl):
+    def __init__(self, name, parameters, return_type, body):
+        self.name = name
+        self.parameters = parameters
+        self.return_type = return_type
+        self.body = body
+
+class Record(TopLevelDecl):
+    def __init__(self, name, decls):
+        self.name = name
+        self.decls = decls
+
+class RecordDecl(object):
+    pass
+
+class Attr(RecordDecl):
+    def __init__(self, name, type):
+        self.name = name
+        self.type = type
+
+class Constructor(RecordDecl):
+    def __init__(self, name, parameters, body):
+        self.name = name
+        self.parameters = parameters
+        self.body = body
+
+class Method(RecordDecl):
     def __init__(self, name, parameters, return_type, body):
         self.name = name
         self.parameters = parameters
@@ -21,6 +50,11 @@ class Assignment(Statement):
 class Store(Statement):
     def __init__(self, address, value):
         self.address = address
+        self.value = value
+
+class AttrStore(Statement):
+    def __init__(self, attr, value):
+        self.attr = attr
         self.value = value
 
 class Conditional(Statement):
@@ -63,9 +97,19 @@ class MethodCall(Expression):
         self.name = name
         self.arguments = arguments
 
+class ConstructorCall(Expression):
+    def __init__(self, ty, name, arguments):
+        self.ty = ty
+        self.name = name
+        self.arguments = arguments
+
 class Load(Expression):
     def __init__(self, address):
         self.address = address
+
+class AttrLoad(Expression):
+    def __init__(self, attr):
+        self.attr = attr
 
 class NumberLiteral(Expression):
     def __init__(self, n):

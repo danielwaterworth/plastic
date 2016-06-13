@@ -37,6 +37,8 @@ def generate_expression(context, expression):
     elif isinstance(expression, program.Load):
         address = generate_expression(context, expression.address)
         return context.basic_block.load(address)
+    elif isinstance(expression, program.AttrLoad):
+        return context.lookup('@%s' % expression.attr)
     elif isinstance(expression, program.BinOp):
         lhs = generate_expression(context, expression.lhs)
         rhs = generate_expression(context, expression.rhs)
@@ -51,7 +53,10 @@ def generate_expression(context, expression):
     elif isinstance(expression, program.MethodCall):
         arguments = [generate_expression(context, argument) for argument in expression.arguments]
         object_variable = generate_expression(context, expression.obj)
-        return expression.type.method(context.basic_block, object_variable, expression.name, arguments)
+        return expression.obj.type.method(context.basic_block, object_variable, expression.name, arguments)
+    elif isinstance(expression, program.ConstructorCall):
+        arguments = [generate_expression(context, argument) for argument in expression.arguments]
+        return context.basic_block.fun_call('%s.%s' % (expression.ty, expression.name), arguments)
     else:
         raise NotImplementedError('unknown expression type: %s' % type(expression))
 
@@ -63,6 +68,9 @@ def generate_statement(context, statement):
         address = generate_expression(context, statement.address)
         value = generate_expression(context, statement.value)
         context.basic_block.store(address, value)
+    elif isinstance(statement, program.AttrStore):
+        var = generate_expression(context, statement.value)
+        context.add('@%s' % statement.attr, var)
     elif isinstance(statement, program.Conditional):
         # FIXME
         assert not statement.true_block.ret
@@ -140,6 +148,14 @@ def generate_statement(context, statement):
     else:
         raise NotImplementedError('unknown statement type: %s' % type(statement))
 
+def generate_code_block(context, code_block):
+    for statement in code_block.statements:
+        generate_statement(context, statement)
+
+    if code_block.ret:
+        variable = generate_expression(context, code_block.ret.expression)
+        context.basic_block.ret(variable)
+
 def generate_function(program_writer, function):
     parameter_names = [parameter[0] for parameter in function.parameters]
     parameter_sizes = [parameter[1].size for parameter in function.parameters]
@@ -149,14 +165,61 @@ def generate_function(program_writer, function):
         basic_block = function_writer.basic_block()
         context = GenerationContext(function_writer, basic_block, variables)
 
-        for statement in function.body.statements:
-            generate_statement(context, statement)
+        generate_code_block(context, function.body)
 
-        if function.body.ret:
-            variable = generate_expression(context, function.body.ret.expression)
-            context.basic_block.ret(variable)
+def generate_record(program_writer, record):
+    def generate_constructor(constructor):
+        assert not constructor.body.ret
 
-def generate_code(writer, functions):
+        function_name = '%s.%s' % (record.name, constructor.name)
+        parameter_names = [parameter[0] for parameter in constructor.parameters]
+        parameter_sizes = [parameter[1].size for parameter in constructor.parameters]
+        return_size = record.type.size
+        with program_writer.function(function_name, parameter_sizes, return_size) as (function_writer, variables):
+            variables = dict(zip(parameter_names, variables))
+            basic_block = function_writer.basic_block()
+            context = GenerationContext(function_writer, basic_block, variables)
+
+            generate_code_block(context, constructor.body)
+
+            arguments = [context.lookup('@%s' % attr) for attr, _ in record.type.attrs]
+            result = context.basic_block.operation('pack', arguments)
+            context.basic_block.ret(result)
+
+    def generate_method(method):
+        function_name = '%s#%s' % (record.name, method.name)
+        parameter_names = [parameter[0] for parameter in method.parameters]
+        parameter_sizes = [record.type.size] + [parameter[1].size for parameter in method.parameters]
+        return_size = method.return_type.size
+        with program_writer.function(function_name, parameter_sizes, return_size) as (function_writer, variables):
+            basic_block = function_writer.basic_block()
+
+            variable_dict = dict(zip(parameter_names, variables[1:]))
+            offset = 0
+            offset_var = basic_block.constant(struct.pack('>Q', offset))
+            for attr, attr_type in record.type.attrs:
+                offset += attr_type.size
+                new_offset_var = basic_block.constant(struct.pack('>Q', offset))
+                var = basic_block.operation('slice', [offset_var, new_offset_var, variables[0]])
+                variable_dict['@%s' % attr] = var
+                offset_var = new_offset_var
+
+            context = GenerationContext(function_writer, basic_block, variable_dict)
+
+            generate_code_block(context, method.body)
+
+    for decl in record.decls:
+        if isinstance(decl, program.Constructor):
+            generate_constructor(decl)
+        elif isinstance(decl, program.Method):
+            generate_method(decl)
+
+def generate_code(writer, decls):
     with writer as program_writer:
-        for function in functions:
-            generate_function(program_writer, function)
+        for decl in decls:
+            if isinstance(decl, program.Function):
+                generate_function(program_writer, decl)
+            elif isinstance(decl, program.Record):
+                generate_record(program_writer, decl)
+            else:
+                raise NotImplementedError('unknown top level decl: %s' % type(decl))

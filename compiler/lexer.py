@@ -42,6 +42,9 @@ keywords = {
     'bool': 'BOOL',
     'uint': 'UINT',
     'void': 'VOID',
+    'record': 'RECORD',
+    'attr': 'ATTR',
+    'constructor': 'CONSTRUCTOR'
 }
 tokens += keywords.values()
 

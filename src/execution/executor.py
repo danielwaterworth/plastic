@@ -77,21 +77,24 @@ class Executor(object):
                 elif isinstance(instr, bytecode.Operation):
                     arguments = self.stack[-1].resolve_variable_list(instr.arguments)
                     if instr.operator == 'sub':
-                        assert len(arguments) == 2
                         a, b = arguments
                         self.stack[-1].retire(data.sub(a, b))
                     elif instr.operator == 'add':
-                        assert len(arguments) == 2
                         a, b = arguments
                         self.stack[-1].retire(data.add(a, b))
                     elif instr.operator == 'lt':
-                        assert len(arguments) == 2
                         a, b = arguments
                         self.stack[-1].retire(data.lt(a, b))
                     elif instr.operator == 'and':
-                        assert len(arguments) == 2
                         a, b = arguments
                         self.stack[-1].retire(data.and_(a, b))
+                    elif instr.operator == 'pack':
+                        self.stack[-1].retire(''.join(arguments))
+                    elif instr.operator == 'slice':
+                        start, stop, value = arguments
+                        assert len(start) == 8
+                        assert len(stop) == 8
+                        self.stack[-1].retire(value[runpack('>Q', start):runpack('>Q', stop)])
                     else:
                         raise NotImplementedError('operator not implemented: %s' % instr.operator)
                 elif isinstance(instr, bytecode.SysCall):
@@ -103,6 +106,15 @@ class Executor(object):
                         a = arguments[0]
                         assert len(a) == 8
                         print runpack('>Q', a)
+                        self.stack[-1].retire('')
+                    elif instr.function == 'print_bool':
+                        assert len(arguments) == 1
+                        a = arguments[0]
+                        assert len(a) == 1
+                        if a != '\0':
+                            print 'True'
+                        else:
+                            print 'False'
                         self.stack[-1].retire('')
                     else:
                         raise NotImplementedError('sys_call not implemented: %s' % instr.function)
