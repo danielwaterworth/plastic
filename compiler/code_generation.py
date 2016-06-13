@@ -42,13 +42,13 @@ def generate_expression(context, expression):
         rhs = generate_expression(context, expression.rhs)
         operator = operators[expression.operator]
         return context.basic_block.operation(operator, [lhs, rhs])
-    elif isinstance(expression, program.FunctionCallExpression):
+    elif isinstance(expression, program.FunctionCall):
         arguments = [generate_expression(context, argument) for argument in expression.arguments]
         return context.basic_block.fun_call(expression.name, arguments)
-    elif isinstance(expression, program.SysCallExpression):
+    elif isinstance(expression, program.SysCall):
         arguments = [generate_expression(context, argument) for argument in expression.arguments]
         return context.basic_block.sys_call(expression.name, arguments)
-    elif isinstance(expression, program.MethodCallExpression):
+    elif isinstance(expression, program.MethodCall):
         arguments = [generate_expression(context, argument) for argument in expression.arguments]
         object_variable = generate_expression(context, expression.obj)
         return expression.type.method(context.basic_block, object_variable, expression.name, arguments)
@@ -59,12 +59,6 @@ def generate_statement(context, statement):
     if isinstance(statement, program.Assignment):
         var = generate_expression(context, statement.expression)
         context.add(statement.name, var)
-    elif isinstance(statement, program.FunctionCallStatement):
-        arguments = [generate_expression(context, argument) for argument in statement.arguments]
-        context.basic_block.fun_call(statement.name, arguments)
-    elif isinstance(statement, program.SysCallStatement):
-        arguments = [generate_expression(context, argument) for argument in statement.arguments]
-        context.basic_block.sys_call(statement.name, arguments)
     elif isinstance(statement, program.Store):
         address = generate_expression(context, statement.address)
         value = generate_expression(context, statement.value)
@@ -141,6 +135,8 @@ def generate_statement(context, statement):
         body_conditional = context.basic_block.special_conditional(condition_variable, last_body_index, 0)
         context.basic_block = context.function_writer.basic_block()
         body_conditional.false_block = context.basic_block.index
+    elif isinstance(statement, program.Expression):
+        generate_expression(context, statement)
     else:
         raise NotImplementedError('unknown statement type: %s' % type(statement))
 

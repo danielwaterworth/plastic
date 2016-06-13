@@ -73,17 +73,17 @@ def type_check(functions):
                 rhs_type = infer_expression_type(expression.rhs)
                 lhs_type = infer_expression_type(expression.lhs)
                 expression.type = operator_type(expression.operator, rhs_type, lhs_type)
-            elif isinstance(expression, program.FunctionCallExpression):
-                expected_arg_types, return_type = function_signatures[statement.name]
+            elif isinstance(expression, program.FunctionCall):
+                expected_arg_types, return_type = function_signatures[expression.name]
                 argument_types = [infer_expression_type(argument) for argument in expression.arguments]
                 assert expected_arg_types == argument_types
                 expression.type = return_type
-            elif isinstance(expression, program.SysCallExpression):
-                expected_arg_types, return_type = sys_call_signatures[statement.name]
+            elif isinstance(expression, program.SysCall):
+                expected_arg_types, return_type = sys_call_signatures[expression.name]
                 argument_types = [infer_expression_type(argument) for argument in expression.arguments]
                 assert expected_arg_types == argument_types
                 expression.type = return_type
-            elif isinstance(expression, program.MethodCallExpression):
+            elif isinstance(expression, program.MethodCall):
                 object_type = infer_expression_type(expression.obj)
                 expected_arg_types, return_type = object_type.method_signature(expression.name)
                 argument_types = [infer_expression_type(argument) for argument in expression.arguments]
@@ -97,14 +97,6 @@ def type_check(functions):
             if isinstance(statement, program.Assignment):
                 expression_type = infer_expression_type(statement.expression)
                 context.add(statement.name, expression_type)
-            elif isinstance(statement, program.FunctionCallStatement):
-                expected_arg_types, return_type = function_signatures[statement.name]
-                argument_types = [infer_expression_type(argument) for argument in statement.arguments]
-                assert argument_types == expected_arg_types
-            elif isinstance(statement, program.SysCallStatement):
-                expected_arg_types, return_type = sys_call_signatures[statement.name]
-                argument_types = [infer_expression_type(argument) for argument in statement.arguments]
-                assert argument_types == expected_arg_types
             elif isinstance(statement, program.Store):
                 address_type = infer_expression_type(statement.address)
                 value_type = infer_expression_type(statement.value)
@@ -134,6 +126,8 @@ def type_check(functions):
                     type_check_statement(body_statement)
 
                 assert infer_expression_type(statement.expression) == program_types.bool
+            elif isinstance(statement, program.Expression):
+                infer_expression_type(statement)
             else:
                 raise NotImplementedError('unknown statement type: %s' % type(statement))
 

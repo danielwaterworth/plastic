@@ -18,16 +18,6 @@ class Assignment(Statement):
         self.name = name
         self.expression = expression
 
-class FunctionCallStatement(Statement):
-    def __init__(self, name, arguments):
-        self.name = name
-        self.arguments = arguments
-
-class SysCallStatement(Statement):
-    def __init__(self, name, arguments):
-        self.name = name
-        self.arguments = arguments
-
 class Store(Statement):
     def __init__(self, address, value):
         self.address = address
@@ -44,7 +34,7 @@ class While(Statement):
         self.expression = expression
         self.body = body
 
-class Expression(object):
+class Expression(Statement):
     pass
 
 class Variable(Expression):
@@ -57,17 +47,17 @@ class BinOp(Expression):
         self.rhs = rhs
         self.operator = operator
 
-class SysCallExpression(Expression):
+class SysCall(Expression):
     def __init__(self, name, arguments):
         self.name = name
         self.arguments = arguments
 
-class FunctionCallExpression(Expression):
+class FunctionCall(Expression):
     def __init__(self, name, arguments):
         self.name = name
         self.arguments = arguments
 
-class MethodCallExpression(Expression):
+class MethodCall(Expression):
     def __init__(self, obj, name, arguments):
         self.obj = obj
         self.name = name

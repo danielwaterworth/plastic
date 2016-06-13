@@ -85,16 +85,12 @@ def p_non_empty_argument_list(p):
     p[0] = p[1]
 
 def p_function_call_statement(p):
-    '''statement : LOWER_NAME function_call SEMICOLON'''
-    p[0] = program.FunctionCallStatement(p[1], p[2])
+    '''statement : expression SEMICOLON'''
+    p[0] = p[1]
 
 def p_assignment_statement(p):
     '''statement : LOWER_NAME ASSIGNMENT expression SEMICOLON'''
     p[0] = program.Assignment(p[1], p[3])
-
-def p_statement_sys_call(p):
-    '''statement : SYS LOWER_NAME function_call SEMICOLON'''
-    p[0] = program.SysCallStatement(p[2], p[3])
 
 def p_statement_store(p):
     '''statement : STORE expression COMMA expression SEMICOLON'''
@@ -126,11 +122,11 @@ def p_expression_false(p):
 
 def p_expression_sys_call(p):
     '''expression : SYS LOWER_NAME function_call'''
-    p[0] = program.SysCallExpression(p[2], p[3])
+    p[0] = program.SysCall(p[2], p[3])
 
 def p_expression_call(p):
     '''expression : LOWER_NAME function_call'''
-    p[0] = program.FunctionCallExpression(p[1], p[2])
+    p[0] = program.FunctionCall(p[1], p[2])
 
 def p_expression_load(p):
     '''expression : LOAD expression'''
@@ -163,7 +159,7 @@ def p_expression_binop(p):
 
 def p_method_call_expression(p):
     '''expression : expression DOT LOWER_NAME function_call'''
-    p[0] = program.MethodCallExpression(p[1], p[3], p[4])
+    p[0] = program.MethodCall(p[1], p[3], p[4])
 
 def p_return(p):
     '''block_end : RETURN expression SEMICOLON'''
