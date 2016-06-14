@@ -1,4 +1,4 @@
-define main() -> bool do
+define main() -> Bool do
     sys print_num(40 + 50);
 
     return false;

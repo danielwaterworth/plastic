@@ -61,11 +61,15 @@ def operator_type(operator, rhs_type, lhs_type):
 
 def type_check(decls):
     function_signatures = {}
-    record_types = {}
+    types = {
+        'UInt': program_types.uint,
+        'Bool': program_types.bool,
+        'Void': program_types.void
+    }
 
     def resolve_type(t):
         if isinstance(t, program_types.NamedType):
-            return record_types[t.name]
+            return types[t.name]
         else:
             return t
 
@@ -103,7 +107,7 @@ def type_check(decls):
                 assert expected_arg_types == argument_types
                 expression.type = return_type
             elif isinstance(expression, program.ConstructorCall):
-                record_type = record_types[expression.ty]
+                record_type = types[expression.ty]
                 expected_arg_types = record_type.constructors[expression.name]
                 argument_types = [infer_expression_type(argument) for argument in expression.arguments]
                 assert expected_arg_types == argument_types
@@ -199,8 +203,8 @@ def type_check(decls):
                 attrs.append((decl.name, decl.type))
 
         record.type = program_types.Record(record.name, attrs, {}, {})
-        assert not record.name in record_types
-        record_types[record.name] = record.type
+        assert not record.name in types
+        types[record.name] = record.type
 
     for record in records:
         constructors = record.type.constructors

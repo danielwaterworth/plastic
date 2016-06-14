@@ -1,4 +1,4 @@
-define main() -> bool do
+define main() -> Bool do
     i := 0;
     do
         sys print_num(i);

@@ -39,9 +39,6 @@ keywords = {
     'else': 'ELSE',
     'true': 'TRUE',
     'false': 'FALSE',
-    'bool': 'BOOL',
-    'uint': 'UINT',
-    'void': 'VOID',
     'record': 'RECORD',
     'attr': 'ATTR',
     'constructor': 'CONSTRUCTOR'

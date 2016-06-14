@@ -1,11 +1,11 @@
-define foo() -> bool do
+define foo() -> Bool do
     do
         sys print_num(100);
     while (true)
     return false;
 end
 
-define main() -> bool do
+define main() -> Bool do
     foo();
     return false;
 end

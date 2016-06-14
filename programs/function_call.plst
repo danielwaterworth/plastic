@@ -1,9 +1,9 @@
-define foo(a : uint) -> bool do
+define foo(a : UInt) -> Bool do
     sys print_num(a);
     return false;
 end
 
-define main() -> bool do
+define main() -> Bool do
     foo(100);
 
     return false;

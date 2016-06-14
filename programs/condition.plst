@@ -1,4 +1,4 @@
-define main() -> bool do
+define main() -> Bool do
     if (40 < 50)
         sys print_num(1);
     else

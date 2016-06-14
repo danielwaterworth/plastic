@@ -1,13 +1,13 @@
 record Foo
-    attr foo : uint;
-    attr bar : uint;
+    attr foo : UInt;
+    attr bar : UInt;
 
-    constructor new(foo : uint, bar : uint)
+    constructor new(foo : UInt, bar : UInt)
         attr foo := foo;
         attr bar := bar;
     end
 
-    define bar(bar : uint) -> Bar do
+    define bar(bar : UInt) -> Bar do
         return Bar.new(self, bar);
     end
 
@@ -15,16 +15,16 @@ record Foo
         return self;
     end
 
-    define plah(a : uint) -> bool do
+    define plah(a : UInt) -> Bool do
         return a < attr bar;
     end
 end
 
 record Bar
     attr foo : Foo;
-    attr bar : uint;
+    attr bar : UInt;
 
-    constructor new(foo : Foo, bar : uint)
+    constructor new(foo : Foo, bar : UInt)
         attr foo := foo;
         attr bar := bar;
     end
@@ -33,7 +33,7 @@ record Bar
         return attr foo;
     end
 
-    define plah() -> bool do
+    define plah() -> Bool do
         return self.foo().plah(attr bar);
     end
 end
@@ -42,7 +42,7 @@ define foo(foo : Foo) -> Foo do
     return foo;
 end
 
-define main() -> bool do
+define main() -> Bool do
     sys print_bool(foo(Foo.new(1, 2)).bar(3).plah().and(true));
     return false;
 end

@@ -1,18 +1,18 @@
 record Foo
-    attr foo : uint;
-    attr bar : uint;
+    attr foo : UInt;
+    attr bar : UInt;
 
-    constructor new(a : uint)
+    constructor new(a : UInt)
         attr foo := a;
         attr bar := a;
     end
 
-    define plah(a : uint) -> bool do
+    define plah(a : UInt) -> Bool do
         return a < attr bar;
     end
 end
 
-define main() -> bool do
+define main() -> Bool do
     sys print_bool(Foo.new(6).plah(5));
     return false;
 end

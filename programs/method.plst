@@ -1,4 +1,4 @@
-define main() -> bool do
+define main() -> Bool do
     if (true.and(true).and(true))
         sys print_num(1);
     else

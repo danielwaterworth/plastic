@@ -63,18 +63,6 @@ def p_method(p):
     '''record_decl : DEFINE LOWER_NAME OPEN_PARENS parameter_list CLOSE_PARENS ARROW type DO code_block END'''
     p[0] = program.Method(p[2], p[4], p[7], p[9])
 
-def p_type_void(p):
-    '''type : VOID'''
-    p[0] = program_types.void
-
-def p_type_bool(p):
-    '''type : BOOL'''
-    p[0] = program_types.bool
-
-def p_type_uint(p):
-    '''type : UINT'''
-    p[0] = program_types.uint
-
 def p_type_named(p):
     '''type : UPPER_NAME'''
     p[0] = program_types.NamedType(p[1])
