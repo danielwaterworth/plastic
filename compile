@@ -1,0 +1,3 @@
+#!/bin/bash
+source config.sh;
+python compile.py $1 $2;
