@@ -1,0 +1,40 @@
+record Foo
+    attr foo : uint;
+    attr bar : uint;
+
+    constructor new(foo : uint, bar : uint)
+        attr foo := foo;
+        attr bar := bar;
+    end
+
+    define plah(a : uint) -> bool do
+        return a < attr bar;
+    end
+end
+
+record Bar
+    attr foo : Foo;
+    attr bar : uint;
+
+    constructor new(foo : Foo, bar : uint)
+        attr foo := foo;
+        attr bar := bar;
+    end
+
+    define foo() -> Foo do
+        return attr foo;
+    end
+
+    define plah() -> bool do
+        return self.foo().plah(attr bar);
+    end
+end
+
+define foo(foo : Foo) -> Foo do
+    return foo;
+end
+
+define main() -> bool do
+    sys print_bool(Bar.new(foo(Foo.new(1, 2)), 3).plah().and(true));
+    return false;
+end

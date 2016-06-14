@@ -194,7 +194,7 @@ def generate_record(program_writer, record):
         with program_writer.function(function_name, parameter_sizes, return_size) as (function_writer, variables):
             basic_block = function_writer.basic_block()
 
-            variable_dict = dict(zip(parameter_names, variables[1:]))
+            variable_dict = dict(zip(['self'] + parameter_names, variables))
             offset = 0
             offset_var = basic_block.constant(struct.pack('>Q', offset))
             for attr, attr_type in record.type.attrs:
