@@ -191,15 +191,23 @@ def type_check(decls):
             records.append(decl)
 
     for record in records:
-        constructors = {}
-        methods = {}
         attrs = []
 
         for decl in record.decls:
             if isinstance(decl, program.Attr):
                 decl.type = resolve_type(decl.type)
                 attrs.append((decl.name, decl.type))
-            elif isinstance(decl, program.Constructor):
+
+        record.type = program_types.Record(record.name, attrs, {}, {})
+        assert not record.name in record_types
+        record_types[record.name] = record.type
+
+    for record in records:
+        constructors = record.type.constructors
+        methods = record.type.methods
+
+        for decl in record.decls:
+            if isinstance(decl, program.Constructor):
                 decl.parameters = [(name, resolve_type(t)) for name, t in decl.parameters]
                 parameter_types = [param[1] for param in decl.parameters]
                 constructors[decl.name] = parameter_types
@@ -208,10 +216,6 @@ def type_check(decls):
                 parameter_types = [param[1] for param in decl.parameters]
                 decl.return_type = resolve_type(decl.return_type)
                 methods[decl.name] = (parameter_types, decl.return_type)
-
-        record.type = program_types.Record(record.name, attrs, constructors, methods)
-        assert not record.name in record_types
-        record_types[record.name] = record.type
 
     for record in records:
         for decl in record.decls:
