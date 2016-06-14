@@ -10,6 +10,8 @@ tokens = [
     "ARROW",
     "OPEN_PARENS",
     "CLOSE_PARENS",
+    "OPEN_SQUARE",
+    "CLOSE_SQUARE",
     "UPPER_NAME",
     "LOWER_NAME",
     "STRING",
@@ -54,6 +56,8 @@ t_ASSIGNMENT = r':='
 t_ARROW = r'->'
 t_OPEN_PARENS = r'\('
 t_CLOSE_PARENS = r'\)'
+t_OPEN_SQUARE = r'\['
+t_CLOSE_SQUARE = r'\]'
 t_UPPER_NAME = r'[A-Z][a-zA-Z]*'
 
 def t_LOWER_NAME(t):

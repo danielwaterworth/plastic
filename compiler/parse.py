@@ -67,6 +67,31 @@ def p_type_named(p):
     '''type : UPPER_NAME'''
     p[0] = program_types.NamedType(p[1])
 
+def p_type_array(p):
+    '''type : type OPEN_SQUARE NUMBER CLOSE_SQUARE'''
+    p[0] = program_types.Array(p[1], int(p[3]))
+
+def p_type_tuple(p):
+    '''type : OPEN_PARENS type_list CLOSE_PARENS'''
+    p[0] = program_types.Tuple(p[2])
+
+def p_empty_type_list(p):
+    '''type_list : empty'''
+    p[0] = []
+
+def p_non_empty_type_list(p):
+    '''type_list : non_empty_type_list'''
+    p[0] = p[1]
+
+def p_type_list_initial(p):
+    '''non_empty_type_list : type'''
+    p[0] = [p[1]]
+
+def p_type_list(p):
+    '''non_empty_type_list : non_empty_type_list COMMA type'''
+    p[1].append(p[3])
+    p[0] = p[1]
+
 def p_code_block(p):
     '''code_block : statement_list block_end'''
     p[0] = program.CodeBlock(p[1], p[2])

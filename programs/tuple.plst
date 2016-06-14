@@ -1,0 +1,3 @@
+define foo(a : (UInt, Bool)) -> (UInt, Bool) do
+    return a;
+end

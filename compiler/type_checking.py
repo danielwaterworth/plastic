@@ -64,14 +64,12 @@ def type_check(decls):
     types = {
         'UInt': program_types.uint,
         'Bool': program_types.bool,
-        'Void': program_types.void
+        'Void': program_types.void,
+        'Byte': program_types.byte
     }
 
     def resolve_type(t):
-        if isinstance(t, program_types.NamedType):
-            return types[t.name]
-        else:
-            return t
+        return t.resolve_type(types)
 
     def type_check_code_block(context, code_block):
         def infer_expression_type(expression):
