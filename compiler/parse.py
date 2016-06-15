@@ -17,6 +17,43 @@ def p_function(p):
     '''top_level_decl : DEFINE LOWER_NAME OPEN_PARENS parameter_list CLOSE_PARENS ARROW type DO code_block END'''
     p[0] = program.Function(p[2], p[4], p[7], p[9])
 
+def p_record(p):
+    '''top_level_decl : RECORD UPPER_NAME record_decl_list END'''
+    p[0] = program.Record(p[2], p[3])
+
+def p_interface(p):
+    '''top_level_decl : INTERFACE UPPER_NAME interface_decl_list END'''
+    p[0] = program.Interface(p[2], p[3])
+
+def p_service(p):
+    '''top_level_decl : SERVICE UPPER_NAME OPEN_PARENS dependencies CLOSE_PARENS service_decl_list END'''
+    p[0] = program.Service(p[2], p[4], p[6])
+
+def p_entry(p):
+    '''top_level_decl : ENTRY code_block END'''
+    p[0] = program.Entry(p[2])
+
+def p_dependencies_empty(p):
+    '''dependencies : empty'''
+    p[0] = []
+
+def p_dependencies(p):
+    '''dependencies : non_empty_dependencies'''
+    p[0] = p[1]
+
+def p_non_empty_dependencies_initial(p):
+    '''non_empty_dependencies : dependency'''
+    p[0] = [p[1]]
+
+def p_non_empty_dependencies(p):
+    '''non_empty_dependencies : non_empty_dependencies COMMA dependency'''
+    p[1].append(p[3])
+    p[0] = p[1]
+
+def p_dependency(p):
+    '''dependency : LOWER_NAME COLON UPPER_NAME'''
+    p[0] = (p[1], p[3])
+
 def p_parameter_list_empty(p):
     '''parameter_list : empty'''
     p[0] = []
@@ -38,10 +75,6 @@ def p_parameter(p):
     '''parameter : LOWER_NAME COLON type'''
     p[0] = (p[1], p[3])
 
-def p_record(p):
-    '''top_level_decl : RECORD UPPER_NAME record_decl_list END'''
-    p[0] = program.Record(p[2], p[3])
-
 def p_record_decl_list_empty(p):
     '''record_decl_list : empty'''
     p[0] = []
@@ -55,13 +88,64 @@ def p_attr(p):
     '''record_decl : ATTR LOWER_NAME COLON type SEMICOLON'''
     p[0] = program.Attr(p[2], p[4])
 
-def p_constructor(p):
+def p_record_constructor(p):
     '''record_decl : CONSTRUCTOR LOWER_NAME OPEN_PARENS parameter_list CLOSE_PARENS code_block END'''
     p[0] = program.Constructor(p[2], p[4], p[6])
 
-def p_method(p):
+def p_record_method(p):
     '''record_decl : DEFINE LOWER_NAME OPEN_PARENS parameter_list CLOSE_PARENS ARROW type DO code_block END'''
-    p[0] = program.Method(p[2], p[4], p[7], p[9])
+    p[0] = program.Function(p[2], p[4], p[7], p[9])
+
+def p_interface_decl_list_empty(p):
+    '''interface_decl_list : empty'''
+    p[0] = []
+
+def p_interface_decl_list(p):
+    '''interface_decl_list : interface_decl_list interface_decl'''
+    p[1].append(p[2])
+    p[0] = p[1]
+
+def p_interface_decl(p):
+    '''interface_decl : LOWER_NAME OPEN_PARENS type_list CLOSE_PARENS ARROW type SEMICOLON'''
+    p[0] = program.MethodSignature(p[1], p[3], p[6])
+
+def p_service_decl_list_empty(p):
+    '''service_decl_list : empty'''
+    p[0] = []
+
+def p_service_decl_list(p):
+    '''service_decl_list : service_decl_list service_decl'''
+    p[1].append(p[2])
+    p[0] = p[1]
+
+def p_service_decl_attr(p):
+    '''service_decl : ATTR LOWER_NAME COLON type SEMICOLON'''
+    p[0] = program.Attr(p[2], p[4])
+
+def p_service_decl_constructor(p):
+    '''service_decl : CONSTRUCTOR LOWER_NAME OPEN_PARENS parameter_list CLOSE_PARENS code_block END'''
+    p[0] = program.Constructor(p[2], p[4], p[6])
+
+def p_service_decl_private(p):
+    '''service_decl : PRIVATE service_method_list END'''
+    p[0] = program.Private(p[2])
+
+def p_service_decl_implements(p):
+    '''service_decl : IMPLEMENTS UPPER_NAME service_method_list END'''
+    p[0] = program.Implements(p[2], p[3])
+
+def p_service_method_list_empty(p):
+    '''service_method_list : empty'''
+    p[0] = []
+
+def p_service_method_list(p):
+    '''service_method_list : service_method_list service_method'''
+    p[1].append(p[2])
+    p[0] = p[1]
+
+def p_service_method(p):
+    '''service_method : DEFINE LOWER_NAME OPEN_PARENS parameter_list CLOSE_PARENS ARROW type DO code_block END'''
+    p[0] = program.Function(p[2], p[4], p[7], p[9])
 
 def p_type_named(p):
     '''type : UPPER_NAME'''
@@ -177,6 +261,10 @@ def p_expression_call(p):
 def p_expression_constructor(p):
     '''expression : UPPER_NAME DOT LOWER_NAME function_call'''
     p[0] = program.ConstructorCall(p[1], p[3], p[4])
+
+def p_expression_service_constructor(p):
+    '''expression : UPPER_NAME function_call DOT LOWER_NAME function_call'''
+    p[0] = program.ServiceConstructorCall(p[1], p[2], p[4], p[5])
 
 def p_expression_load(p):
     '''expression : LOAD expression'''

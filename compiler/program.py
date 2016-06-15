@@ -1,38 +1,81 @@
-class TopLevelDecl(object):
+class Decl(object):
     pass
 
-class Function(TopLevelDecl):
+class Function(Decl):
     def __init__(self, name, parameters, return_type, body):
         self.name = name
         self.parameters = parameters
         self.return_type = return_type
         self.body = body
 
-class Record(TopLevelDecl):
+    def resolve_types(self, types):
+        self.parameters = [(name, param.resolve_type(types)) for name, param in self.parameters]
+        self.return_type = self.return_type.resolve_type(types)
+
+    @property
+    def parameter_types(self):
+        return [param[1] for param in self.parameters]
+
+    @property
+    def signature(self):
+        return (self.parameter_types, self.return_type)
+
+class Record(Decl):
     def __init__(self, name, decls):
         self.name = name
         self.decls = decls
 
-class RecordDecl(object):
-    pass
+class Interface(Decl):
+    def __init__(self, name, decls):
+        self.name = name
+        self.decls = decls
 
-class Attr(RecordDecl):
+class Service(Decl):
+    def __init__(self, name, dependencies, decls):
+        self.name = name
+        self.dependencies = dependencies
+        self.decls = decls
+
+class Entry(Decl):
+    def __init__(self, body):
+        self.body = body
+
+class Attr(Decl):
     def __init__(self, name, type):
         self.name = name
         self.type = type
 
-class Constructor(RecordDecl):
+class Constructor(Decl):
     def __init__(self, name, parameters, body):
         self.name = name
         self.parameters = parameters
         self.body = body
 
-class Method(RecordDecl):
-    def __init__(self, name, parameters, return_type, body):
+    def resolve_types(self, types):
+        self.parameters = [(name, t.resolve_type(types)) for name, t in self.parameters]
+
+    @property
+    def parameter_types(self):
+        return [param[1] for param in self.parameters]
+
+class Implements(Decl):
+    def __init__(self, interface, decls):
+        self.interface = interface
+        self.decls = decls
+
+class Private(Decl):
+    def __init__(self, decls):
+        self.decls = decls
+
+class MethodSignature(object):
+    def __init__(self, name, parameters, return_type):
         self.name = name
         self.parameters = parameters
         self.return_type = return_type
-        self.body = body
+
+    def resolve_types(self, types):
+        self.parameters = [param.resolve_type(types) for param in self.parameters]
+        self.return_type = self.return_type.resolve_type(types)
 
 class CodeBlock(object):
     def __init__(self, statements, ret=None):
@@ -100,6 +143,13 @@ class MethodCall(Expression):
 class ConstructorCall(Expression):
     def __init__(self, ty, name, arguments):
         self.ty = ty
+        self.name = name
+        self.arguments = arguments
+
+class ServiceConstructorCall(Expression):
+    def __init__(self, service, service_arguments, name, arguments):
+        self.service = service
+        self.service_arguments = service_arguments
         self.name = name
         self.arguments = arguments
 

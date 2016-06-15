@@ -28,23 +28,29 @@ tokens = [
     "COMMENT",
     "WHITESPACE",
 ]
-keywords = {
-    'define' : 'DEFINE',
-    'end' : 'END',
-    'sys' : 'SYS',
-    'store' : 'STORE',
-    'load' : 'LOAD',
-    'return' : 'RETURN',
-    'do': 'DO',
-    'while': 'WHILE',
-    'if': 'IF',
-    'else': 'ELSE',
-    'true': 'TRUE',
-    'false': 'FALSE',
-    'record': 'RECORD',
-    'attr': 'ATTR',
-    'constructor': 'CONSTRUCTOR'
-}
+keywords = [
+    'define',
+    'end',
+    'sys',
+    'store',
+    'load',
+    'return',
+    'do',
+    'while',
+    'if',
+    'else',
+    'true',
+    'false',
+    'record',
+    'attr',
+    'constructor',
+    'service',
+    'interface',
+    'implements',
+    'private',
+    'entry'
+]
+keywords = {keyword: keyword.upper() for keyword in keywords}
 tokens += keywords.values()
 
 t_NUMBER = r'\d+'

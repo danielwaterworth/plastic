@@ -5,6 +5,9 @@ class Type(object):
     def resolve_type(self, types):
         return self
 
+    def is_subtype_of(self, other):
+        return self == other
+
 class Void(Type):
     @property
     def size(self):
@@ -57,21 +60,6 @@ class NamedType(Type):
     def resolve_type(self, types):
         return types[self.name]
 
-class Record(Type):
-    def __init__(self, name, attrs, constructors, methods):
-        self.name = name
-        self.attrs = attrs
-        self.constructors = constructors
-        self.methods = methods
-        self.size = sum([t.size for (_, t) in attrs])
-
-    def method_signature(self, name):
-        return self.methods[name]
-
-    def method(self, basic_block, object_variable, name, arguments):
-        self.methods[name]
-        return basic_block.fun_call('%s#%s' % (self.name, name), [object_variable] + arguments)
-
 class Array(Type):
     def __init__(self, ty, count):
         self.ty = ty
@@ -111,3 +99,64 @@ class Tuple(Type):
 
     def __repr__(self):
         return '<Tuple (%s)>' % ', '.join([repr(t) for t in self.types])
+
+class Record(Type):
+    def __init__(self, name, attrs, constructors, methods):
+        self.name = name
+        self.attrs = attrs
+        self.constructors = constructors
+        self.methods = methods
+        self.size = sum([t.size for (_, t) in attrs])
+
+    def method_signature(self, name):
+        return self.methods[name]
+
+    def method(self, basic_block, object_variable, name, arguments):
+        self.methods[name]
+        return basic_block.fun_call('%s#%s' % (self.name, name), [object_variable] + arguments)
+
+class Interface(Type):
+    def __init__(self, name, methods):
+        self.name = name
+        self.methods = methods
+
+    @property
+    def size(self):
+        raise NotImplementedError('interface object size')
+
+    def method_signature(self, name):
+        return self.methods[name]
+
+    def method(self, basic_block, object_variable, name, arguments):
+        raise NotImplementedError('interface object method call')
+
+    def __repr__(self):
+        return "<Interface %s>" % self.name
+
+# Type used for self in a service context
+class PrivateService(Type):
+    def __init__(self, name, private_methods):
+        self.private_methods = private_methods
+
+    @property
+    def size(self):
+        raise NotImplementedError('private service object size')
+
+class Service(Type):
+    def __init__(self, name, dependencies, constructors, interfaces):
+        self.name = name
+        self.dependencies = dependencies
+        self.constructors = constructors
+        self.interfaces = interfaces
+
+    @property
+    def size(self):
+        raise NotImplementedError('service object size')
+
+    def is_subtype_of(self, other):
+        if isinstance(other, Interface):
+            return other.name in self.interfaces
+        return self == other
+
+    def __repr__(self):
+        return "<Service %s>" % self.name

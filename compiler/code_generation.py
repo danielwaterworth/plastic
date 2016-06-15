@@ -211,7 +211,7 @@ def generate_record(program_writer, record):
     for decl in record.decls:
         if isinstance(decl, program.Constructor):
             generate_constructor(decl)
-        elif isinstance(decl, program.Method):
+        elif isinstance(decl, program.Function):
             generate_method(decl)
 
 def generate_code(writer, decls):
