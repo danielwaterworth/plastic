@@ -222,10 +222,6 @@ def p_attr_assignment(p):
     '''statement : ATTR LOWER_NAME ASSIGNMENT expression SEMICOLON'''
     p[0] = program.AttrStore(p[2], p[4])
 
-def p_statement_store(p):
-    '''statement : STORE expression COMMA expression SEMICOLON'''
-    p[0] = program.Store(p[2], p[4])
-
 def p_conditional(p):
     '''statement : IF OPEN_PARENS expression CLOSE_PARENS code_block ELSE code_block END'''
     p[0] = program.Conditional(p[3], p[5], p[7])
@@ -265,10 +261,6 @@ def p_expression_constructor(p):
 def p_expression_service_constructor(p):
     '''expression : UPPER_NAME function_call DOT LOWER_NAME function_call'''
     p[0] = program.ServiceConstructorCall(p[1], p[2], p[4], p[5])
-
-def p_expression_load(p):
-    '''expression : LOAD expression'''
-    p[0] = program.Load(p[2])
 
 def p_expression_attr(p):
     '''expression : ATTR LOWER_NAME'''

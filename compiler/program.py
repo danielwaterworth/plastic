@@ -115,11 +115,6 @@ class Assignment(Statement):
         value = self.expression.evaluate(context)
         context.add(self.name, value)
 
-class Store(Statement):
-    def __init__(self, address, value):
-        self.address = address
-        self.value = value
-
 class AttrStore(Statement):
     def __init__(self, attr, value):
         self.attr = attr
@@ -185,10 +180,6 @@ class ServiceConstructorCall(Expression):
         service_arguments = [arg.evaluate(context) for arg in self.service_arguments]
         arguments = [arg.evaluate(context) for arg in self.arguments]
         return context.service(self.service, service_arguments, self.name, arguments)
-
-class Load(Expression):
-    def __init__(self, address):
-        self.address = address
 
 class AttrLoad(Expression):
     def __init__(self, attr):

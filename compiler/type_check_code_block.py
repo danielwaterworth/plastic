@@ -70,9 +70,6 @@ def type_check_code_block(context, code_block):
             expression.type = program_types.uint
         elif isinstance(expression, program.BoolLiteral):
             expression.type = program_types.bool
-        elif isinstance(expression, program.Load):
-            assert infer_expression_type(expression.address) == program_types.uint
-            expression.type = program_types.uint
         elif isinstance(expression, program.AttrLoad):
             expression.type = context.lookup_attr(expression.attr)
         elif isinstance(expression, program.BinOp):
@@ -118,11 +115,6 @@ def type_check_code_block(context, code_block):
         if isinstance(statement, program.Assignment):
             expression_type = infer_expression_type(statement.expression)
             context.add(statement.name, expression_type)
-        elif isinstance(statement, program.Store):
-            address_type = infer_expression_type(statement.address)
-            value_type = infer_expression_type(statement.value)
-            assert address_type == program_types.uint
-            assert value_type == program_types.uint
         elif isinstance(statement, program.AttrStore):
             if not context.attr_store:
                 raise Exception('Attributes cannot be stored in this context')

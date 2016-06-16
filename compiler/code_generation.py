@@ -36,9 +36,6 @@ def generate_expression(context, expression):
         return context.basic_block.constant(struct.pack('>Q', expression.n))
     elif isinstance(expression, program.BoolLiteral):
         return context.basic_block.constant(struct.pack('>B', 1 if expression.b else 0))
-    elif isinstance(expression, program.Load):
-        address = generate_expression(context, expression.address)
-        return context.basic_block.load(address)
     elif isinstance(expression, program.AttrLoad):
         return context.lookup('@%s' % expression.attr)
     elif isinstance(expression, program.BinOp):
@@ -66,10 +63,6 @@ def generate_statement(context, statement):
     if isinstance(statement, program.Assignment):
         var = generate_expression(context, statement.expression)
         context.add(statement.name, var)
-    elif isinstance(statement, program.Store):
-        address = generate_expression(context, statement.address)
-        value = generate_expression(context, statement.value)
-        context.basic_block.store(address, value)
     elif isinstance(statement, program.AttrStore):
         var = generate_expression(context, statement.value)
         context.add('@%s' % statement.attr, var)

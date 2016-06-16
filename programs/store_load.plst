@@ -1,5 +1,0 @@
-define main() -> Bool do
-    store 100, 42;
-    sys print_num(load 100);
-    return false;
-end
