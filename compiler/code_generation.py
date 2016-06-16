@@ -173,8 +173,8 @@ def generate_record(program_writer, record):
         assert not constructor.body.ret
 
         function_name = '%s.%s' % (record.name, constructor.name)
-        parameter_names = [parameter[0] for parameter in constructor.parameters]
-        parameter_sizes = [parameter[1].size for parameter in constructor.parameters]
+        parameter_names = constructor.parameter_names
+        parameter_sizes = constructor.parameter_sizes
         return_size = record.type.size
         with program_writer.function(function_name, parameter_sizes, return_size) as (function_writer, variables):
             variables = dict(zip(parameter_names, variables))
@@ -189,13 +189,13 @@ def generate_record(program_writer, record):
 
     def generate_method(method):
         function_name = '%s#%s' % (record.name, method.name)
-        parameter_names = [parameter[0] for parameter in method.parameters]
-        parameter_sizes = [record.type.size] + [parameter[1].size for parameter in method.parameters]
+        parameter_names = ['self'] + method.parameter_names
+        parameter_sizes = [record.type.size] + method.parameter_sizes
         return_size = method.return_type.size
         with program_writer.function(function_name, parameter_sizes, return_size) as (function_writer, variables):
             basic_block = function_writer.basic_block()
 
-            variable_dict = dict(zip(['self'] + parameter_names, variables))
+            variable_dict = dict(zip(parameter_names, variables))
             offset = 0
             offset_var = basic_block.constant(struct.pack('>Q', offset))
             for attr, attr_type in record.type.attrs:
@@ -214,6 +214,28 @@ def generate_record(program_writer, record):
             generate_constructor(decl)
         elif isinstance(decl, program.Function):
             generate_method(decl)
+
+def generate_service(program_writer, name, instantiation, service_decl):
+    def generate_service_method(function_name, function):
+        parameter_names = ['self'] + function.parameter_names
+        parameter_sizes = [8] + function.parameter_sizes
+        return_size = function.return_type.size
+        with program_writer.function(function_name, parameter_sizes, return_size) as (function_writer, variables):
+            basic_block = function_writer.basic_block()
+            variable_dict = dict(zip(parameter_names, variables))
+            context = GenerationContext(function_writer, basic_block, variable_dict)
+            generate_code_block(context, function.body)
+
+    for decl in service_decl.decls:
+        if isinstance(decl, program.Private):
+            for function in decl.decls:
+                function_name = "%s#%s" % (name, function.name)
+                generate_service_method(function_name, function)
+        elif isinstance(decl, program.Implements):
+            interface = decl.interface
+            for function in decl.decls:
+                function_name = "%s.%s#%s" % (name, interface, function.name)
+                generate_service_method(function_name, function)
 
 def transitive_closure_services(entry_service):
     services = set()
@@ -246,4 +268,11 @@ def generate_code(writer, entry_service, decls):
 
         services = group_services(transitive_closure_services(entry_service))
         for name, instantiations in services.iteritems():
-            print name, instantiations, service_decls[name]
+            service_decl = service_decls[name]
+            generate_service(program_writer, name, instantiations, service_decl)
+
+        with program_writer.function('main', [], 1) as (function_writer, _):
+            with function_writer.basic_block() as block_writer:
+                service_id = block_writer.constant(struct.pack('>Q', 0))
+                x = block_writer.fun_call("%s.EntryPoint#main" % entry_service.service, [service_id])
+                block_writer.ret(x)

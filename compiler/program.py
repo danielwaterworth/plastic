@@ -20,6 +20,14 @@ class Function(Decl):
     def signature(self):
         return (self.parameter_types, self.return_type)
 
+    @property
+    def parameter_names(self):
+        return [param[0] for param in self.parameters]
+
+    @property
+    def parameter_sizes(self):
+        return [t.size for t in self.parameter_types]
+
 class Record(Decl):
     def __init__(self, name, decls):
         self.name = name
@@ -57,6 +65,14 @@ class Constructor(Decl):
     @property
     def parameter_types(self):
         return [param[1] for param in self.parameters]
+
+    @property
+    def parameter_names(self):
+        return [param[0] for param in self.parameters]
+
+    @property
+    def parameter_sizes(self):
+        return [t.size for t in self.parameter_types]
 
 class Implements(Decl):
     def __init__(self, interface, decls):

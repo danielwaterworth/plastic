@@ -1,0 +1,38 @@
+interface Printer
+    print_num(UInt) -> Bool;
+end
+
+service SysPrinter()
+    constructor new()
+    end
+
+    implements Printer
+        define print_num(n : UInt) -> Bool do
+            sys print_num(n);
+            return false;
+        end
+    end
+end
+
+service Test(printer : Printer)
+    constructor new()
+    end
+
+    implements EntryPoint
+        define main() -> Bool do
+            attr printer.print_num(42);
+            return false;
+        end
+    end
+
+    private
+        define foo() -> Bool do
+            return false;
+        end
+    end
+end
+
+entry
+    printer := SysPrinter().new();
+    return Test(printer).new();
+end
