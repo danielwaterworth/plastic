@@ -2,10 +2,6 @@ interface Printer
     print_num(UInt) -> Bool;
 end
 
-interface EntryPoint
-    main() -> Bool;
-end
-
 service SysPrinter()
     constructor new()
     end

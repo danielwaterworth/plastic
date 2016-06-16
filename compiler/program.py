@@ -82,6 +82,11 @@ class CodeBlock(object):
         self.statements = statements
         self.ret = ret
 
+    def evaluate(self, context):
+        for statement in self.statements:
+            statement.evaluate(context)
+        return self.ret.expression.evaluate(context)
+
 class Statement(object):
     pass
 
@@ -89,6 +94,10 @@ class Assignment(Statement):
     def __init__(self, name, expression):
         self.name = name
         self.expression = expression
+
+    def evaluate(self, context):
+        value = self.expression.evaluate(context)
+        context.add(self.name, value)
 
 class Store(Statement):
     def __init__(self, address, value):
@@ -117,6 +126,9 @@ class Expression(Statement):
 class Variable(Expression):
     def __init__(self, name):
         self.name = name
+
+    def evaluate(self, context):
+        return context.lookup(self.name)
 
 class BinOp(Expression):
     def __init__(self, lhs, rhs, operator):
@@ -152,6 +164,11 @@ class ServiceConstructorCall(Expression):
         self.service_arguments = service_arguments
         self.name = name
         self.arguments = arguments
+
+    def evaluate(self, context):
+        service_arguments = [arg.evaluate(context) for arg in self.service_arguments]
+        arguments = [arg.evaluate(context) for arg in self.arguments]
+        return context.service(self.service, service_arguments, self.name, arguments)
 
 class Load(Expression):
     def __init__(self, address):

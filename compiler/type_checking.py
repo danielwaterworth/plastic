@@ -10,6 +10,8 @@ def type_check(decls):
         'Void': program_types.void,
         'Byte': program_types.byte
     }
+    entry_point = program_types.Interface('EntryPoint', {'main': ([], program_types.bool)})
+    interface_types = {'EntryPoint': entry_point}
 
     def type_check_function(function):
         context = type_check_code_block.TypeCheckingContext(
@@ -101,7 +103,6 @@ def type_check(decls):
             elif isinstance(decl, program.Function):
                 type_check_method(record.type, dict(record.type.attrs), decl)
 
-    interface_types = {}
     for interface in interface_decls:
         methods = {}
 
@@ -110,6 +111,7 @@ def type_check(decls):
             methods[decl.name] = (decl.parameters, decl.return_type)
 
         interface.type = program_types.Interface(interface.name, methods)
+        assert not interface.name in interface_types
         interface_types[interface.name] = interface.type
 
     services = {}
@@ -172,6 +174,7 @@ def type_check(decls):
     for function in function_decls:
         type_check_function(function)
 
-    if entry:
-        context = type_check_code_block.TypeCheckingContext(function_signatures, types, services, interface_types['EntryPoint'], {}, False, {})
-        type_check_code_block.type_check_code_block(context, entry.body)
+    assert entry
+    context = type_check_code_block.TypeCheckingContext(function_signatures, types, services, entry_point, {}, False, {})
+    type_check_code_block.type_check_code_block(context, entry.body)
+    return entry.body

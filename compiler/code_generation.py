@@ -1,3 +1,4 @@
+import collections
 import itertools
 import struct
 import program
@@ -214,12 +215,35 @@ def generate_record(program_writer, record):
         elif isinstance(decl, program.Function):
             generate_method(decl)
 
-def generate_code(writer, decls):
+def transitive_closure_services(entry_service):
+    services = set()
+    stack = [entry_service]
+    while stack:
+        service = stack.pop()
+        if not service in services:
+            services.add(service)
+            stack.extend(service.service_arguments)
+    return services
+
+def group_services(services):
+    grouped_services = collections.defaultdict(set)
+
+    for service in services:
+        grouped_services[service.service].add(service)
+
+    return grouped_services
+
+def generate_code(writer, entry_service, decls):
     with writer as program_writer:
+        service_decls = {}
         for decl in decls:
             if isinstance(decl, program.Function):
                 generate_function(program_writer, decl)
             elif isinstance(decl, program.Record):
                 generate_record(program_writer, decl)
-            else:
-                raise NotImplementedError('unknown top level decl: %s' % type(decl))
+            elif isinstance(decl, program.Service):
+                service_decls[decl.name] = decl
+
+        services = group_services(transitive_closure_services(entry_service))
+        for name, instantiations in services.iteritems():
+            print name, instantiations, service_decls[name]
