@@ -2,6 +2,7 @@ import collections
 import itertools
 import struct
 import program
+import program_types
 
 class GenerationContext(object):
     def __init__(self, function_writer, basic_block, variables):
@@ -237,6 +238,14 @@ def generate_service(program_writer, name, instantiation, service_decl):
                 function_name = "%s.%s#%s" % (name, interface, function.name)
                 generate_service_method(function_name, function)
 
+def generate_interface(program_writer, interface, services):
+    for name, (parameter_types, return_type) in interface.methods.iteritems():
+        function_name = "%s#%s" % (interface.name, name)
+        parameter_sizes = [16] + [param.size for param in parameter_types]
+        return_size = return_type.size
+        with program_writer.function(function_name, parameter_sizes, return_size) as (function_writer, variables):
+            raise NotImplementedError()
+
 def transitive_closure_services(entry_service):
     services = set()
     stack = [entry_service]
@@ -258,6 +267,8 @@ def group_services(services):
 def generate_code(writer, entry_service, decls):
     with writer as program_writer:
         service_decls = {}
+        entry_point = program_types.Interface('EntryPoint', {'main': ([], program_types.bool)})
+        interface_types = {'EntryPoint': entry_point}
         for decl in decls:
             if isinstance(decl, program.Function):
                 generate_function(program_writer, decl)
@@ -265,11 +276,23 @@ def generate_code(writer, entry_service, decls):
                 generate_record(program_writer, decl)
             elif isinstance(decl, program.Service):
                 service_decls[decl.name] = decl
+            elif isinstance(decl, program.Interface):
+                interface_types[decl.name] = decl.type
 
         services = group_services(transitive_closure_services(entry_service))
         for name, instantiations in services.iteritems():
             service_decl = service_decls[name]
             generate_service(program_writer, name, instantiations, service_decl)
+
+        services_by_interface = collections.defaultdict(set)
+        for name in services:
+            service_decl = service_decls[name]
+            for interface in service_decl.type.interfaces:
+                services_by_interface[interface].add(name)
+
+        for interface, services in services_by_interface.iteritems():
+            interface_type = interface_types[interface]
+            generate_interface(program_writer, interface_type, services)
 
         with program_writer.function('main', [], 1) as (function_writer, _):
             with function_writer.basic_block() as block_writer:
