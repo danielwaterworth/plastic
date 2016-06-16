@@ -72,7 +72,8 @@ def read_bytecode(fd, receiver):
                                     basic_block_receiver.sys_call(function_name, arguments)
                                 elif instruction_type == LOAD:
                                     address = runpack('>Q', fd.read(8))
-                                    basic_block_receiver.load(address)
+                                    size = runpack('>Q', fd.read(8))
+                                    basic_block_receiver.load(address, size)
                                 elif instruction_type == STORE:
                                     address = runpack('>Q', fd.read(8))
                                     variable = runpack('>Q', fd.read(8))

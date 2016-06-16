@@ -41,8 +41,9 @@ class Constant(Instruction):
         self.value = value
 
 class Load(Instruction):
-    def __init__(self, address):
+    def __init__(self, address, size):
         self.address = address
+        self.size = size
 
 class Store(Instruction):
     def __init__(self, address, variable):

@@ -65,7 +65,7 @@ class ActivationRecord(object):
 class Executor(object):
     def __init__(self, program):
         self.program = program
-        self.memory = [r_ulonglong(0) for i in xrange(1024**2)]
+        self.memory = [0] * 1024**2
         self.stack = [ActivationRecord(program.functions['main'], [])]
 
     def run(self):
@@ -126,13 +126,16 @@ class Executor(object):
                 elif isinstance(instr, bytecode.Load):
                     address_bytes = self.stack[-1].resolve_variable(instr.address)
                     assert len(address_bytes) == 8
-                    self.stack[-1].retire(data.pack_uint(self.memory[runpack('>Q', address_bytes)]))
+                    address = runpack('>Q', address_bytes)
+                    dat = self.memory[address:address+instr.size]
+                    self.stack[-1].retire(''.join([chr(i) for i in dat]))
                 elif isinstance(instr, bytecode.Store):
                     address_bytes = self.stack[-1].resolve_variable(instr.address)
                     value = self.stack[-1].resolve_variable(instr.variable)
                     assert len(address_bytes) == 8
-                    assert len(value) == 8
-                    self.memory[runpack('>Q', address_bytes)] = runpack('>Q', value)
+                    address = runpack('>Q', address_bytes)
+                    for i in xrange(len(value)):
+                        self.memory[address+i] = ord(value[i])
                     self.stack[-1].retire('')
                 else:
                     raise NotImplementedError('missing instruction implementation')
