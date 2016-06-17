@@ -16,6 +16,48 @@ class GenerationContext(object):
     def lookup(self, name):
         return self.variables[name]
 
+    def new_context(self, basic_block):
+        raise NotImplementedError()
+
+    def attr_lookup(self, name):
+        raise NotImplementedError()
+
+class FunctionContext(GenerationContext):
+    def new_context(self, basic_block):
+        return FunctionContext(self.function_writer, basic_block, dict(self.variables))
+
+class RecordContext(GenerationContext):
+    def new_context(self, basic_block):
+        return RecordContext(self.function_writer, basic_block, dict(self.variables))
+
+    def attr_lookup(self, name):
+        return self.lookup('@%s' % name)
+
+class ServiceContext(GenerationContext):
+    def __init__(self, name, dependencies, self_variable, function_writer, basic_block, variables):
+        self.name = name
+        self.dependencies = dependencies
+        self.self_variable = self_variable
+        self.function_writer = function_writer
+        self.basic_block = basic_block
+        self.variables = variables
+
+    def new_context(self, basic_block):
+        return ServiceContext(
+                    self.name,
+                    self.dependencies,
+                    self.self_variable,
+                    self.function_writer,
+                    basic_block,
+                    dict(self.variables)
+                )
+
+    def attr_lookup(self, name):
+        if name in self.dependencies:
+            return self.basic_block.fun_call('%s^%s' % (self.name, name), [self.self_variable])
+        else:
+            raise NotImplementedError()
+
 operators = {
     '<': 'lt',
     '>': 'gt',
@@ -37,7 +79,7 @@ def generate_expression(context, expression):
     elif isinstance(expression, program.BoolLiteral):
         return context.basic_block.constant(struct.pack('>B', 1 if expression.b else 0))
     elif isinstance(expression, program.AttrLoad):
-        return context.lookup('@%s' % expression.attr)
+        return context.attr_lookup(expression.attr)
     elif isinstance(expression, program.BinOp):
         lhs = generate_expression(context, expression.lhs)
         rhs = generate_expression(context, expression.rhs)
@@ -76,7 +118,7 @@ def generate_statement(context, statement):
 
         true_block = context.function_writer.basic_block()
         entry_conditional.true_block = true_block.index
-        true_context = GenerationContext(context.function_writer, true_block, dict(context.variables))
+        true_context = context.new_context(true_block)
 
         for true_statement in statement.true_block.statements:
             generate_statement(true_context, true_statement)
@@ -86,7 +128,7 @@ def generate_statement(context, statement):
 
         false_block = context.function_writer.basic_block()
         entry_conditional.false_block = false_block.index
-        false_context = GenerationContext(context.function_writer, false_block, dict(context.variables))
+        false_context = context.new_context(false_block)
 
         for false_statement in statement.false_block.statements:
             generate_statement(false_context, false_statement)
@@ -158,7 +200,7 @@ def generate_function(program_writer, function):
     with program_writer.function(function.name, parameter_sizes, return_size) as (function_writer, variables):
         variables = dict(zip(parameter_names, variables))
         basic_block = function_writer.basic_block()
-        context = GenerationContext(function_writer, basic_block, variables)
+        context = FunctionContext(function_writer, basic_block, variables)
 
         generate_code_block(context, function.body)
 
@@ -173,7 +215,7 @@ def generate_record(program_writer, record):
         with program_writer.function(function_name, parameter_sizes, return_size) as (function_writer, variables):
             variables = dict(zip(parameter_names, variables))
             basic_block = function_writer.basic_block()
-            context = GenerationContext(function_writer, basic_block, variables)
+            context = RecordContext(function_writer, basic_block, variables)
 
             generate_code_block(context, constructor.body)
 
@@ -199,7 +241,7 @@ def generate_record(program_writer, record):
                 variable_dict['@%s' % attr] = var
                 offset_var = new_offset_var
 
-            context = GenerationContext(function_writer, basic_block, variable_dict)
+            context = RecordContext(function_writer, basic_block, variable_dict)
 
             generate_code_block(context, method.body)
 
@@ -209,7 +251,7 @@ def generate_record(program_writer, record):
         elif isinstance(decl, program.Function):
             generate_method(decl)
 
-def generate_service(program_writer, name, instantiation, service_decl):
+def generate_service(program_writer, name, instantiations, service_decl):
     def generate_service_method(function_name, function):
         parameter_names = ['self'] + function.parameter_names
         parameter_sizes = [8] + function.parameter_sizes
@@ -217,7 +259,14 @@ def generate_service(program_writer, name, instantiation, service_decl):
         with program_writer.function(function_name, parameter_sizes, return_size) as (function_writer, variables):
             basic_block = function_writer.basic_block()
             variable_dict = dict(zip(parameter_names, variables))
-            context = GenerationContext(function_writer, basic_block, variable_dict)
+            context = ServiceContext(
+                            name,
+                            service_decl.dependency_names,
+                            variables[0],
+                            function_writer,
+                            basic_block,
+                            variable_dict
+                        )
             generate_code_block(context, function.body)
 
     for decl in service_decl.decls:
@@ -230,6 +279,25 @@ def generate_service(program_writer, name, instantiation, service_decl):
             for function in decl.decls:
                 function_name = "%s.%s#%s" % (name, interface, function.name)
                 generate_service_method(function_name, function)
+
+    for instantiation in instantiations:
+        instantiation.dependencies = dict(zip(service_decl.dependency_names, instantiation.service_arguments))
+
+    for dependency_name in service_decl.dependency_names:
+        with program_writer.function("%s^%s" % (service_decl.name, dependency_name), [8], 16) as (function_writer, variables):
+            basic_block = function_writer.basic_block()
+            self_variable = variables[0]
+            block = 0
+            for instantiation in instantiations:
+                service_id = basic_block.constant(struct.pack('>Q', instantiation.service_id))
+                v = basic_block.operation('eq', [self_variable, service_id])
+                basic_block.conditional(v, block + 1, block + 2)
+                basic_block = function_writer.basic_block()
+                result = instantiation.dependencies[dependency_name].interface_variable(basic_block)
+                basic_block.ret(result)
+                basic_block = function_writer.basic_block()
+                block += 2
+            basic_block.catch_fire_and_die()
 
 def generate_interface(program_writer, interface, services):
     for name, (parameter_types, return_type) in interface.methods.iteritems():
@@ -268,10 +336,11 @@ def transitive_closure_services(entry_service):
     return services
 
 def group_services(services):
-    grouped_services = collections.defaultdict(set)
+    grouped_services = collections.defaultdict(list)
 
     for service in services:
-        grouped_services[service.service].add(service)
+        service.service_id = len(grouped_services[service.service])
+        grouped_services[service.service].append(service)
 
     return grouped_services
 
@@ -293,8 +362,12 @@ def generate_code(writer, entry_service, decls):
         service_types = {}
         grouped_services = group_services(transitive_closure_services(entry_service))
         for (name, instantiations), service_type_id in zip(grouped_services.iteritems(), itertools.count()):
-            service_decl = service_decls[name]
             service_types[name] = service_type_id
+            for instantiation in instantiations:
+                instantiation.service_type_id = service_type_id
+
+        for name, instantiations in grouped_services.iteritems():
+            service_decl = service_decls[name]
             generate_service(program_writer, name, instantiations, service_decl)
 
         services_by_interface = collections.defaultdict(set)
@@ -309,8 +382,6 @@ def generate_code(writer, entry_service, decls):
 
         with program_writer.function('main', [], 1) as (function_writer, _):
             with function_writer.basic_block() as block_writer:
-                service_type = block_writer.constant(struct.pack('>Q', service_types[entry_service.service]))
-                service_id = block_writer.constant(struct.pack('>Q', 0))
-                service = block_writer.operation('pack', [service_type, service_id])
+                service = entry_service.interface_variable(block_writer)
                 x = block_writer.fun_call("EntryPoint#main", [service])
                 block_writer.ret(x)

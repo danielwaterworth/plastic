@@ -128,7 +128,7 @@ class Interface(Type):
         return self.methods[name]
 
     def method(self, basic_block, object_variable, name, arguments):
-        raise NotImplementedError('interface object method call')
+        return basic_block.fun_call("%s#%s" % (self.name, name), [object_variable] + arguments)
 
     def __repr__(self):
         return "<Interface %s>" % self.name

@@ -133,9 +133,9 @@ def type_check(decls):
                 interface = interface_types[service_decl.interface]
                 methods = {}
 
-                for implements_decl in service_decl.decls:
-                    implements_decl.resolve_types(types)
-                    methods[implements_decl.name] = implements_decl.signature
+                for method_decl in service_decl.decls:
+                    method_decl.resolve_types(types)
+                    methods[method_decl.name] = method_decl.signature
 
                 assert methods == interface.methods
                 interfaces.add(service_decl.interface)
@@ -153,8 +153,8 @@ def type_check(decls):
 
         for service_decl in service.decls:
             if isinstance(service_decl, program.Implements):
-                for implements_decl in service_decl.decls:
-                    type_check_method(private_service_type, all_attrs, implements_decl)
+                for method_decl in service_decl.decls:
+                    type_check_method(private_service_type, all_attrs, method_decl)
             elif isinstance(service_decl, program.Private):
                 for private_decl in service_decl.decls:
                     type_check_method(private_service_type, all_attrs, private_decl)

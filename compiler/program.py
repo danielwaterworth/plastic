@@ -44,6 +44,10 @@ class Service(Decl):
         self.dependencies = dependencies
         self.decls = decls
 
+    @property
+    def dependency_names(self):
+        return [name for name, _ in self.dependencies]
+
 class Entry(Decl):
     def __init__(self, body):
         self.body = body
