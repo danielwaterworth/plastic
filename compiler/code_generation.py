@@ -19,6 +19,9 @@ class GenerationContext(object):
     def new_context(self, basic_block):
         raise NotImplementedError()
 
+    def attr_add(self, name, value):
+        raise NotImplementedError()
+
     def attr_lookup(self, name):
         raise NotImplementedError()
 
@@ -29,6 +32,9 @@ class FunctionContext(GenerationContext):
 class RecordContext(GenerationContext):
     def new_context(self, basic_block):
         return RecordContext(self.function_writer, basic_block, dict(self.variables))
+
+    def attr_add(self, name, value):
+        self.add('@%s' % name, value)
 
     def attr_lookup(self, name):
         return self.lookup('@%s' % name)
@@ -107,7 +113,7 @@ def generate_statement(context, statement):
         context.add(statement.name, var)
     elif isinstance(statement, program.AttrStore):
         var = generate_expression(context, statement.value)
-        context.add('@%s' % statement.attr, var)
+        context.attr_add(statement.attr, var)
     elif isinstance(statement, program.Conditional):
         # FIXME
         assert not statement.true_block.ret
@@ -299,6 +305,26 @@ def generate_service(program_writer, name, instantiations, service_decl):
                 block += 2
             basic_block.catch_fire_and_die()
 
+    memory_offset = 0
+    for attr_name, attr_type in service_decl.type.attrs.iteritems():
+        with program_writer.function("%s^%s" % (service_decl.name, attr_name), [8], 8) as (function_writer, variables):
+            basic_block = function_writer.basic_block()
+            self_variable = variables[0]
+
+            block = 0
+            for instantiation in instantiations:
+                attr_offset = memory_offset + instantiation.memory_offset
+                service_id = basic_block.constant(struct.pack('>Q', instantiation.service_id))
+                v = basic_block.operation('eq', [self_variable, service_id])
+                basic_block.conditional(v, block + 1, block + 2)
+                basic_block = function_writer.basic_block()
+                result = basic_block.constant(struct.pack('>Q', attr_offset))
+                basic_block.ret(result)
+                basic_block = function_writer.basic_block()
+                block += 2
+            basic_block.catch_fire_and_die()
+        memory_offset += attr_type.size
+
 def generate_interface(program_writer, interface, services):
     for name, (parameter_types, return_type) in interface.methods.iteritems():
         function_name = "%s#%s" % (interface.name, name)
@@ -361,10 +387,14 @@ def generate_code(writer, entry_service, decls):
 
         service_types = {}
         grouped_services = group_services(transitive_closure_services(entry_service))
+        memory_offset = 0
         for (name, instantiations), service_type_id in zip(grouped_services.iteritems(), itertools.count()):
+            service_decl = service_decls[name]
             service_types[name] = service_type_id
             for instantiation in instantiations:
                 instantiation.service_type_id = service_type_id
+                instantiation.memory_offset = memory_offset
+                memory_offset += service_decl.type.attrs_size
 
         for name, instantiations in grouped_services.iteritems():
             service_decl = service_decls[name]
