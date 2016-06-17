@@ -1,20 +1,16 @@
-define main() -> Bool do
-    i := 0;
-    do
-        sys print_num(i);
-        i := i + 1;
-    while (i < 4)
-
-    return false;
-end
-
 service Test()
     constructor new()
     end
 
     implements EntryPoint
         define main() -> Bool do
-            return main();
+            i := 0;
+            do
+                sys print_num(i);
+                i := i + 1;
+            while (i < 4)
+
+            return false;
         end
     end
 end
