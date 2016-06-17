@@ -115,63 +115,59 @@ def type_check(decls):
         interface_types[interface.name] = interface.type
 
     services = {}
-    for decl in decls:
-        if isinstance(decl, program.Service):
-            service = decl
-            attrs = {}
-            dependencies = {name: interface_types[interface_name] for name, interface_name in service.dependencies}
-            dependency_types = dependencies.values()
-            constructors = {}
-            interfaces = set()
-            private_methods = {}
+    for service in service_decls:
+        attrs = {}
+        dependency_names = {name for name, interface_name in service.dependencies}
+        dependencies = [(name, interface_types[interface_name]) for name, interface_name in service.dependencies]
+        constructors = {}
+        interfaces = set()
+        private_methods = {}
 
-            for service_decl in service.decls:
-                if isinstance(service_decl, program.Attr):
-                    service_decl.type = service_decl.type.resolve_type(types)
-                    assert not service_decl.name in attrs
-                    assert not service_decl.name in dependencies
-                    attrs[service_decl.name] = service_decl.type
-                elif isinstance(service_decl, program.Implements):
-                    interface = interface_types[service_decl.interface]
-                    methods = {}
+        for service_decl in service.decls:
+            if isinstance(service_decl, program.Attr):
+                service_decl.type = service_decl.type.resolve_type(types)
+                assert not service_decl.name in attrs
+                assert not service_decl.name in dependency_names
+                attrs[service_decl.name] = service_decl.type
+            elif isinstance(service_decl, program.Implements):
+                interface = interface_types[service_decl.interface]
+                methods = {}
 
-                    for method_decl in service_decl.decls:
-                        method_decl.resolve_types(types)
-                        methods[method_decl.name] = method_decl.signature
+                for method_decl in service_decl.decls:
+                    method_decl.resolve_types(types)
+                    methods[method_decl.name] = method_decl.signature
 
-                    assert methods == interface.methods
-                    interfaces.add(service_decl.interface)
-                elif isinstance(service_decl, program.Private):
-                    for private_decl in service_decl.decls:
-                        private_decl.resolve_types(types)
-                        private_methods[private_decl.name] = private_decl.signature
-                elif isinstance(service_decl, program.Constructor):
-                    service_decl.resolve_types(types)
-                    constructors[service_decl.name] = service_decl.parameter_types
+                assert methods == interface.methods
+                interfaces.add(service_decl.interface)
+            elif isinstance(service_decl, program.Private):
+                for private_decl in service_decl.decls:
+                    private_decl.resolve_types(types)
+                    private_methods[private_decl.name] = private_decl.signature
+            elif isinstance(service_decl, program.Constructor):
+                service_decl.resolve_types(types)
+                constructors[service_decl.name] = service_decl.parameter_types
+        service.type = program_types.Service(service.name, dependencies, attrs, constructors, interfaces)
+        services[service.name] = service.type
+        service.private_type = program_types.PrivateService(service.name, private_methods)
 
-            private_service_type = program_types.PrivateService(service.name, private_methods)
-            all_attrs = dict(attrs)
-            all_attrs.update(dependencies)
+    for function in function_decls:
+        assert not function.name in function_signatures
+        function.parameters = [(name, t.resolve_type(types)) for name, t in function.parameters]
+        arg_types = [arg[1] for arg in function.parameters]
+        function.return_type = function.return_type.resolve_type(types)
+        function_signatures[function.name] = (arg_types, function.return_type)
 
-            for service_decl in service.decls:
-                if isinstance(service_decl, program.Implements):
-                    for method_decl in service_decl.decls:
-                        type_check_method(private_service_type, all_attrs, method_decl)
-                elif isinstance(service_decl, program.Private):
-                    for private_decl in service_decl.decls:
-                        type_check_method(private_service_type, all_attrs, private_decl)
-                elif isinstance(service_decl, program.Constructor):
-                    type_check_constructor(attrs, service_decl)
-
-            service.type = program_types.Service(service.name, dependency_types, constructors, interfaces)
-            services[service.name] = service.type
-        elif isinstance(decl, program.Function):
-            function = decl
-            assert not function.name in function_signatures
-            function.parameters = [(name, t.resolve_type(types)) for name, t in function.parameters]
-            arg_types = [arg[1] for arg in function.parameters]
-            function.return_type = function.return_type.resolve_type(types)
-            function_signatures[function.name] = (arg_types, function.return_type)
+    for service in service_decls:
+        all_attrs = service.type.all_attrs
+        for service_decl in service.decls:
+            if isinstance(service_decl, program.Implements):
+                for method_decl in service_decl.decls:
+                    type_check_method(service.private_type, all_attrs, method_decl)
+            elif isinstance(service_decl, program.Private):
+                for private_decl in service_decl.decls:
+                    type_check_method(service.private_type, all_attrs, private_decl)
+            elif isinstance(service_decl, program.Constructor):
+                type_check_constructor(attrs, service_decl)
 
     for function in function_decls:
         type_check_function(function)

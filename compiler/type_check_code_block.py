@@ -101,8 +101,8 @@ def type_check_code_block(context, code_block):
         elif isinstance(expression, program.ServiceConstructorCall):
             service = context.services[expression.service]
             dependency_types = [infer_expression_type(argument) for argument in expression.service_arguments]
-            assert len(dependency_types) == len(service.dependencies)
-            for service_arg, interface in zip(dependency_types, service.dependencies):
+            assert len(dependency_types) == len(service.dependency_types)
+            for service_arg, interface in zip(dependency_types, service.dependency_types):
                 assert service_arg.is_subtype_of(interface)
             constructor_arg_types = [infer_expression_type(argument) for argument in expression.arguments]
             assert constructor_arg_types == service.constructors[expression.name]

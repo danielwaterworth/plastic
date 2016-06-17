@@ -143,11 +143,22 @@ class PrivateService(Type):
         raise NotImplementedError('private service object size')
 
 class Service(Type):
-    def __init__(self, name, dependencies, constructors, interfaces):
+    def __init__(self, name, dependencies, attrs, constructors, interfaces):
         self.name = name
         self.dependencies = dependencies
+        self.attrs = attrs
         self.constructors = constructors
         self.interfaces = interfaces
+
+    @property
+    def all_attrs(self):
+        all_attrs = dict(self.attrs)
+        all_attrs.update(dict(self.dependencies))
+        return all_attrs
+
+    @property
+    def dependency_types(self):
+        return [t for _, t in self.dependencies]
 
     @property
     def size(self):
