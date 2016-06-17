@@ -148,7 +148,7 @@ def generate_statement(context, statement):
                 variables[variable] = true_variable
             else:
                 phi_inputs = [(last_true_block, true_variable), (last_false_block, false_variable)]
-                variables[variable] = (context.basic_block.phi(phi_inputs), context.lookup(variable)[1])
+                variables[variable] = context.basic_block.phi(phi_inputs)
 
         context.variables = variables
     elif isinstance(statement, program.While):

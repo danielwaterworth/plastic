@@ -1,9 +1,12 @@
 define main() -> Bool do
     if (40 < 50)
+        a := true;
         sys print_num(1);
     else
+        a := false;
         sys print_num(2);
     end
+    sys print_bool(a);
 
     return false;
 end
