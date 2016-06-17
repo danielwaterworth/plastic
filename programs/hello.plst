@@ -9,3 +9,18 @@ define main() -> Bool do
     foo();
     return false;
 end
+
+service Test()
+    constructor new()
+    end
+
+    implements EntryPoint
+        define main() -> Bool do
+            return main();
+        end
+    end
+end
+
+entry
+    return Test().new();
+end

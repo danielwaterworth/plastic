@@ -1,3 +1,18 @@
 define foo(a : (UInt, Bool)) -> (UInt, Bool) do
     return a;
 end
+
+service Test()
+    constructor new()
+    end
+
+    implements EntryPoint
+        define main() -> Bool do
+            return false;
+        end
+    end
+end
+
+entry
+    return Test().new();
+end

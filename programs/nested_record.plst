@@ -46,3 +46,18 @@ define main() -> Bool do
     sys print_bool(foo(Foo.new(1, 2)).bar(3).plah().and(true));
     return false;
 end
+
+service Test()
+    constructor new()
+    end
+
+    implements EntryPoint
+        define main() -> Bool do
+            return main();
+        end
+    end
+end
+
+entry
+    return Test().new();
+end

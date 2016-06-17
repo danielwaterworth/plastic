@@ -66,7 +66,7 @@ class Executor(object):
     def __init__(self, program):
         self.program = program
         self.memory = [0] * 1024**2
-        self.stack = [ActivationRecord(program.functions['main'], [])]
+        self.stack = [ActivationRecord(program.functions['$main'], [])]
 
     def run(self):
         while True:

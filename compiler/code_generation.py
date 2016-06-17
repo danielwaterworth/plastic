@@ -380,7 +380,7 @@ def generate_code(writer, entry_service, decls):
             interface_type = interface_types[interface]
             generate_interface(program_writer, interface_type, services)
 
-        with program_writer.function('main', [], 1) as (function_writer, _):
+        with program_writer.function('$main', [], 1) as (function_writer, _):
             with function_writer.basic_block() as block_writer:
                 service = entry_service.interface_variable(block_writer)
                 x = block_writer.fun_call("EntryPoint#main", [service])
