@@ -237,7 +237,25 @@ def generate_interface(program_writer, interface, services):
         parameter_sizes = [16] + [param.size for param in parameter_types]
         return_size = return_type.size
         with program_writer.function(function_name, parameter_sizes, return_size) as (function_writer, variables):
-            raise NotImplementedError()
+            basic_block = function_writer.basic_block()
+            zero = basic_block.constant(struct.pack('>Q', 0))
+            eight = basic_block.constant(struct.pack('>Q', 8))
+            sixteen = basic_block.constant(struct.pack('>Q', 16))
+            self_type = basic_block.operation('slice', [zero, eight, variables[0]])
+            self_id = basic_block.operation('slice', [eight, sixteen, variables[0]])
+
+            block = 0
+            for service_name, service_type_id in services:
+                service_type = basic_block.constant(struct.pack('>Q', service_type_id))
+                v = basic_block.operation('eq', [service_type, self_type])
+                basic_block.conditional(v, block + 1, block + 2)
+                basic_block = function_writer.basic_block()
+                result = basic_block.fun_call("%s.%s#%s" % (service_name, interface.name, name), [self_id] + variables[1:])
+                basic_block.ret(result)
+                block += 2
+
+#            basic_block = function_writer.basic_block()
+#            basic_block.unreachable()
 
 def transitive_closure_services(entry_service):
     services = set()
@@ -272,16 +290,18 @@ def generate_code(writer, entry_service, decls):
             elif isinstance(decl, program.Interface):
                 interface_types[decl.name] = decl.type
 
-        services = group_services(transitive_closure_services(entry_service))
-        for name, instantiations in services.iteritems():
+        service_types = {}
+        grouped_services = group_services(transitive_closure_services(entry_service))
+        for (name, instantiations), service_type_id in zip(grouped_services.iteritems(), itertools.count()):
             service_decl = service_decls[name]
+            service_types[name] = service_type_id
             generate_service(program_writer, name, instantiations, service_decl)
 
         services_by_interface = collections.defaultdict(set)
-        for name in services:
+        for name in grouped_services:
             service_decl = service_decls[name]
             for interface in service_decl.type.interfaces:
-                services_by_interface[interface].add(name)
+                services_by_interface[interface].add((name, service_types[name]))
 
         for interface, services in services_by_interface.iteritems():
             interface_type = interface_types[interface]
@@ -289,6 +309,8 @@ def generate_code(writer, entry_service, decls):
 
         with program_writer.function('main', [], 1) as (function_writer, _):
             with function_writer.basic_block() as block_writer:
+                service_type = block_writer.constant(struct.pack('>Q', service_types[entry_service.service]))
                 service_id = block_writer.constant(struct.pack('>Q', 0))
-                x = block_writer.fun_call("%s.EntryPoint#main" % entry_service.service, [service_id])
+                service = block_writer.operation('pack', [service_type, service_id])
+                x = block_writer.fun_call("EntryPoint#main", [service])
                 block_writer.ret(x)

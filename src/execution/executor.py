@@ -82,6 +82,10 @@ class Executor(object):
                     elif instr.operator == 'add':
                         a, b = arguments
                         self.stack[-1].retire(data.add(a, b))
+                    elif instr.operator == 'eq':
+                        a, b = arguments
+                        assert len(a) == len(b)
+                        self.stack[-1].retire('\1' if a == b else '\0')
                     elif instr.operator == 'lt':
                         a, b = arguments
                         self.stack[-1].retire(data.lt(a, b))
