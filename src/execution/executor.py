@@ -162,5 +162,7 @@ class Executor(object):
                         self.stack[-1].goto(term.true_block)
                     else:
                         self.stack[-1].goto(term.false_block)
+                elif isinstance(term, bytecode.CatchFireAndDie):
+                    raise Exception('catching fire and dying')
                 else:
                     raise NotImplementedError('missing terminator implementation')

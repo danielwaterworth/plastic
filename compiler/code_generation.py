@@ -254,8 +254,8 @@ def generate_interface(program_writer, interface, services):
                 basic_block.ret(result)
                 block += 2
 
-#            basic_block = function_writer.basic_block()
-#            basic_block.unreachable()
+            basic_block = function_writer.basic_block()
+            basic_block.catch_fire_and_die()
 
 def transitive_closure_services(entry_service):
     services = set()

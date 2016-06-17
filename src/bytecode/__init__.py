@@ -66,3 +66,6 @@ class Conditional(Terminator):
         self.condition_variable = condition_variable
         self.true_block = true_block
         self.false_block = false_block
+
+class CatchFireAndDie(Terminator):
+    pass

@@ -92,6 +92,9 @@ def read_bytecode(fd, receiver):
                                     false_block = runpack('>Q', fd.read(8))
                                     basic_block_receiver.conditional(variable, true_block, false_block)
                                     break
+                                elif instruction_type == CATCH_FIRE_AND_DIE:
+                                    basic_block_receiver.catch_fire_and_die()
+                                    break
                                 else:
                                     raise NotImplementedError("unknown instruction type: %d" % instruction_type)
             else:

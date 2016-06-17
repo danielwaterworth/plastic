@@ -68,6 +68,9 @@ class BasicBlockConstructor(object):
     def conditional(self, variable, true_block, false_block):
         self.special_conditional(variable, true_block, false_block)
 
+    def catch_fire_and_die(self):
+        self.terminal = bytecode.CatchFireAndDie()
+
     def get_basic_block(self):
         return bytecode.BasicBlock(self.instructions, self.terminal)
 

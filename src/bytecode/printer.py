@@ -44,6 +44,9 @@ class BasicBlockPrinter(object):
     def conditional(self, variable, true_block, false_block):
         print ("CONDITIONAL", variable, true_block, false_block)
 
+    def catch_fire_and_die(self):
+        print "CATCH_FIRE_AND_DIE"
+
 class FunctionPrinter(object):
     def __init__(self, name, argument_sizes, return_size):
         self.name = name

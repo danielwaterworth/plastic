@@ -102,6 +102,10 @@ class BasicBlockWriter(object):
         self.block_writer.write(struct.pack('>Q', true_block))
         self.block_writer.write(struct.pack('>Q', false_block))
 
+    def catch_fire_and_die(self):
+        self.terminator()
+        self.block_writer.write(struct.pack('>B', CATCH_FIRE_AND_DIE))
+
     def write_out(self):
         self.writer.write(self.block_writer.getvalue())
 
