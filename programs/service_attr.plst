@@ -1,0 +1,21 @@
+service Test()
+    attr foo : UInt;
+    attr bar : Bool;
+
+    constructor new()
+        attr foo := 4;
+        attr bar := true;
+    end
+
+    implements EntryPoint
+        define main() -> Bool do
+            sys print_num(attr foo);
+            sys print_bool(attr bar);
+            return false;
+        end
+    end
+end
+
+entry
+    return Test().new();
+end

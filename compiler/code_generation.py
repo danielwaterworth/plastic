@@ -40,9 +40,10 @@ class RecordContext(GenerationContext):
         return self.lookup('@%s' % name)
 
 class ServiceContext(GenerationContext):
-    def __init__(self, name, dependencies, self_variable, function_writer, basic_block, variables):
+    def __init__(self, name, dependencies, attrs, self_variable, function_writer, basic_block, variables):
         self.name = name
         self.dependencies = dependencies
+        self.attrs = attrs
         self.self_variable = self_variable
         self.function_writer = function_writer
         self.basic_block = basic_block
@@ -52,6 +53,7 @@ class ServiceContext(GenerationContext):
         return ServiceContext(
                     self.name,
                     self.dependencies,
+                    self.attrs,
                     self.self_variable,
                     self.function_writer,
                     basic_block,
@@ -61,6 +63,10 @@ class ServiceContext(GenerationContext):
     def attr_lookup(self, name):
         if name in self.dependencies:
             return self.basic_block.fun_call('%s^%s' % (self.name, name), [self.self_variable])
+        elif name in self.attrs:
+            attr = self.attrs[name]
+            offset = self.basic_block.fun_call('%s^%s' % (self.name, name), [self.self_variable])
+            return self.basic_block.load(offset, attr.size)
         else:
             raise NotImplementedError()
 
@@ -268,6 +274,7 @@ def generate_service(program_writer, name, instantiations, service_decl):
             context = ServiceContext(
                             name,
                             service_decl.dependency_names,
+                            service_decl.type.attrs,
                             variables[0],
                             function_writer,
                             basic_block,
