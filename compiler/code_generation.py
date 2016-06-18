@@ -94,6 +94,8 @@ def generate_expression(context, expression):
         return context.basic_block.constant(struct.pack('>Q', expression.n))
     elif isinstance(expression, program.BoolLiteral):
         return context.basic_block.constant(struct.pack('>B', 1 if expression.b else 0))
+    elif isinstance(expression, program.VoidLiteral):
+        return context.basic_block.constant('')
     elif isinstance(expression, program.AttrLoad):
         return context.attr_lookup(expression.attr)
     elif isinstance(expression, program.BinOp):

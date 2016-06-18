@@ -46,7 +46,8 @@ keywords = [
     'interface',
     'implements',
     'private',
-    'entry'
+    'entry',
+    'void'
 ]
 keywords = {keyword: keyword.upper() for keyword in keywords}
 tokens += keywords.values()

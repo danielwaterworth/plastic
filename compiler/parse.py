@@ -246,6 +246,10 @@ def p_expression_false(p):
     '''expression : FALSE'''
     p[0] = program.BoolLiteral(False)
 
+def p_expression_void(p):
+    '''expression : VOID'''
+    p[0] = program.VoidLiteral()
+
 def p_expression_sys_call(p):
     '''expression : SYS LOWER_NAME function_call'''
     p[0] = program.SysCall(p[2], p[3])

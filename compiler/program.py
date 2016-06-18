@@ -209,6 +209,10 @@ class BoolLiteral(Expression):
     def evaluate(self, context):
         return '\1' if self.b else '\0'
 
+class VoidLiteral(Expression):
+    def evaluate(self, context):
+        return ''
+
 class Return(object):
     def __init__(self, expression):
         self.expression = expression

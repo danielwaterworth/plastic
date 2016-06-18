@@ -70,6 +70,8 @@ def type_check_code_block(context, code_block):
             expression.type = program_types.uint
         elif isinstance(expression, program.BoolLiteral):
             expression.type = program_types.bool
+        elif isinstance(expression, program.VoidLiteral):
+            expression.type = program_types.void
         elif isinstance(expression, program.AttrLoad):
             expression.type = context.lookup_attr(expression.attr)
         elif isinstance(expression, program.BinOp):
