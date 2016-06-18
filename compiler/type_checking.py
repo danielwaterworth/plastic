@@ -85,13 +85,13 @@ def type_check(decls):
         types[record.name] = record.type
 
     for record in record_decls:
-        constructors = record.type.constructors
+        constructor_signatures = record.type.constructor_signatures
         methods = record.type.methods
 
         for decl in record.decls:
             if isinstance(decl, program.Constructor):
                 decl.resolve_types(types)
-                constructors[decl.name] = decl.parameter_types
+                constructor_signatures[decl.name] = decl.parameter_types
             elif isinstance(decl, program.Function):
                 decl.resolve_types(types)
                 methods[decl.name] = decl.signature
@@ -119,7 +119,7 @@ def type_check(decls):
         attrs = {}
         dependency_names = {name for name, interface_name in service.dependencies}
         dependencies = [(name, interface_types[interface_name]) for name, interface_name in service.dependencies]
-        constructors = {}
+        constructor_signatures = {}
         interfaces = set()
         private_methods = {}
 
@@ -145,8 +145,8 @@ def type_check(decls):
                     private_methods[private_decl.name] = private_decl.signature
             elif isinstance(service_decl, program.Constructor):
                 service_decl.resolve_types(types)
-                constructors[service_decl.name] = service_decl.parameter_types
-        service.type = program_types.Service(service.name, dependencies, attrs, constructors, interfaces)
+                constructor_signatures[service_decl.name] = service_decl.parameter_types
+        service.type = program_types.Service(service.name, dependencies, attrs, constructor_signatures, interfaces)
         services[service.name] = service.type
         service.private_type = program_types.PrivateService(service.name, private_methods)
 

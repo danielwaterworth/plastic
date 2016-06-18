@@ -94,7 +94,7 @@ def type_check_code_block(context, code_block):
             expression.type = return_type
         elif isinstance(expression, program.ConstructorCall):
             record_type = context.types[expression.ty]
-            expected_arg_types = record_type.constructors[expression.name]
+            expected_arg_types = record_type.constructor_signatures[expression.name]
             argument_types = [infer_expression_type(argument) for argument in expression.arguments]
             assert expected_arg_types == argument_types
             expression.type = record_type
@@ -105,7 +105,7 @@ def type_check_code_block(context, code_block):
             for service_arg, interface in zip(dependency_types, service.dependency_types):
                 assert service_arg.is_subtype_of(interface)
             constructor_arg_types = [infer_expression_type(argument) for argument in expression.arguments]
-            assert constructor_arg_types == service.constructors[expression.name]
+            assert constructor_arg_types == service.constructor_signatures[expression.name]
             expression.type = service
         else:
             raise NotImplementedError('unknown expression type: %s' % type(expression))

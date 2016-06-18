@@ -101,10 +101,10 @@ class Tuple(Type):
         return '<Tuple (%s)>' % ', '.join([repr(t) for t in self.types])
 
 class Record(Type):
-    def __init__(self, name, attrs, constructors, methods):
+    def __init__(self, name, attrs, constructor_signatures, methods):
         self.name = name
         self.attrs = attrs
-        self.constructors = constructors
+        self.constructor_signatures = constructor_signatures
         self.methods = methods
         self.size = sum([t.size for (_, t) in attrs])
 
@@ -143,11 +143,11 @@ class PrivateService(Type):
         raise NotImplementedError('private service object size')
 
 class Service(Type):
-    def __init__(self, name, dependencies, attrs, constructors, interfaces):
+    def __init__(self, name, dependencies, attrs, constructor_signatures, interfaces):
         self.name = name
         self.dependencies = dependencies
         self.attrs = attrs
-        self.constructors = constructors
+        self.constructor_signatures = constructor_signatures
         self.interfaces = interfaces
 
     @property
