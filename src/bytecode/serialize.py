@@ -9,12 +9,20 @@ def serialize_instruction(block_writer, instruction):
         block_writer.fun_call(instruction.function, instruction.arguments)
     elif isinstance(instruction, bytecode.SysCall):
         block_writer.sys_call(instruction.function, instruction.arguments)
+    elif isinstance(instruction, bytecode.NewCoroutine):
+        block_writer.new_coroutine(instruction.function, instruction.arguments)
     elif isinstance(instruction, bytecode.Constant):
         block_writer.constant(instruction.value)
     elif isinstance(instruction, bytecode.Load):
         block_writer.load(instruction.address, instruction.size)
     elif isinstance(instruction, bytecode.Store):
         block_writer.store(instruction.address, instruction.variable)
+    elif isinstance(instruction, bytecode.RunCoroutine):
+        block_writer.run_coroutine(instruction.coroutine)
+    elif isinstance(instruction, bytecode.Yield):
+        block_writer.yield_(instruction.value)
+    elif isinstance(instruction, bytecode.Resume):
+        block_writer.resume(instruction.coroutine, instruction.value)
     else:
         raise NotImplementedError('unknown instruction type: %s' % type(instruction))
 

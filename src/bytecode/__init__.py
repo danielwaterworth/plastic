@@ -36,6 +36,11 @@ class SysCall(Instruction):
         self.function = function
         self.arguments = arguments
 
+class NewCoroutine(Instruction):
+    def __init__(self, function, arguments):
+        self.function = function
+        self.arguments = arguments
+
 class Constant(Instruction):
     def __init__(self, value):
         self.value = value
@@ -49,6 +54,19 @@ class Store(Instruction):
     def __init__(self, address, variable):
         self.address = address
         self.variable = variable
+
+class RunCoroutine(Instruction):
+    def __init__(self, coroutine):
+        self.coroutine = coroutine
+
+class Yield(Instruction):
+    def __init__(self, value):
+        self.value = value
+
+class Resume(Instruction):
+    def __init__(self, coroutine, value):
+        self.coroutine = coroutine
+        self.value = value
 
 class Terminator(object):
     pass

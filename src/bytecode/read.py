@@ -70,6 +70,14 @@ def read_bytecode(fd, receiver):
                                     for i in xrange(arguments_n):
                                         arguments.append(runpack('>Q', fd.read(8)))
                                     basic_block_receiver.sys_call(function_name, arguments)
+                                elif instruction_type == NEW_COROUTINE:
+                                    function_name_n = intmask(runpack('>Q', fd.read(8)))
+                                    function_name = symbols[function_name_n]
+                                    arguments_n = intmask(runpack('>Q', fd.read(8)))
+                                    arguments = []
+                                    for i in xrange(arguments_n):
+                                        arguments.append(runpack('>Q', fd.read(8)))
+                                    basic_block_receiver.new_coroutine(function_name, arguments)
                                 elif instruction_type == LOAD:
                                     address = runpack('>Q', fd.read(8))
                                     size = runpack('>Q', fd.read(8))
@@ -78,6 +86,16 @@ def read_bytecode(fd, receiver):
                                     address = runpack('>Q', fd.read(8))
                                     variable = runpack('>Q', fd.read(8))
                                     basic_block_receiver.store(address, variable)
+                                elif instruction_type == RUN_COROUTINE:
+                                    coroutine = runpack('>Q', fd.read(8))
+                                    basic_block_receiver.run_coroutine(coroutine)
+                                elif instruction_type == YIELD:
+                                    value = runpack('>Q', fd.read(8))
+                                    basic_block_receiver.yield_(value)
+                                elif instruction_type == RESUME:
+                                    coroutine = runpack('>Q', fd.read(8))
+                                    value = runpack('>Q', fd.read(8))
+                                    basic_block_receiver.resume(coroutine, value)
                                 elif instruction_type == RET:
                                     variable = runpack('>Q', fd.read(8))
                                     basic_block_receiver.ret(variable)

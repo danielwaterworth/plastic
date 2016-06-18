@@ -1,5 +1,32 @@
 from rpython.rlib.rstruct.runpack import runpack
 
+def operation(operator, arguments):
+    if operator == 'sub':
+        a, b = arguments
+        return sub(a, b)
+    elif operator == 'add':
+        a, b = arguments
+        return add(a, b)
+    elif operator == 'eq':
+        a, b = arguments
+        assert len(a) == len(b)
+        return '\1' if a == b else '\0'
+    elif operator == 'lt':
+        a, b = arguments
+        return lt(a, b)
+    elif operator == 'and':
+        a, b = arguments
+        return and_(a, b)
+    elif operator == 'pack':
+        return ''.join(arguments)
+    elif operator == 'slice':
+        start, stop, value = arguments
+        assert len(start) == 8
+        assert len(stop) == 8
+        return value[runpack('>Q', start):runpack('>Q', stop)]
+    else:
+        raise NotImplementedError('operator not implemented: %s' % operator)
+
 def pack_uint(n):
     output = []
     for i in xrange(8):

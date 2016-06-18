@@ -62,11 +62,36 @@ class ActivationRecord(object):
         assert var < len(self.values)
         return self.values[var]
 
-class Executor(object):
-    def __init__(self, program):
+class CoroutineExit(object):
+    pass
+
+class CoroutineReturn(CoroutineExit):
+    def __init__(self, value):
+        self.value = value
+
+class CoroutineYield(CoroutineExit):
+    def __init__(self, value):
+        self.value = value
+
+class CoroutineNew(CoroutineExit):
+    def __init__(self, function, arguments):
+        self.function = function
+        self.arguments = arguments
+
+class CoroutineRun(CoroutineExit):
+    def __init__(self, coroutine_id):
+        self.coroutine_id = coroutine_id
+
+class CoroutineResume(CoroutineExit):
+    def __init__(self, coroutine_id, value):
+        self.coroutine_id = coroutine_id
+        self.value = value
+
+class Coroutine(object):
+    def __init__(self, executor, program, function, arguments):
+        self.executor = executor
         self.program = program
-        self.memory = [0] * 1024**2
-        self.stack = [ActivationRecord(program.functions['$main'], [])]
+        self.stack = [ActivationRecord(function, arguments)]
 
     def run(self):
         while True:
@@ -76,31 +101,7 @@ class Executor(object):
                     self.stack[-1].retire(self.stack[-1].resolve_variable(instr.inputs[self.stack[-1].last_block_index]))
                 elif isinstance(instr, bytecode.Operation):
                     arguments = self.stack[-1].resolve_variable_list(instr.arguments)
-                    if instr.operator == 'sub':
-                        a, b = arguments
-                        self.stack[-1].retire(data.sub(a, b))
-                    elif instr.operator == 'add':
-                        a, b = arguments
-                        self.stack[-1].retire(data.add(a, b))
-                    elif instr.operator == 'eq':
-                        a, b = arguments
-                        assert len(a) == len(b)
-                        self.stack[-1].retire('\1' if a == b else '\0')
-                    elif instr.operator == 'lt':
-                        a, b = arguments
-                        self.stack[-1].retire(data.lt(a, b))
-                    elif instr.operator == 'and':
-                        a, b = arguments
-                        self.stack[-1].retire(data.and_(a, b))
-                    elif instr.operator == 'pack':
-                        self.stack[-1].retire(''.join(arguments))
-                    elif instr.operator == 'slice':
-                        start, stop, value = arguments
-                        assert len(start) == 8
-                        assert len(stop) == 8
-                        self.stack[-1].retire(value[runpack('>Q', start):runpack('>Q', stop)])
-                    else:
-                        raise NotImplementedError('operator not implemented: %s' % instr.operator)
+                    self.stack[-1].retire(data.operation(instr.operator, arguments))
                 elif isinstance(instr, bytecode.SysCall):
                     arguments = self.stack[-1].resolve_variable_list(instr.arguments)
                     if instr.function == 'exit':
@@ -125,13 +126,16 @@ class Executor(object):
                 elif isinstance(instr, bytecode.FunctionCall):
                     arguments = self.stack[-1].resolve_variable_list(instr.arguments)
                     self.stack.append(ActivationRecord(self.program.functions[instr.function], arguments))
+                elif isinstance(instr, bytecode.NewCoroutine):
+                    arguments = self.stack[-1].resolve_variable_list(instr.arguments)
+                    return CoroutineNew(instr.function, arguments)
                 elif isinstance(instr, bytecode.Constant):
                     self.stack[-1].retire(instr.value)
                 elif isinstance(instr, bytecode.Load):
                     address_bytes = self.stack[-1].resolve_variable(instr.address)
                     assert len(address_bytes) == 8
                     address = runpack('>Q', address_bytes)
-                    dat = self.memory[address:address+instr.size]
+                    dat = self.executor.memory[address:address+instr.size]
                     self.stack[-1].retire(''.join([chr(i) for i in dat]))
                 elif isinstance(instr, bytecode.Store):
                     address_bytes = self.stack[-1].resolve_variable(instr.address)
@@ -139,8 +143,18 @@ class Executor(object):
                     assert len(address_bytes) == 8
                     address = runpack('>Q', address_bytes)
                     for i in xrange(len(value)):
-                        self.memory[address+i] = ord(value[i])
+                        self.executor.memory[address+i] = ord(value[i])
                     self.stack[-1].retire('')
+                elif isinstance(instr, bytecode.RunCoroutine):
+                    coroutine = self.stack[-1].resolve_variable(instr.coroutine)
+                    return CoroutineRun(coroutine)
+                elif isinstance(instr, bytecode.Yield):
+                    value = self.stack[-1].resolve_variable(instr.value)
+                    return CoroutineYield(value)
+                elif isinstance(instr, bytecode.Resume):
+                    coroutine = self.stack[-1].resolve_variable(instr.coroutine)
+                    value = self.stack[-1].resolve_variable(instr.value)
+                    return CoroutineResume(coroutine, value)
                 else:
                     raise NotImplementedError('missing instruction implementation')
             else:
@@ -152,7 +166,7 @@ class Executor(object):
                     if self.stack:
                         self.stack[-1].retire(value)
                     else:
-                        return value
+                        return CoroutineReturn(value)
                 elif isinstance(term, bytecode.Goto):
                     self.stack[-1].goto(term.block_index)
                 elif isinstance(term, bytecode.Conditional):
@@ -166,3 +180,47 @@ class Executor(object):
                     raise Exception('catching fire and dying')
                 else:
                     raise NotImplementedError('missing terminator implementation')
+
+    def resume(self, value):
+        self.stack[-1].retire(value)
+        return self.run()
+
+class Executor(object):
+    def __init__(self, program):
+        self.program = program
+        self.coroutines = []
+        self.coroutine_stack = [Coroutine(self, program, program.functions['$main'], [])]
+        self.memory = [0] * 1024**2
+
+    def run(self):
+        coroutine = self.coroutine_stack[-1]
+        result = coroutine.run()
+        while True:
+            if isinstance(result, CoroutineReturn):
+                self.coroutine_stack.pop()
+                if self.coroutine_stack:
+                    coroutine = self.coroutine_stack[-1]
+                    result = coroutine.resume(result.value)
+                else:
+                    return 0
+            elif isinstance(result, CoroutineYield):
+                self.coroutine_stack.pop()
+                if self.coroutine_stack:
+                    coroutine = self.coroutine_stack[-1]
+                    result = coroutine.resume(result.value)
+                else:
+                    raise Exception('yielded from top level coroutine')
+            elif isinstance(result, CoroutineResume):
+                coroutine = self.coroutines[runpack('>Q', result.coroutine_id)]
+                self.coroutine_stack.append(coroutine)
+                result = coroutine.resume(result.value)
+            elif isinstance(result, CoroutineNew):
+                function = self.program.functions[result.function]
+                coroutine = Coroutine(self, self.program, function, result.arguments)
+                coroutine_id = data.pack_uint(len(self.coroutines))
+                self.coroutines.append(coroutine)
+                result = self.coroutine_stack[-1].resume(coroutine_id)
+            elif isinstance(result, CoroutineRun):
+                coroutine = self.coroutines[runpack('>Q', result.coroutine_id)]
+                self.coroutine_stack.append(coroutine)
+                result = coroutine.run()

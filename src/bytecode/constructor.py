@@ -41,12 +41,28 @@ class BasicBlockConstructor(object):
         self.instructions.append(bytecode.SysCall(function, arguments))
         return self.function.create_variable()
 
+    def new_coroutine(self, function, arguments):
+        self.instructions.append(bytecode.NewCoroutine(function, arguments))
+        return self.function.create_variable()
+
     def load(self, address, size):
         self.instructions.append(bytecode.Load(address, size))
         return self.function.create_variable()
 
     def store(self, address, variable):
         self.instructions.append(bytecode.Store(address, variable))
+        return self.function.create_variable()
+
+    def run_coroutine(self, coroutine):
+        self.instructions.append(bytecode.RunCoroutine(coroutine))
+        return self.function.create_variable()
+
+    def yield_(self, value):
+        self.instructions.append(bytecode.Yield(value))
+        return self.function.create_variable()
+
+    def resume(self, coroutine, value):
+        self.instructions.append(bytecode.Resume(coroutine, value))
         return self.function.create_variable()
 
     def ret(self, variable):

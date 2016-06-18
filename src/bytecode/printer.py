@@ -35,6 +35,36 @@ class BasicBlockPrinter(object):
         print ("FUN_CALL", name, arguments, var)
         return var
 
+    def new_coroutine(self, name, arguments):
+        var = self.function.create_variable()
+        print ("NEW_COROUTINE", name, arguments, var)
+        return var
+
+    def load(self, address, size):
+        var = self.function.create_variable()
+        print ("LOAD", address, size, var)
+        return var
+
+    def store(self, address, value):
+        var = self.function.create_variable()
+        print ("STORE", address, value, var)
+        return var
+
+    def run_coroutine(self, coroutine):
+        var = self.function.create_variable()
+        print ("RUN_COROUTINE", coroutine, var)
+        return var
+
+    def yield_(self, value):
+        var = self.function.create_variable()
+        print ("YIELD", value, var)
+        return var
+
+    def resume(self, coroutine, value):
+        var = self.function.create_variable()
+        print ("RESUME", coroutine, value, var)
+        return var
+
     def ret(self, variable):
         print ("RET", variable)
 

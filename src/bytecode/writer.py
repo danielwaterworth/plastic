@@ -67,6 +67,16 @@ class BasicBlockWriter(object):
             self.block_writer.write(struct.pack('>Q', arg))
         return self.function.create_variable()
 
+    def new_coroutine(self, function, arguments):
+        assert not self.terminated
+        self.block_writer.write(struct.pack('>B', NEW_COROUTINE))
+        self.block_writer.write(self.writer.symbol(function))
+
+        self.block_writer.write(struct.pack('>Q', len(arguments)))
+        for arg in arguments:
+            self.block_writer.write(struct.pack('>Q', arg))
+        return self.function.create_variable()
+
     def load(self, address, size):
         assert not self.terminated
         self.block_writer.write(struct.pack('>B', LOAD))
@@ -78,6 +88,25 @@ class BasicBlockWriter(object):
         assert not self.terminated
         self.block_writer.write(struct.pack('>B', STORE))
         self.block_writer.write(struct.pack('>Q', address))
+        self.block_writer.write(struct.pack('>Q', value))
+        return self.function.create_variable()
+
+    def run_coroutine(self, coroutine):
+        assert not self.terminated
+        self.block_writer.write(struct.pack('>B', RUN_COROUTINE))
+        self.block_writer.write(struct.pack('>Q', coroutine))
+        return self.function.create_variable()
+
+    def yield_(self, value):
+        assert not self.terminated
+        self.block_writer.write(struct.pack('>B', YIELD))
+        self.block_writer.write(struct.pack('>Q', value))
+        return self.function.create_variable()
+
+    def resume(self, coroutine, value):
+        assert not self.terminated
+        self.block_writer.write(struct.pack('>B', RESUME))
+        self.block_writer.write(struct.pack('>Q', coroutine))
         self.block_writer.write(struct.pack('>Q', value))
         return self.function.create_variable()
 
