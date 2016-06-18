@@ -1,3 +1,5 @@
+import struct
+
 class Decl(object):
     pass
 
@@ -198,14 +200,14 @@ class NumberLiteral(Expression):
         self.n = n
 
     def evaluate(self, context):
-        return self.n
+        return struct.pack('>Q', self.n)
 
 class BoolLiteral(Expression):
     def __init__(self, b):
         self.b = b
 
     def evaluate(self, context):
-        return self.b
+        return '\1' if self.b else '\0'
 
 class Return(object):
     def __init__(self, expression):

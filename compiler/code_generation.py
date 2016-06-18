@@ -393,7 +393,8 @@ def generate_code(writer, entry_service, decls):
                 interface_types[decl.name] = decl.type
 
         service_types = {}
-        grouped_services = group_services(transitive_closure_services(entry_service))
+        all_services = transitive_closure_services(entry_service)
+        grouped_services = group_services(all_services)
         memory_offset = 0
         for (name, instantiations), service_type_id in zip(grouped_services.iteritems(), itertools.count()):
             service_decl = service_decls[name]
@@ -419,6 +420,13 @@ def generate_code(writer, entry_service, decls):
 
         with program_writer.function('$main', [], 1) as (function_writer, _):
             with function_writer.basic_block() as block_writer:
+                for service in all_services:
+                    service_variable = service.service_variable(block_writer)
+                    for attr_name, value in service.attrs.iteritems():
+                        attr_address = block_writer.fun_call('%s^%s' % (service.service, attr_name), [service_variable])
+                        var = block_writer.constant(value)
+                        block_writer.store(attr_address, var)
+
                 service = entry_service.interface_variable(block_writer)
                 x = block_writer.fun_call("EntryPoint#main", [service])
                 block_writer.ret(x)
