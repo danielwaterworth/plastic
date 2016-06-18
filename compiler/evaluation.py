@@ -1,5 +1,6 @@
 import collections
 import struct
+import program
 
 class ServiceInstantiation(object):
     def __init__(self, service, service_arguments, name, arguments):
@@ -31,3 +32,13 @@ class EvaluationContext(object):
         instantiation = ServiceInstantiation(service, service_arguments, name, arguments)
         self.services.append(instantiation)
         return instantiation
+
+def evaluate_entry_block(decls):
+    entry_block = None
+    for decl in decls:
+        if isinstance(decl, program.Entry):
+            entry_block = decl.body
+
+    assert entry_block
+    context = EvaluationContext({})
+    return entry_block.evaluate(context)

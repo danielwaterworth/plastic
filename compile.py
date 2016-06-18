@@ -15,11 +15,8 @@ with open(sys.argv[1], 'r') as fd:
     source = fd.read()
 
 ast = parse.parser.parse(source)
-entry_block = type_checking.type_check(ast)
-
-context = evaluation.EvaluationContext({})
-entry_service = entry_block.evaluate(context)
-
+type_checking.type_check(ast)
+entry_service = evaluation.evaluate_entry_block(ast)
 constructor = bytecode.constructor.BytecodeConstructor()
 code_generation.generate_code(constructor, entry_service, ast)
 
