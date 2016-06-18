@@ -32,8 +32,6 @@ keywords = [
     'define',
     'end',
     'sys',
-    'store',
-    'load',
     'return',
     'do',
     'while',

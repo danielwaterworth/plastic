@@ -274,7 +274,7 @@ precedence = (
     ('nonassoc', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE'),
     ('left', 'PLUS', 'MINUS'),
     ('left', 'MUL', 'DIV'),
-    ('right', 'LOAD', 'ATTR'),
+    ('right', 'ATTR'),
     ('right', 'DOT')
 )
 
