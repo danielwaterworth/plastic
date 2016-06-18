@@ -195,6 +195,13 @@ class AttrLoad(Expression):
     def __init__(self, attr):
         self.attr = attr
 
+class ByteLiteral(Expression):
+    def __init__(self, b):
+        self.b = b
+
+    def evaluate(self, context):
+        return self.b
+
 class NumberLiteral(Expression):
     def __init__(self, n):
         self.n = n

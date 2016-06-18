@@ -234,6 +234,10 @@ def p_expression_variable(p):
     '''expression : LOWER_NAME'''
     p[0] = program.Variable(p[1])
 
+def p_expression_byte(p):
+    '''expression : BYTE'''
+    p[0] = program.ByteLiteral(p[1][1])
+
 def p_expression_number(p):
     '''expression : NUMBER'''
     p[0] = program.NumberLiteral(int(p[1]))

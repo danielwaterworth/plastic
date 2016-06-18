@@ -66,6 +66,8 @@ def type_check_code_block(context, code_block):
     def infer_expression_type(expression):
         if isinstance(expression, program.Variable):
             expression.type = context.lookup(expression.name)
+        elif isinstance(expression, program.ByteLiteral):
+            expression.type = program_types.byte
         elif isinstance(expression, program.NumberLiteral):
             expression.type = program_types.uint
         elif isinstance(expression, program.BoolLiteral):

@@ -90,6 +90,8 @@ operators = {
 def generate_expression(context, expression):
     if isinstance(expression, program.Variable):
         return context.lookup(expression.name)
+    elif isinstance(expression, program.ByteLiteral):
+        return context.basic_block.constant(expression.b)
     elif isinstance(expression, program.NumberLiteral):
         return context.basic_block.constant(struct.pack('>Q', expression.n))
     elif isinstance(expression, program.BoolLiteral):

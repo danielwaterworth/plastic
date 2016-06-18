@@ -1,6 +1,7 @@
 import ply.lex as lex
 
 tokens = [
+    "BYTE",
     "NUMBER",
     "COLON",
     "SEMICOLON",
@@ -52,6 +53,7 @@ keywords = [
 keywords = {keyword: keyword.upper() for keyword in keywords}
 tokens += keywords.values()
 
+t_BYTE = r"'.'"
 t_NUMBER = r'\d+'
 t_COLON = r':'
 t_SEMICOLON = r';'
