@@ -1,11 +1,27 @@
 import program
 import program_types
 
+class Signature(object):
+    pass
+
+class CoroutineSignature(Signature):
+    def __init__(self, parameter_types, receive_type, yield_type):
+        self.parameter_types = parameter_types
+        self.receive_type = receive_type
+        self.yield_type = yield_type
+
+class FunctionSignature(Signature):
+    def __init__(self, parameter_types, return_type):
+        self.parameter_types = parameter_types
+        self.return_type = return_type
+
 class TypeCheckingContext(object):
-    def __init__(self, function_signatures, types, services, return_type, attrs, attr_store, variable_types):
-        self.function_signatures = function_signatures
+    def __init__(self, signatures, types, services, receive_type, yield_type, return_type, attrs, attr_store, variable_types):
+        self.signatures = signatures
         self.types = types
         self.services = services
+        self.receive_type = receive_type
+        self.yield_type = yield_type
         self.return_type = return_type
         self.attrs = attrs
         self.attr_store = attr_store
@@ -29,7 +45,8 @@ class TypeCheckingContext(object):
 
 sys_call_signatures = {
     'print_num': ([program_types.uint], program_types.void),
-    'print_bool': ([program_types.bool], program_types.void)
+    'print_bool': ([program_types.bool], program_types.void),
+    'print_byte': ([program_types.byte], program_types.void)
 }
 
 def merge_contexts(a, b):
@@ -76,15 +93,38 @@ def type_check_code_block(context, code_block):
             expression.type = program_types.void
         elif isinstance(expression, program.AttrLoad):
             expression.type = context.lookup_attr(expression.attr)
+        elif isinstance(expression, program.Yield):
+            value_type = infer_expression_type(expression.value)
+            assert value_type == context.yield_type
+            expression.type = context.receive_type
+        elif isinstance(expression, program.Run):
+            coroutine = infer_expression_type(expression.coroutine)
+            assert isinstance(coroutine, program_types.Coroutine)
+            expression.type = coroutine.yield_type
+        elif isinstance(expression, program.Resume):
+            coroutine = infer_expression_type(expression.coroutine)
+            value = infer_expression_type(expression.value)
+            assert isinstance(coroutine, program_types.Coroutine)
+            assert value == coroutine.receive_type
+            expression.type = coroutine.yield_type
         elif isinstance(expression, program.BinOp):
             rhs_type = infer_expression_type(expression.rhs)
             lhs_type = infer_expression_type(expression.lhs)
             expression.type = operator_type(expression.operator, rhs_type, lhs_type)
         elif isinstance(expression, program.FunctionCall):
-            expected_arg_types, return_type = context.function_signatures[expression.name]
-            argument_types = [infer_expression_type(argument) for argument in expression.arguments]
-            assert expected_arg_types == argument_types
-            expression.type = return_type
+            signature = context.signatures[expression.name]
+            if isinstance(signature, FunctionSignature):
+                argument_types = [infer_expression_type(argument) for argument in expression.arguments]
+                assert signature.parameter_types == argument_types
+                expression.coroutine_call = False
+                expression.type = signature.return_type
+            elif isinstance(signature, CoroutineSignature):
+                argument_types = [infer_expression_type(argument) for argument in expression.arguments]
+                assert signature.parameter_types == argument_types
+                expression.coroutine_call = True
+                expression.type = program_types.Coroutine(signature.receive_type, signature.yield_type)
+            else:
+                raise NotImplementedError('not implemented signature type: %s' % type(signature))
         elif isinstance(expression, program.SysCall):
             expected_arg_types, return_type = sys_call_signatures[expression.name]
             argument_types = [infer_expression_type(argument) for argument in expression.arguments]

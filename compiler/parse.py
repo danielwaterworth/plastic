@@ -13,9 +13,13 @@ def p_program(p):
     p[1].append(p[2])
     p[0] = p[1]
 
-def p_function(p):
-    '''top_level_decl : DEFINE LOWER_NAME OPEN_PARENS parameter_list CLOSE_PARENS ARROW type DO code_block END'''
-    p[0] = program.Function(p[2], p[4], p[7], p[9])
+def p_top_level_function(p):
+    '''top_level_decl : function'''
+    p[0] = p[1]
+
+def p_top_level_coroutine(p):
+    '''top_level_decl : coroutine'''
+    p[0] = p[1]
 
 def p_record(p):
     '''top_level_decl : RECORD UPPER_NAME record_decl_list END'''
@@ -32,6 +36,14 @@ def p_service(p):
 def p_entry(p):
     '''top_level_decl : ENTRY code_block END'''
     p[0] = program.Entry(p[2])
+
+def p_function(p):
+    '''function : DEFINE LOWER_NAME OPEN_PARENS parameter_list CLOSE_PARENS ARROW type DO code_block END'''
+    p[0] = program.Function(p[2], p[4], p[7], p[9])
+
+def p_coroutine(p):
+    '''coroutine : COROUTINE LOWER_NAME OPEN_PARENS parameter_list CLOSE_PARENS type ARROW type DO code_block END'''
+    p[0] = program.Coroutine(p[2], p[4], p[6], p[8], p[10])
 
 def p_dependencies_empty(p):
     '''dependencies : empty'''
@@ -93,8 +105,8 @@ def p_record_constructor(p):
     p[0] = program.Constructor(p[2], p[4], p[6])
 
 def p_record_method(p):
-    '''record_decl : DEFINE LOWER_NAME OPEN_PARENS parameter_list CLOSE_PARENS ARROW type DO code_block END'''
-    p[0] = program.Function(p[2], p[4], p[7], p[9])
+    '''record_decl : function'''
+    p[0] = p[1]
 
 def p_interface_decl_list_empty(p):
     '''interface_decl_list : empty'''
@@ -144,8 +156,8 @@ def p_service_method_list(p):
     p[0] = p[1]
 
 def p_service_method(p):
-    '''service_method : DEFINE LOWER_NAME OPEN_PARENS parameter_list CLOSE_PARENS ARROW type DO code_block END'''
-    p[0] = program.Function(p[2], p[4], p[7], p[9])
+    '''service_method : function'''
+    p[0] = p[1]
 
 def p_type_named(p):
     '''type : UPPER_NAME'''
@@ -274,11 +286,24 @@ def p_expression_attr(p):
     '''expression : ATTR LOWER_NAME'''
     p[0] = program.AttrLoad(p[2])
 
+def p_expression_yield(p):
+    '''expression : YIELD expression'''
+    p[0] = program.Yield(p[2])
+
+def p_expression_run(p):
+    '''expression : RUN OPEN_PARENS expression CLOSE_PARENS'''
+    p[0] = program.Run(p[3])
+
+def p_expression_resume(p):
+    '''expression : RESUME OPEN_PARENS expression COMMA expression CLOSE_PARENS'''
+    p[0] = program.Resume(p[3], p[5])
+
 def p_bracketed_expr(p):
     '''expression : OPEN_PARENS expression CLOSE_PARENS'''
     p[0] = p[2]
 
 precedence = (
+    ('right', 'YIELD'),
     ('nonassoc', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE'),
     ('left', 'PLUS', 'MINUS'),
     ('left', 'MUL', 'DIV'),

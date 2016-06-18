@@ -121,6 +121,12 @@ class Coroutine(object):
                         else:
                             print 'False'
                         self.stack[-1].retire('')
+                    elif instr.function == 'print_byte':
+                        assert len(arguments) == 1
+                        a = arguments[0]
+                        assert len(a) == 1
+                        print a
+                        self.stack[-1].retire('')
                     else:
                         raise NotImplementedError('sys_call not implemented: %s' % instr.function)
                 elif isinstance(instr, bytecode.FunctionCall):

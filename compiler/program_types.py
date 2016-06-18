@@ -60,6 +60,21 @@ class NamedType(Type):
     def resolve_type(self, types):
         return types[self.name]
 
+class Coroutine(Type):
+    def __init__(self, receive_type, yield_type):
+        self.receive_type = receive_type
+        self.yield_type = yield_type
+
+    @property
+    def size(self):
+        return 8
+
+    def __eq__(self, other):
+        return isinstance(other, Coroutine) and self.receive_type == other.receive_type and self.yield_type == other.yield_type
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
 class Array(Type):
     def __init__(self, ty, count):
         self.ty = ty

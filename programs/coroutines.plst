@@ -1,0 +1,26 @@
+coroutine foo() Void -> Byte do
+    yield 'a';
+    return 'b';
+end
+
+define main() -> Bool do
+    c := foo();
+    sys print_byte(run(c));
+    sys print_byte(resume(c, void));
+    return true;
+end
+
+service Test()
+    constructor new()
+    end
+
+    implements EntryPoint
+        define main() -> Bool do
+            return main();
+        end
+    end
+end
+
+entry
+    return Test().new();
+end

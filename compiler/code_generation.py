@@ -100,6 +100,16 @@ def generate_expression(context, expression):
         return context.basic_block.constant('')
     elif isinstance(expression, program.AttrLoad):
         return context.attr_lookup(expression.attr)
+    elif isinstance(expression, program.Yield):
+        value = generate_expression(context, expression.value)
+        return context.basic_block.yield_(value)
+    elif isinstance(expression, program.Run):
+        coroutine = generate_expression(context, expression.coroutine)
+        return context.basic_block.run_coroutine(coroutine)
+    elif isinstance(expression, program.Resume):
+        coroutine = generate_expression(context, expression.coroutine)
+        value = generate_expression(context, expression.value)
+        return context.basic_block.resume(coroutine, value)
     elif isinstance(expression, program.BinOp):
         lhs = generate_expression(context, expression.lhs)
         rhs = generate_expression(context, expression.rhs)
@@ -107,7 +117,10 @@ def generate_expression(context, expression):
         return context.basic_block.operation(operator, [lhs, rhs])
     elif isinstance(expression, program.FunctionCall):
         arguments = [generate_expression(context, argument) for argument in expression.arguments]
-        return context.basic_block.fun_call(expression.name, arguments)
+        if expression.coroutine_call:
+            return context.basic_block.new_coroutine(expression.name, arguments)
+        else:
+            return context.basic_block.fun_call(expression.name, arguments)
     elif isinstance(expression, program.SysCall):
         arguments = [generate_expression(context, argument) for argument in expression.arguments]
         return context.basic_block.sys_call(expression.name, arguments)
@@ -214,8 +227,8 @@ def generate_code_block(context, code_block):
         context.basic_block.ret(variable)
 
 def generate_function(program_writer, function):
-    parameter_names = [parameter[0] for parameter in function.parameters]
-    parameter_sizes = [parameter[1].size for parameter in function.parameters]
+    parameter_names = function.parameter_names
+    parameter_sizes = function.parameter_sizes
     return_size = function.return_type.size
     with program_writer.function(function.name, parameter_sizes, return_size) as (function_writer, variables):
         variables = dict(zip(parameter_names, variables))
@@ -223,6 +236,17 @@ def generate_function(program_writer, function):
         context = FunctionContext(function_writer, basic_block, variables)
 
         generate_code_block(context, function.body)
+
+def generate_coroutine(program_writer, coroutine):
+    parameter_names = coroutine.parameter_names
+    parameter_sizes = coroutine.parameter_sizes
+    return_size = coroutine.yield_type.size
+    with program_writer.function(coroutine.name, parameter_sizes, return_size) as (function_writer, variables):
+        variables = dict(zip(parameter_names, variables))
+        basic_block = function_writer.basic_block()
+        context = FunctionContext(function_writer, basic_block, variables)
+
+        generate_code_block(context, coroutine.body)
 
 def generate_record(program_writer, record):
     def generate_constructor(constructor):
@@ -393,6 +417,8 @@ def generate_code(writer, entry_service, decls):
         for decl in decls:
             if isinstance(decl, program.Function):
                 generate_function(program_writer, decl)
+            elif isinstance(decl, program.Coroutine):
+                generate_coroutine(program_writer, decl)
             elif isinstance(decl, program.Record):
                 generate_record(program_writer, decl)
             elif isinstance(decl, program.Service):

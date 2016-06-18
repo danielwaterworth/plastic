@@ -3,7 +3,7 @@ import program_types
 import type_check_code_block
 
 def type_check(decls):
-    function_signatures = {}
+    signatures = {}
     types = {
         'UInt': program_types.uint,
         'Bool': program_types.bool,
@@ -15,9 +15,11 @@ def type_check(decls):
 
     def type_check_function(function):
         context = type_check_code_block.TypeCheckingContext(
-                        function_signatures,
+                        signatures,
                         types,
                         {},
+                        None,
+                        None,
                         function.return_type,
                         {},
                         False,
@@ -26,11 +28,28 @@ def type_check(decls):
 
         type_check_code_block.type_check_code_block(context, function.body)
 
-    def type_check_constructor(attr_types, constructor):
+    def type_check_coroutine(coroutine):
         context = type_check_code_block.TypeCheckingContext(
-                        function_signatures,
+                        signatures,
                         types,
                         {},
+                        coroutine.receive_type,
+                        coroutine.yield_type,
+                        coroutine.yield_type,
+                        {},
+                        False,
+                        dict(coroutine.parameters)
+                    )
+
+        type_check_code_block.type_check_code_block(context, coroutine.body)
+
+    def type_check_constructor(attr_types, constructor):
+        context = type_check_code_block.TypeCheckingContext(
+                        signatures,
+                        types,
+                        {},
+                        None,
+                        None,
                         program_types.void,
                         attr_types,
                         True,
@@ -43,9 +62,11 @@ def type_check(decls):
         scope = dict(method.parameters)
         scope['self'] = self_type
         context = type_check_code_block.TypeCheckingContext(
-                        function_signatures,
+                        signatures,
                         types,
                         {},
+                        None,
+                        None,
                         method.return_type,
                         attr_types,
                         store_attributes,
@@ -55,6 +76,7 @@ def type_check(decls):
         type_check_code_block.type_check_code_block(context, method.body)
 
     function_decls = []
+    coroutine_decls = []
     record_decls = []
     interface_decls = []
     service_decls = []
@@ -62,6 +84,8 @@ def type_check(decls):
     for decl in decls:
         if isinstance(decl, program.Function):
             function_decls.append(decl)
+        elif isinstance(decl, program.Coroutine):
+            coroutine_decls.append(decl)
         elif isinstance(decl, program.Record):
             record_decls.append(decl)
         elif isinstance(decl, program.Interface):
@@ -151,11 +175,22 @@ def type_check(decls):
         service.private_type = program_types.PrivateService(service.name, private_methods)
 
     for function in function_decls:
-        assert not function.name in function_signatures
-        function.parameters = [(name, t.resolve_type(types)) for name, t in function.parameters]
-        arg_types = [arg[1] for arg in function.parameters]
-        function.return_type = function.return_type.resolve_type(types)
-        function_signatures[function.name] = (arg_types, function.return_type)
+        assert not function.name in signatures
+        function.resolve_types(types)
+        signatures[function.name] = type_check_code_block.FunctionSignature(
+                                            function.parameter_types,
+                                            function.return_type
+                                        )
+
+    for coroutine in coroutine_decls:
+        assert not coroutine.name in signatures
+        coroutine.resolve_types(types)
+        arg_types = coroutine.parameter_types
+        signatures[coroutine.name] = type_check_code_block.CoroutineSignature(
+                                            coroutine.parameter_types,
+                                            coroutine.receive_type,
+                                            coroutine.yield_type
+                                        )
 
     for service in service_decls:
         all_attrs = service.type.all_attrs
@@ -172,6 +207,9 @@ def type_check(decls):
     for function in function_decls:
         type_check_function(function)
 
+    for coroutine in coroutine_decls:
+        type_check_coroutine(coroutine)
+
     if entry:
-        context = type_check_code_block.TypeCheckingContext(function_signatures, types, services, entry_point, {}, False, {})
+        context = type_check_code_block.TypeCheckingContext(signatures, types, services, None, None, entry_point, {}, False, {})
         type_check_code_block.type_check_code_block(context, entry.body)

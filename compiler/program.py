@@ -3,6 +3,31 @@ import struct
 class Decl(object):
     pass
 
+class Coroutine(Decl):
+    def __init__(self, name, parameters, receive_type, yield_type, body):
+        self.name = name
+        self.parameters = parameters
+        self.receive_type = receive_type
+        self.yield_type = yield_type
+        self.body = body
+
+    def resolve_types(self, types):
+        self.parameters = [(name, param.resolve_type(types)) for name, param in self.parameters]
+        self.receive_type = self.receive_type.resolve_type(types)
+        self.yield_type = self.yield_type.resolve_type(types)
+
+    @property
+    def parameter_types(self):
+        return [param[1] for param in self.parameters]
+
+    @property
+    def parameter_names(self):
+        return [param[0] for param in self.parameters]
+
+    @property
+    def parameter_sizes(self):
+        return [t.size for t in self.parameter_types]
+
 class Function(Decl):
     def __init__(self, name, parameters, return_type, body):
         self.name = name
@@ -194,6 +219,19 @@ class ServiceConstructorCall(Expression):
 class AttrLoad(Expression):
     def __init__(self, attr):
         self.attr = attr
+
+class Yield(Expression):
+    def __init__(self, value):
+        self.value = value
+
+class Run(Expression):
+    def __init__(self, coroutine):
+        self.coroutine = coroutine
+
+class Resume(Expression):
+    def __init__(self, coroutine, value):
+        self.coroutine = coroutine
+        self.value = value
 
 class ByteLiteral(Expression):
     def __init__(self, b):
