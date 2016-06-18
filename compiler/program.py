@@ -124,6 +124,10 @@ class AttrStore(Statement):
         self.attr = attr
         self.value = value
 
+    def evaluate(self, context):
+        value = self.value.evaluate(context)
+        context.attr_add(self.attr, value)
+
 class Conditional(Statement):
     def __init__(self, expression, true_block, false_block):
         self.expression = expression
@@ -193,9 +197,15 @@ class NumberLiteral(Expression):
     def __init__(self, n):
         self.n = n
 
+    def evaluate(self, context):
+        return self.n
+
 class BoolLiteral(Expression):
     def __init__(self, b):
         self.b = b
+
+    def evaluate(self, context):
+        return self.b
 
 class Return(object):
     def __init__(self, expression):

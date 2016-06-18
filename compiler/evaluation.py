@@ -3,11 +3,10 @@ import struct
 import program
 
 class ServiceInstantiation(object):
-    def __init__(self, service, service_arguments, name, arguments):
+    def __init__(self, service, service_arguments, attrs):
         self.service = service
         self.service_arguments = service_arguments
-        self.name = name
-        self.arguments = arguments
+        self.attrs = attrs
 
     def interface_variable(self, basic_block):
         service_type = basic_block.constant(struct.pack('>Q', self.service_type_id))
@@ -18,27 +17,45 @@ class ServiceInstantiation(object):
         return basic_block.constant(struct.pack('>Q', self.service_id))
 
 class EvaluationContext(object):
-    def __init__(self, variables):
+    def __init__(self, service_constructors, variables):
+        self.service_constructors = service_constructors
         self.variables = {}
         self.services = []
+        self.attrs = {}
 
     def lookup(self, name):
         return self.variables[name]
 
-    def add(self, name, variable):
-        self.variables[name] = variable
+    def add(self, name, value):
+        self.variables[name] = value
+
+    def attr_add(self, name, value):
+        self.attrs[name] = value
 
     def service(self, service, service_arguments, name, arguments):
-        instantiation = ServiceInstantiation(service, service_arguments, name, arguments)
+        constructor = self.service_constructors[(service, name)]
+        variables = dict(zip(constructor.parameter_names, arguments))
+
+        new_context = EvaluationContext(self.service_constructors, variables)
+        for statement in constructor.body.statements:
+            statement.evaluate(new_context)
+
+        instantiation = ServiceInstantiation(service, service_arguments, new_context.attrs)
         self.services.append(instantiation)
         return instantiation
 
 def evaluate_entry_block(decls):
+    service_constructors = {}
+
     entry_block = None
     for decl in decls:
         if isinstance(decl, program.Entry):
             entry_block = decl.body
+        elif isinstance(decl, program.Service):
+            for service_decl in decl.decls:
+                if isinstance(service_decl, program.Constructor):
+                    service_constructors[(decl.name, service_decl.name)] = service_decl
 
     assert entry_block
-    context = EvaluationContext({})
+    context = EvaluationContext(service_constructors, {})
     return entry_block.evaluate(context)

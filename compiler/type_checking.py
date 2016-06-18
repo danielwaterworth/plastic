@@ -172,7 +172,6 @@ def type_check(decls):
     for function in function_decls:
         type_check_function(function)
 
-    assert entry
-    context = type_check_code_block.TypeCheckingContext(function_signatures, types, services, entry_point, {}, False, {})
-    type_check_code_block.type_check_code_block(context, entry.body)
-    return entry.body
+    if entry:
+        context = type_check_code_block.TypeCheckingContext(function_signatures, types, services, entry_point, {}, False, {})
+        type_check_code_block.type_check_code_block(context, entry.body)
