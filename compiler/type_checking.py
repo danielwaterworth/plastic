@@ -39,7 +39,7 @@ def type_check(decls):
 
         type_check_code_block.type_check_code_block(context, constructor.body)
 
-    def type_check_method(self_type, attr_types, method):
+    def type_check_method(self_type, attr_types, method, store_attributes=False):
         scope = dict(method.parameters)
         scope['self'] = self_type
         context = type_check_code_block.TypeCheckingContext(
@@ -48,7 +48,7 @@ def type_check(decls):
                         {},
                         method.return_type,
                         attr_types,
-                        False,
+                        store_attributes,
                         scope
                     )
 
@@ -162,10 +162,10 @@ def type_check(decls):
         for service_decl in service.decls:
             if isinstance(service_decl, program.Implements):
                 for method_decl in service_decl.decls:
-                    type_check_method(service.private_type, all_attrs, method_decl)
+                    type_check_method(service.private_type, all_attrs, method_decl, True)
             elif isinstance(service_decl, program.Private):
                 for private_decl in service_decl.decls:
-                    type_check_method(service.private_type, all_attrs, private_decl)
+                    type_check_method(service.private_type, all_attrs, private_decl, True)
             elif isinstance(service_decl, program.Constructor):
                 type_check_constructor(attrs, service_decl)
 

@@ -70,6 +70,10 @@ class ServiceContext(GenerationContext):
         else:
             raise NotImplementedError()
 
+    def attr_add(self, name, value):
+        offset = self.basic_block.fun_call('%s^%s' % (self.name, name), [self.self_variable])
+        self.basic_block.store(offset, value)
+
 operators = {
     '<': 'lt',
     '>': 'gt',
