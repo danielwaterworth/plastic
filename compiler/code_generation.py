@@ -1,6 +1,5 @@
 import collections
 import itertools
-import struct
 import program
 import program_types
 
@@ -91,13 +90,13 @@ def generate_expression(context, expression):
     if isinstance(expression, program.Variable):
         return context.lookup(expression.name)
     elif isinstance(expression, program.ByteLiteral):
-        return context.basic_block.constant(expression.b)
+        return context.basic_block.constant_byte(expression.b)
     elif isinstance(expression, program.NumberLiteral):
-        return context.basic_block.constant(struct.pack('>Q', expression.n))
+        return context.basic_block.constant_uint(expression.n)
     elif isinstance(expression, program.BoolLiteral):
-        return context.basic_block.constant(struct.pack('>B', 1 if expression.b else 0))
+        return context.basic_block.constant_byte('\1' if expression.b else '\0')
     elif isinstance(expression, program.VoidLiteral):
-        return context.basic_block.constant('')
+        return context.basic_block.constant_void()
     elif isinstance(expression, program.AttrLoad):
         return context.attr_lookup(expression.attr)
     elif isinstance(expression, program.Yield):
@@ -277,10 +276,10 @@ def generate_record(program_writer, record):
 
             variable_dict = dict(zip(parameter_names, variables))
             offset = 0
-            offset_var = basic_block.constant(struct.pack('>Q', offset))
+            offset_var = basic_block.constant_uint(offset)
             for attr, attr_type in record.type.attrs:
                 offset += attr_type.size
-                new_offset_var = basic_block.constant(struct.pack('>Q', offset))
+                new_offset_var = basic_block.constant_uint(offset)
                 var = basic_block.operation('slice', [offset_var, new_offset_var, variables[0]])
                 variable_dict['@%s' % attr] = var
                 offset_var = new_offset_var
@@ -334,7 +333,7 @@ def generate_service(program_writer, name, instantiations, service_decl):
             self_variable = variables[0]
             block = 0
             for instantiation in instantiations:
-                service_id = basic_block.constant(struct.pack('>Q', instantiation.service_id))
+                service_id = basic_block.constant_uint(instantiation.service_id)
                 v = basic_block.operation('eq', [self_variable, service_id])
                 basic_block.conditional(v, block + 1, block + 2)
                 basic_block = function_writer.basic_block()
@@ -353,11 +352,11 @@ def generate_service(program_writer, name, instantiations, service_decl):
             block = 0
             for instantiation in instantiations:
                 attr_offset = memory_offset + instantiation.memory_offset
-                service_id = basic_block.constant(struct.pack('>Q', instantiation.service_id))
+                service_id = basic_block.constant_uint(instantiation.service_id)
                 v = basic_block.operation('eq', [self_variable, service_id])
                 basic_block.conditional(v, block + 1, block + 2)
                 basic_block = function_writer.basic_block()
-                result = basic_block.constant(struct.pack('>Q', attr_offset))
+                result = basic_block.constant_uint(attr_offset)
                 basic_block.ret(result)
                 basic_block = function_writer.basic_block()
                 block += 2
@@ -371,15 +370,15 @@ def generate_interface(program_writer, interface, services):
         return_size = return_type.size
         with program_writer.function(function_name, parameter_sizes, return_size) as (function_writer, variables):
             basic_block = function_writer.basic_block()
-            zero = basic_block.constant(struct.pack('>Q', 0))
-            eight = basic_block.constant(struct.pack('>Q', 8))
-            sixteen = basic_block.constant(struct.pack('>Q', 16))
+            zero = basic_block.constant_uint(0)
+            eight = basic_block.constant_uint(8)
+            sixteen = basic_block.constant_uint(16)
             self_type = basic_block.operation('slice', [zero, eight, variables[0]])
             self_id = basic_block.operation('slice', [eight, sixteen, variables[0]])
 
             block = 0
             for service_name, service_type_id in services:
-                service_type = basic_block.constant(struct.pack('>Q', service_type_id))
+                service_type = basic_block.constant_uint(service_type_id)
                 v = basic_block.operation('eq', [service_type, self_type])
                 basic_block.conditional(v, block + 1, block + 2)
                 basic_block = function_writer.basic_block()

@@ -1,5 +1,4 @@
 import collections
-import struct
 import program
 
 class ServiceInstantiation(object):
@@ -9,12 +8,12 @@ class ServiceInstantiation(object):
         self.attrs = attrs
 
     def interface_variable(self, basic_block):
-        service_type = basic_block.constant(struct.pack('>Q', self.service_type_id))
-        service_id = basic_block.constant(struct.pack('>Q', self.service_id))
+        service_type = basic_block.constant_uint(self.service_type_id)
+        service_id = basic_block.constant_uint(self.service_id)
         return basic_block.operation('pack', [service_type, service_id])
 
     def service_variable(self, basic_block):
-        return basic_block.constant(struct.pack('>Q', self.service_id))
+        return basic_block.constant_uint(self.service_id)
 
 class EvaluationContext(object):
     def __init__(self, service_constructors, variables):

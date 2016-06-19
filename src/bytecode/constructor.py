@@ -1,4 +1,5 @@
 import bytecode
+import struct
 
 class BasicBlockConstructor(object):
     def __init__(self, function, index):
@@ -28,6 +29,16 @@ class BasicBlockConstructor(object):
     def constant(self, value):
         self.instructions.append(bytecode.Constant(value))
         return self.function.create_variable()
+
+    def constant_uint(self, value):
+        return self.constant(struct.pack('>Q', value))
+
+    def constant_byte(self, value):
+        assert isinstance(value, str) and len(value) == 1
+        return self.constant(value)
+
+    def constant_void(self):
+        return self.constant('')
 
     def operation(self, operator, arguments):
         self.instructions.append(bytecode.Operation(operator, arguments))
