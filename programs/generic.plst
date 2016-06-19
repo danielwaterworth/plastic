@@ -1,0 +1,19 @@
+define id(v : a) -> a do
+    return v;
+end
+
+service Test()
+    constructor new()
+    end
+
+    implements EntryPoint
+        define main() -> Bool do
+            sys print_string(id("Hello, world"));
+            return true;
+        end
+    end
+end
+
+entry
+    return Test().new();
+end

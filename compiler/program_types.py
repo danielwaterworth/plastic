@@ -51,6 +51,13 @@ class NamedType(Type):
     def resolve_type(self, types):
         return types[self.name]
 
+class Variable(Type):
+    def __init__(self, name):
+        self.name = name
+
+    def __eq__(self, other):
+        return isinstance(other, Variable) and self.name == other.name
+
 class Coroutine(Type):
     def __init__(self, receive_type, yield_type):
         self.receive_type = receive_type

@@ -159,6 +159,10 @@ def p_service_method(p):
     '''service_method : function'''
     p[0] = p[1]
 
+def p_type_variable(p):
+    '''type : LOWER_NAME'''
+    p[0] = program_types.Variable(p[1])
+
 def p_type_named(p):
     '''type : UPPER_NAME'''
     p[0] = program_types.NamedType(p[1])

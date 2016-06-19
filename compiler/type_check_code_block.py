@@ -15,6 +15,28 @@ class FunctionSignature(Signature):
         self.parameter_types = parameter_types
         self.return_type = return_type
 
+    def produce_return_type(self, argument_types):
+        assert len(self.parameter_types) == len(argument_types)
+
+        quantified = {}
+        for parameter, argument in zip(self.parameter_types, argument_types):
+            if isinstance(parameter, program_types.Variable):
+                name = parameter.name
+                if name in quantified:
+                    assert quantified[name] == argument
+                else:
+                    quantified[name] = argument
+            else:
+                assert parameter == argument
+
+        if isinstance(self.return_type, program_types.Variable):
+            # FIXME: it is possible that the return type is not in the
+            #        quantified dict, but if this is the case, the variable
+            #        name may clash in the current scope.
+            return quantified[self.return_type.name]
+        else:
+            return self.return_type
+
 class TypeCheckingContext(object):
     def __init__(self, signatures, types, services, receive_type, yield_type, return_type, attrs, attr_store, variable_types):
         self.signatures = signatures
@@ -122,9 +144,9 @@ def type_check_code_block(context, code_block):
             signature = context.signatures[expression.name]
             if isinstance(signature, FunctionSignature):
                 argument_types = [infer_expression_type(argument) for argument in expression.arguments]
-                assert signature.parameter_types == argument_types
+                return_type = signature.produce_return_type(argument_types)
                 expression.coroutine_call = False
-                expression.type = signature.return_type
+                expression.type = return_type
             elif isinstance(signature, CoroutineSignature):
                 argument_types = [infer_expression_type(argument) for argument in expression.arguments]
                 assert signature.parameter_types == argument_types
