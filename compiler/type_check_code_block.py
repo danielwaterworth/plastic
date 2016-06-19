@@ -20,22 +20,9 @@ class FunctionSignature(Signature):
 
         quantified = {}
         for parameter, argument in zip(self.parameter_types, argument_types):
-            if isinstance(parameter, program_types.Variable):
-                name = parameter.name
-                if name in quantified:
-                    assert quantified[name] == argument
-                else:
-                    quantified[name] = argument
-            else:
-                assert parameter == argument
+            parameter.match(quantified, argument)
 
-        if isinstance(self.return_type, program_types.Variable):
-            # FIXME: it is possible that the return type is not in the
-            #        quantified dict, but if this is the case, the variable
-            #        name may clash in the current scope.
-            return quantified[self.return_type.name]
-        else:
-            return self.return_type
+        return self.return_type.template(quantified)
 
 class TypeCheckingContext(object):
     def __init__(self, signatures, types, services, receive_type, yield_type, return_type, attrs, attr_store, variable_types):
@@ -180,6 +167,9 @@ def type_check_code_block(context, code_block):
             constructor_arg_types = [infer_expression_type(argument) for argument in expression.arguments]
             assert constructor_arg_types == service.constructor_signatures[expression.name]
             expression.type = service
+        elif isinstance(expression, program.TupleConstructor):
+            value_types = [infer_expression_type(value) for value in expression.values]
+            expression.type = program_types.Tuple(value_types)
         else:
             raise NotImplementedError('unknown expression type: %s' % type(expression))
         return expression.type

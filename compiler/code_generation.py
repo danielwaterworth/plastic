@@ -134,6 +134,9 @@ def generate_expression(context, expression):
     elif isinstance(expression, program.ConstructorCall):
         arguments = [generate_expression(context, argument) for argument in expression.arguments]
         return context.basic_block.fun_call('%s.%s' % (expression.ty, expression.name), arguments)
+    elif isinstance(expression, program.TupleConstructor):
+        values = [generate_expression(context, value) for value in expression.values]
+        return context.basic_block.operation('pack', values)
     else:
         raise NotImplementedError('unknown expression type: %s' % type(expression))
 

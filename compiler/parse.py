@@ -310,6 +310,11 @@ def p_expression_is_done(p):
     '''expression : IS_DONE OPEN_PARENS expression CLOSE_PARENS'''
     p[0] = program.IsDone(p[3])
 
+def p_expression_tuple(p):
+    '''expression : OPEN_PARENS non_empty_argument_list COMMA expression CLOSE_PARENS'''
+    p[2].append(p[4])
+    p[0] = program.TupleConstructor(p[2])
+
 def p_bracketed_expr(p):
     '''expression : OPEN_PARENS expression CLOSE_PARENS'''
     p[0] = p[2]

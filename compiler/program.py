@@ -217,6 +217,10 @@ class ServiceConstructorCall(Expression):
         arguments = [arg.evaluate(context) for arg in self.arguments]
         return context.service(self.service, service_arguments, self.name, arguments)
 
+class TupleConstructor(Expression):
+    def __init__(self, values):
+        self.values = values
+
 class AttrLoad(Expression):
     def __init__(self, attr):
         self.attr = attr

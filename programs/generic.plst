@@ -1,5 +1,9 @@
-define id(v : a) -> a do
-    return v;
+define foo(v : (UInt, UInt)) -> UInt do
+    return 4;
+end
+
+define bar(v : a, w : b) -> (a, b) do
+    return (v, w);
 end
 
 service Test()
@@ -8,7 +12,7 @@ service Test()
 
     implements EntryPoint
         define main() -> Bool do
-            sys print_string(id("Hello, world"));
+            sys print_num(foo(bar(3, 4)));
             return true;
         end
     end

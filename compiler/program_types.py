@@ -9,7 +9,11 @@ class Type(object):
         return self == other
 
 class Void(Type):
-    pass
+    def match(self, _, other):
+        assert isinstance(other, Void)
+
+    def template(self, _):
+        return self
 
 void = Void()
 
@@ -23,6 +27,12 @@ class Bool(Type):
         else:
             raise KeyError('no such method %s on %s' % (name, self))
 
+    def match(self, _, other):
+        assert isinstance(other, Bool)
+
+    def template(self, _):
+        return self
+
 bool = Bool()
 
 bool_methods = {
@@ -30,17 +40,29 @@ bool_methods = {
 }
 
 class Byte(Type):
-    pass
+    def match(self, _, other):
+        assert isinstance(other, Byte)
+
+    def template(self, _):
+        return self
 
 byte = Byte()
 
 class String(Type):
-    pass
+    def match(self, _, other):
+        assert isinstance(other, String)
+
+    def template(self, _):
+        return self
 
 string = String()
 
 class UInt(Type):
-    pass
+    def match(self, _, other):
+        assert isinstance(other, UInt)
+
+    def template(self, _):
+        return self
 
 uint = UInt()
 
@@ -57,6 +79,15 @@ class Variable(Type):
 
     def __eq__(self, other):
         return isinstance(other, Variable) and self.name == other.name
+
+    def match(self, quantified, other):
+        if self.name in quantified:
+            assert quantified[self.name] == other
+        else:
+            quantified[self.name] = other
+
+    def template(self, quantified):
+        return quantified[self.name]
 
 class Coroutine(Type):
     def __init__(self, receive_type, yield_type):
@@ -98,6 +129,15 @@ class Tuple(Type):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def match(self, quantified, other):
+        assert isinstance(other, Tuple)
+        assert len(self.types) == len(other.types)
+        for a, b in zip(self.types, other.types):
+            a.match(quantified, b)
+
+    def template(self, quantified):
+        return Tuple([t.template(quantified) for t in self.types])
+
     def __repr__(self):
         return '<Tuple (%s)>' % ', '.join([repr(t) for t in self.types])
 
@@ -114,6 +154,12 @@ class Record(Type):
     def method(self, basic_block, object_variable, name, arguments):
         self.methods[name]
         return basic_block.fun_call('%s#%s' % (self.name, name), [object_variable] + arguments)
+
+    def match(self, _, other):
+        assert self == other
+
+    def template(self, _):
+        return self
 
 class Interface(Type):
     def __init__(self, name, methods):
