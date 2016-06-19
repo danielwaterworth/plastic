@@ -78,10 +78,9 @@ class BasicBlockPrinter(object):
         print "CATCH_FIRE_AND_DIE"
 
 class FunctionPrinter(object):
-    def __init__(self, name, num_arguments, return_size):
+    def __init__(self, name, num_arguments):
         self.name = name
         self.num_arguments = num_arguments
-        self.return_size = return_size
         self.next_variable = num_arguments
 
     def create_variable(self):
@@ -90,7 +89,7 @@ class FunctionPrinter(object):
         return i
 
     def __enter__(self):
-        print ("FUNCTION START", self.name, self.num_arguments, self.return_size)
+        print ("FUNCTION START", self.name, self.num_arguments)
         return (self, [i for i in xrange(self.num_arguments)])
 
     def __exit__(self, type, value, traceback):
@@ -101,8 +100,8 @@ class FunctionPrinter(object):
         return BasicBlockPrinter(self)
 
 class ProgramPrinter(object):
-    def function(self, name, num_arguments, return_size):
-        return FunctionPrinter(name, num_arguments, return_size)
+    def function(self, name, num_arguments):
+        return FunctionPrinter(name, num_arguments)
 
 class BytecodePrinter(object):
     def __enter__(self):
