@@ -95,7 +95,7 @@ def generate_expression(context, expression):
     elif isinstance(expression, program.BoolLiteral):
         return context.basic_block.constant_byte('\1' if expression.b else '\0')
     elif isinstance(expression, program.VoidLiteral):
-        return context.basic_block.constant_void()
+        return context.basic_block.void()
     elif isinstance(expression, program.AttrLoad):
         return context.attr_lookup(expression.attr)
     elif isinstance(expression, program.Yield):

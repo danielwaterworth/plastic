@@ -37,6 +37,24 @@ class BasicBlockWriter(object):
         self.block_writer.write(value)
         return self.function.create_variable()
 
+    def constant_byte(self, value):
+        assert not self.terminated
+        assert len(value) == 1
+        self.block_writer.write(struct.pack('>B', CONST_BYTE))
+        self.block_writer.write(value)
+        return self.function.create_variable()
+
+    def constant_uint(self, value):
+        assert not self.terminated
+        self.block_writer.write(struct.pack('>B', CONST_UINT))
+        self.block_writer.write(struct.pack('>Q', value))
+        return self.function.create_variable()
+
+    def void(self):
+        assert not self.terminated
+        self.block_writer.write(struct.pack('>B', VOID))
+        return self.function.create_variable()
+
     def operation(self, operator, arguments):
         assert not self.terminated
         self.block_writer.write(struct.pack('>B', OPERATION))

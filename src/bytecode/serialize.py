@@ -13,6 +13,12 @@ def serialize_instruction(block_writer, instruction):
         block_writer.new_coroutine(instruction.function, instruction.arguments)
     elif isinstance(instruction, bytecode.Constant):
         block_writer.constant(instruction.value)
+    elif isinstance(instruction, bytecode.ConstantByte):
+        block_writer.constant_byte(instruction.value)
+    elif isinstance(instruction, bytecode.ConstantUInt):
+        block_writer.constant_uint(instruction.value)
+    elif isinstance(instruction, bytecode.Void):
+        block_writer.void()
     elif isinstance(instruction, bytecode.Load):
         block_writer.load(instruction.address)
     elif isinstance(instruction, bytecode.Store):

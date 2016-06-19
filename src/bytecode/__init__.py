@@ -44,6 +44,17 @@ class Constant(Instruction):
     def __init__(self, value):
         self.value = value
 
+class ConstantByte(Instruction):
+    def __init__(self, value):
+        self.value = value
+
+class ConstantUInt(Instruction):
+    def __init__(self, value):
+        self.value = value
+
+class Void(Instruction):
+    pass
+
 class Load(Instruction):
     def __init__(self, address):
         self.address = address

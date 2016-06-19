@@ -31,14 +31,16 @@ class BasicBlockConstructor(object):
         return self.function.create_variable()
 
     def constant_uint(self, value):
-        return self.constant(struct.pack('>Q', value))
+        self.instructions.append(bytecode.ConstantUInt(value))
+        return self.function.create_variable()
 
     def constant_byte(self, value):
-        assert isinstance(value, str) and len(value) == 1
-        return self.constant(value)
+        self.instructions.append(bytecode.ConstantByte(value))
+        return self.function.create_variable()
 
-    def constant_void(self):
-        return self.constant('')
+    def void(self):
+        self.instructions.append(bytecode.Void())
+        return self.function.create_variable()
 
     def operation(self, operator, arguments):
         self.instructions.append(bytecode.Operation(operator, arguments))

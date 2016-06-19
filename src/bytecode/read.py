@@ -41,6 +41,12 @@ def read_bytecode(fd, receiver):
                                 elif instruction_type == CONST:
                                     length = intmask(runpack('>Q', fd.read(8)))
                                     basic_block_receiver.constant(fd.read(length))
+                                elif instruction_type == CONST_BYTE:
+                                    basic_block_receiver.constant_byte(fd.read(1))
+                                elif instruction_type == CONST_UINT:
+                                    basic_block_receiver.constant_uint(runpack('>Q', fd.read(8)))
+                                elif instruction_type == VOID:
+                                    basic_block_receiver.void()
                                 elif instruction_type == OPERATION:
                                     operator_n = intmask(runpack('>Q', fd.read(8)))
                                     operator = symbols[operator_n]

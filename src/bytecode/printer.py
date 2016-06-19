@@ -20,6 +20,21 @@ class BasicBlockPrinter(object):
         print ("CONSTANT", value, var)
         return var
 
+    def constant_byte(self, value):
+        var = self.function.create_variable()
+        print ("CONST_BYTE", value, var)
+        return var
+
+    def constant_uint(self, value):
+        var = self.function.create_variable()
+        print ("CONST_UINT", value, var)
+        return var
+
+    def void(self):
+        var = self.function.create_variable()
+        print ("VOID", var)
+        return var
+
     def operation(self, name, arguments):
         var = self.function.create_variable()
         print ("OPERATION", name, arguments, var)

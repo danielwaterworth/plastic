@@ -132,6 +132,10 @@ class Coroutine(object):
                     return CoroutineNew(instr.function, arguments)
                 elif isinstance(instr, bytecode.Constant):
                     self.stack[-1].retire(instr.value)
+                elif isinstance(instr, bytecode.ConstantByte):
+                    self.stack[-1].retire(instr.value)
+                elif isinstance(instr, bytecode.ConstantUInt):
+                    self.stack[-1].retire(data.pack_uint(instr.value))
                 elif isinstance(instr, bytecode.Load):
                     address_bytes = self.stack[-1].resolve_variable(instr.address)
                     assert len(address_bytes) == 8
