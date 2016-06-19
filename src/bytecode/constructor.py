@@ -26,8 +26,8 @@ class BasicBlockConstructor(object):
     def phi(self, inputs):
         return self.special_phi(inputs)[0]
 
-    def constant(self, value):
-        self.instructions.append(bytecode.Constant(value))
+    def constant_bool(self, value):
+        self.instructions.append(bytecode.ConstantBool(value))
         return self.function.create_variable()
 
     def constant_uint(self, value):

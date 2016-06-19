@@ -1,6 +1,3 @@
-from rpython.rlib.rarithmetic import r_ulonglong
-from rpython.rlib.rstruct.runpack import runpack
-
 import bytecode
 import data
 
@@ -15,7 +12,7 @@ class ActivationRecord(object):
             block_value_offsets.append(len(arguments) + n_values)
             n_values += len(block.instructions)
 
-        self.values = arguments + ['' for i in xrange(n_values)]
+        self.values = arguments + [data.Void() for i in xrange(n_values)]
         self.block_value_offsets = block_value_offsets
         self.next_value = len(arguments)
         self.last_block_index = 0
@@ -74,15 +71,17 @@ class CoroutineNew(CoroutineExit):
         self.arguments = arguments
 
 class CoroutineRun(CoroutineExit):
-    def __init__(self, coroutine_id):
-        self.coroutine_id = coroutine_id
+    def __init__(self, coroutine):
+        assert isinstance(coroutine, Coroutine)
+        self.coroutine = coroutine
 
 class CoroutineResume(CoroutineExit):
-    def __init__(self, coroutine_id, value):
-        self.coroutine_id = coroutine_id
+    def __init__(self, coroutine, value):
+        assert isinstance(coroutine, Coroutine)
+        self.coroutine = coroutine
         self.value = value
 
-class Coroutine(object):
+class Coroutine(data.Data):
     def __init__(self, executor, program, function, arguments):
         self.executor = executor
         self.program = program
@@ -104,24 +103,24 @@ class Coroutine(object):
                     elif instr.function == 'print_num':
                         assert len(arguments) == 1
                         a = arguments[0]
-                        assert len(a) == 8
-                        print runpack('>Q', a)
-                        self.stack[-1].retire('')
+                        assert isinstance(a, data.UInt)
+                        print a.n
+                        self.stack[-1].retire(data.Void())
                     elif instr.function == 'print_bool':
                         assert len(arguments) == 1
                         a = arguments[0]
-                        assert len(a) == 1
-                        if a != '\0':
+                        assert isinstance(a, data.Bool)
+                        if a.b:
                             print 'True'
                         else:
                             print 'False'
-                        self.stack[-1].retire('')
+                        self.stack[-1].retire(data.Void())
                     elif instr.function == 'print_byte':
                         assert len(arguments) == 1
                         a = arguments[0]
-                        assert len(a) == 1
-                        print a
-                        self.stack[-1].retire('')
+                        assert isinstance(a, data.Byte)
+                        print a.b
+                        self.stack[-1].retire(data.Void())
                     else:
                         raise NotImplementedError('sys_call not implemented: %s' % instr.function)
                 elif isinstance(instr, bytecode.FunctionCall):
@@ -130,25 +129,25 @@ class Coroutine(object):
                 elif isinstance(instr, bytecode.NewCoroutine):
                     arguments = self.stack[-1].resolve_variable_list(instr.arguments)
                     return CoroutineNew(instr.function, arguments)
-                elif isinstance(instr, bytecode.Constant):
-                    self.stack[-1].retire(instr.value)
+                elif isinstance(instr, bytecode.ConstantBool):
+                    self.stack[-1].retire(data.Bool(instr.value))
                 elif isinstance(instr, bytecode.ConstantByte):
-                    self.stack[-1].retire(instr.value)
+                    self.stack[-1].retire(data.Byte(instr.value))
                 elif isinstance(instr, bytecode.ConstantUInt):
-                    self.stack[-1].retire(data.pack_uint(instr.value))
+                    self.stack[-1].retire(data.UInt(instr.value))
+                elif isinstance(instr, bytecode.Void):
+                    self.stack[-1].retire(data.Void())
                 elif isinstance(instr, bytecode.Load):
-                    address_bytes = self.stack[-1].resolve_variable(instr.address)
-                    assert len(address_bytes) == 8
-                    address = runpack('>Q', address_bytes)
-                    dat = self.executor.memory[address]
+                    address = self.stack[-1].resolve_variable(instr.address)
+                    assert isinstance(address, data.UInt)
+                    dat = self.executor.memory[address.n]
                     self.stack[-1].retire(dat)
                 elif isinstance(instr, bytecode.Store):
-                    address_bytes = self.stack[-1].resolve_variable(instr.address)
+                    address = self.stack[-1].resolve_variable(instr.address)
                     value = self.stack[-1].resolve_variable(instr.variable)
-                    assert len(address_bytes) == 8
-                    address = runpack('>Q', address_bytes)
-                    self.executor.memory[address] = value
-                    self.stack[-1].retire('')
+                    assert isinstance(address, data.UInt)
+                    self.executor.memory[address.n] = value
+                    self.stack[-1].retire(data.Void())
                 elif isinstance(instr, bytecode.RunCoroutine):
                     coroutine = self.stack[-1].resolve_variable(instr.coroutine)
                     return CoroutineRun(coroutine)
@@ -174,8 +173,8 @@ class Coroutine(object):
                     self.stack[-1].goto(term.block_index)
                 elif isinstance(term, bytecode.Conditional):
                     v = self.stack[-1].resolve_variable(term.condition_variable)
-                    assert len(v) == 1
-                    if v != chr(0):
+                    assert isinstance(v, data.Bool)
+                    if v.b:
                         self.stack[-1].goto(term.true_block)
                     else:
                         self.stack[-1].goto(term.false_block)
@@ -191,9 +190,8 @@ class Coroutine(object):
 class Executor(object):
     def __init__(self, program):
         self.program = program
-        self.coroutines = []
         self.coroutine_stack = [Coroutine(self, program, program.functions['$main'], [])]
-        self.memory = [''] * 1024**2
+        self.memory = [data.Void()] * 1024**2
 
     def run(self):
         coroutine = self.coroutine_stack[-1]
@@ -214,16 +212,12 @@ class Executor(object):
                 else:
                     raise Exception('yielded from top level coroutine')
             elif isinstance(result, CoroutineResume):
-                coroutine = self.coroutines[runpack('>Q', result.coroutine_id)]
-                self.coroutine_stack.append(coroutine)
+                self.coroutine_stack.append(result.coroutine)
                 result = coroutine.resume(result.value)
             elif isinstance(result, CoroutineNew):
                 function = self.program.functions[result.function]
                 coroutine = Coroutine(self, self.program, function, result.arguments)
-                coroutine_id = data.pack_uint(len(self.coroutines))
-                self.coroutines.append(coroutine)
-                result = self.coroutine_stack[-1].resume(coroutine_id)
+                result = self.coroutine_stack[-1].resume(coroutine)
             elif isinstance(result, CoroutineRun):
-                coroutine = self.coroutines[runpack('>Q', result.coroutine_id)]
-                self.coroutine_stack.append(coroutine)
+                self.coroutine_stack.append(result.coroutine)
                 result = coroutine.run()

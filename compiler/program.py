@@ -1,4 +1,5 @@
 import struct
+import data
 
 class Decl(object):
     pass
@@ -238,25 +239,25 @@ class ByteLiteral(Expression):
         self.b = b
 
     def evaluate(self, context):
-        return self.b
+        return data.Byte(self.b)
 
 class NumberLiteral(Expression):
     def __init__(self, n):
         self.n = n
 
     def evaluate(self, context):
-        return struct.pack('>Q', self.n)
+        return data.UInt(self.n)
 
 class BoolLiteral(Expression):
     def __init__(self, b):
         self.b = b
 
     def evaluate(self, context):
-        return '\1' if self.b else '\0'
+        return data.Bool(self.b)
 
 class VoidLiteral(Expression):
     def evaluate(self, context):
-        return ''
+        return data.Void()
 
 class Return(object):
     def __init__(self, expression):

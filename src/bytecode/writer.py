@@ -30,11 +30,10 @@ class BasicBlockWriter(object):
             self.block_writer.write(struct.pack('>Q', var))
         return self.function.create_variable()
 
-    def constant(self, value):
+    def constant_bool(self, value):
         assert not self.terminated
-        self.block_writer.write(struct.pack('>B', CONST))
-        self.block_writer.write(struct.pack('>Q', len(value)))
-        self.block_writer.write(value)
+        self.block_writer.write(struct.pack('>B', CONST_BOOL))
+        self.block_writer.write('\1' if value else '\0')
         return self.function.create_variable()
 
     def constant_byte(self, value):

@@ -1,4 +1,34 @@
-from rpython.rlib.rstruct.runpack import runpack
+class Data(object):
+    pass
+
+class UInt(Data):
+    def __init__(self, n):
+        self.n = n
+
+    def write_out(self, basic_block):
+        return basic_block.constant_uint(self.n)
+
+class Bool(Data):
+    def __init__(self, b):
+        self.b = b
+
+    def write_out(self, basic_block):
+        return basic_block.constant_bool(self.b)
+
+class Void(Data):
+    def write_out(self, basic_block):
+        return basic_block.void()
+
+class Byte(Data):
+    def __init__(self, b):
+        self.b = b
+
+    def write_out(self, basic_block):
+        return basic_block.constant_byte(self.b)
+
+class Packed(Data):
+    def __init__(self, values):
+        self.values = values
 
 def operation(operator, arguments):
     if operator == 'sub':
@@ -9,8 +39,7 @@ def operation(operator, arguments):
         return add(a, b)
     elif operator == 'eq':
         a, b = arguments
-        assert len(a) == len(b)
-        return '\1' if a == b else '\0'
+        return eq(a, b)
     elif operator == 'lt':
         a, b = arguments
         return lt(a, b)
@@ -18,45 +47,36 @@ def operation(operator, arguments):
         a, b = arguments
         return and_(a, b)
     elif operator == 'pack':
-        return ''.join(arguments)
-    elif operator == 'slice':
-        start, stop, value = arguments
-        assert len(start) == 8
-        assert len(stop) == 8
-        return value[runpack('>Q', start):runpack('>Q', stop)]
+        return Packed(arguments)
+    elif operator == 'index':
+        a, b = arguments
+        assert isinstance(a, Packed)
+        assert isinstance(b, UInt)
+        return a.values[b.n]
     else:
         raise NotImplementedError('operator not implemented: %s' % operator)
 
-def pack_uint(n):
-    output = []
-    for i in xrange(8):
-        output.append(chr(n & 0xff))
-        n = n >> 8
-    output.reverse()
-    return ''.join(output)
-
-def pack_bool(b):
-    if b:
-        return chr(1)
-    else:
-        return chr(0)
-
 def sub(a, b):
-    assert len(a) == 8
-    assert len(b) == 8
-    return pack_uint(runpack('>Q', a) - runpack('>Q', b))
+    assert isinstance(a, UInt)
+    assert isinstance(b, UInt)
+    return UInt(a.n - b.n)
 
 def add(a, b):
-    assert len(a) == 8
-    assert len(b) == 8
-    return pack_uint(runpack('>Q', a) + runpack('>Q', b))
+    assert isinstance(a, UInt)
+    assert isinstance(b, UInt)
+    return UInt(a.n - b.n)
 
 def lt(a, b):
-    assert len(a) == 8
-    assert len(b) == 8
-    return pack_bool(runpack('>Q', a) < runpack('>Q', b))
+    assert isinstance(a, UInt)
+    assert isinstance(b, UInt)
+    return Bool(a.n < b.n)
 
 def and_(a, b):
-    assert len(a) == 1
-    assert len(b) == 1
-    return '\1' if (a != '\0') and (b != '\0') else '\0'
+    assert isinstance(a, Bool)
+    assert isinstance(b, Bool)
+    return Bool(a.b and b.b)
+
+def eq(a, b):
+    assert isinstance(a, UInt)
+    assert isinstance(b, UInt)
+    return Bool(a.n == b.n)

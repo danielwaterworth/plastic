@@ -15,9 +15,9 @@ class BasicBlockPrinter(object):
         print ("PHI", inputs, var)
         return var
 
-    def constant(self, value):
+    def constant_bool(self, value):
         var = self.function.create_variable()
-        print ("CONSTANT", value, var)
+        print ("CONST_BOOL", value, var)
         return var
 
     def constant_byte(self, value):

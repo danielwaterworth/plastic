@@ -9,17 +9,11 @@ class Type(object):
         return self == other
 
 class Void(Type):
-    @property
-    def size(self):
-        return 0
+    pass
 
 void = Void()
 
 class Bool(Type):
-    @property
-    def size(self):
-        return 1
-
     def method_signature(self, name):
         return bool_methods[name]
 
@@ -36,26 +30,18 @@ bool_methods = {
 }
 
 class Byte(Type):
-    @property
-    def size(self):
-        return 1
+    pass
 
 byte = Byte()
 
 class UInt(Type):
-    @property
-    def size(self):
-        return 8
+    pass
 
 uint = UInt()
 
 class NamedType(Type):
     def __init__(self, name):
         self.name = name
-
-    @property
-    def size(self):
-        raise Exception()
 
     def resolve_type(self, types):
         return types[self.name]
@@ -64,10 +50,6 @@ class Coroutine(Type):
     def __init__(self, receive_type, yield_type):
         self.receive_type = receive_type
         self.yield_type = yield_type
-
-    @property
-    def size(self):
-        return 8
 
     def __eq__(self, other):
         return isinstance(other, Coroutine) and self.receive_type == other.receive_type and self.yield_type == other.yield_type
@@ -79,10 +61,6 @@ class Array(Type):
     def __init__(self, ty, count):
         self.ty = ty
         self.count = count
-
-    @property
-    def size(self):
-        return self.ty.size * self.count
 
     def resolve_type(self, types):
         self.ty = self.ty.resolve_type(types)
@@ -97,10 +75,6 @@ class Array(Type):
 class Tuple(Type):
     def __init__(self, types):
         self.types = types
-
-    @property
-    def size(self):
-        return sum([t.size for t in self.types])
 
     def resolve_type(self, types):
         self.types = [t.resolve_type(types) for t in self.types]
@@ -121,7 +95,6 @@ class Record(Type):
         self.attrs = attrs
         self.constructor_signatures = constructor_signatures
         self.methods = methods
-        self.size = sum([t.size for (_, t) in attrs])
 
     def method_signature(self, name):
         return self.methods[name]
@@ -134,10 +107,6 @@ class Interface(Type):
     def __init__(self, name, methods):
         self.name = name
         self.methods = methods
-
-    @property
-    def size(self):
-        raise NotImplementedError('interface object size')
 
     def method_signature(self, name):
         return self.methods[name]
@@ -152,10 +121,6 @@ class Interface(Type):
 class PrivateService(Type):
     def __init__(self, name, private_methods):
         self.private_methods = private_methods
-
-    @property
-    def size(self):
-        raise NotImplementedError('private service object size')
 
 class Service(Type):
     def __init__(self, name, dependencies, attrs, constructor_signatures, interfaces):
@@ -174,10 +139,6 @@ class Service(Type):
     @property
     def dependency_types(self):
         return [t for _, t in self.dependencies]
-
-    @property
-    def size(self):
-        raise NotImplementedError('service object size')
 
     def is_subtype_of(self, other):
         if isinstance(other, Interface):

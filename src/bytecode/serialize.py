@@ -11,8 +11,8 @@ def serialize_instruction(block_writer, instruction):
         block_writer.sys_call(instruction.function, instruction.arguments)
     elif isinstance(instruction, bytecode.NewCoroutine):
         block_writer.new_coroutine(instruction.function, instruction.arguments)
-    elif isinstance(instruction, bytecode.Constant):
-        block_writer.constant(instruction.value)
+    elif isinstance(instruction, bytecode.ConstantBool):
+        block_writer.constant_bool(instruction.value)
     elif isinstance(instruction, bytecode.ConstantByte):
         block_writer.constant_byte(instruction.value)
     elif isinstance(instruction, bytecode.ConstantUInt):

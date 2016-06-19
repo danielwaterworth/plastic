@@ -93,7 +93,7 @@ def generate_expression(context, expression):
     elif isinstance(expression, program.NumberLiteral):
         return context.basic_block.constant_uint(expression.n)
     elif isinstance(expression, program.BoolLiteral):
-        return context.basic_block.constant_byte('\1' if expression.b else '\0')
+        return context.basic_block.constant_bool(expression.b)
     elif isinstance(expression, program.VoidLiteral):
         return context.basic_block.void()
     elif isinstance(expression, program.AttrLoad):
@@ -273,9 +273,9 @@ def generate_record(program_writer, record):
             offset = 0
             offset_var = basic_block.constant_uint(offset)
             for attr, attr_type in record.type.attrs:
-                offset += attr_type.size
+                offset += 1
                 new_offset_var = basic_block.constant_uint(offset)
-                var = basic_block.operation('slice', [offset_var, new_offset_var, variables[0]])
+                var = basic_block.operation('index', [variables[0], offset_var])
                 variable_dict['@%s' % attr] = var
                 offset_var = new_offset_var
 
@@ -364,10 +364,9 @@ def generate_interface(program_writer, interface, services):
         with program_writer.function(function_name, num_parameters) as (function_writer, variables):
             basic_block = function_writer.basic_block()
             zero = basic_block.constant_uint(0)
-            eight = basic_block.constant_uint(8)
-            sixteen = basic_block.constant_uint(16)
-            self_type = basic_block.operation('slice', [zero, eight, variables[0]])
-            self_id = basic_block.operation('slice', [eight, sixteen, variables[0]])
+            one = basic_block.constant_uint(1)
+            self_type = basic_block.operation('index', [variables[0], zero])
+            self_id = basic_block.operation('index', [variables[0], one])
 
             block = 0
             for service_name, service_type_id in services:
@@ -450,7 +449,7 @@ def generate_code(writer, entry_service, decls):
                     service_variable = service.service_variable(block_writer)
                     for attr_name, value in service.attrs.iteritems():
                         attr_address = block_writer.fun_call('%s^%s' % (service.service, attr_name), [service_variable])
-                        var = block_writer.constant(value)
+                        var = value.write_out(block_writer)
                         block_writer.store(attr_address, var)
 
                 service = entry_service.interface_variable(block_writer)
