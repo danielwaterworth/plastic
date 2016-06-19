@@ -136,15 +136,14 @@ class Coroutine(object):
                     address_bytes = self.stack[-1].resolve_variable(instr.address)
                     assert len(address_bytes) == 8
                     address = runpack('>Q', address_bytes)
-                    dat = self.executor.memory[address:address+instr.size]
-                    self.stack[-1].retire(''.join([chr(i) for i in dat]))
+                    dat = self.executor.memory[address]
+                    self.stack[-1].retire(dat)
                 elif isinstance(instr, bytecode.Store):
                     address_bytes = self.stack[-1].resolve_variable(instr.address)
                     value = self.stack[-1].resolve_variable(instr.variable)
                     assert len(address_bytes) == 8
                     address = runpack('>Q', address_bytes)
-                    for i in xrange(len(value)):
-                        self.executor.memory[address+i] = ord(value[i])
+                    self.executor.memory[address] = value
                     self.stack[-1].retire('')
                 elif isinstance(instr, bytecode.RunCoroutine):
                     coroutine = self.stack[-1].resolve_variable(instr.coroutine)
@@ -190,7 +189,7 @@ class Executor(object):
         self.program = program
         self.coroutines = []
         self.coroutine_stack = [Coroutine(self, program, program.functions['$main'], [])]
-        self.memory = [0] * 1024**2
+        self.memory = [''] * 1024**2
 
     def run(self):
         coroutine = self.coroutine_stack[-1]

@@ -14,7 +14,7 @@ def serialize_instruction(block_writer, instruction):
     elif isinstance(instruction, bytecode.Constant):
         block_writer.constant(instruction.value)
     elif isinstance(instruction, bytecode.Load):
-        block_writer.load(instruction.address, instruction.size)
+        block_writer.load(instruction.address)
     elif isinstance(instruction, bytecode.Store):
         block_writer.store(instruction.address, instruction.variable)
     elif isinstance(instruction, bytecode.RunCoroutine):

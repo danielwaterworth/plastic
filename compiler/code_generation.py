@@ -63,9 +63,8 @@ class ServiceContext(GenerationContext):
         if name in self.dependencies:
             return self.basic_block.fun_call('%s^%s' % (self.name, name), [self.self_variable])
         elif name in self.attrs:
-            attr = self.attrs[name]
             offset = self.basic_block.fun_call('%s^%s' % (self.name, name), [self.self_variable])
-            return self.basic_block.load(offset, attr.size)
+            return self.basic_block.load(offset)
         else:
             raise NotImplementedError()
 
@@ -356,7 +355,7 @@ def generate_service(program_writer, name, instantiations, service_decl):
                 basic_block = function_writer.basic_block()
                 block += 2
             basic_block.catch_fire_and_die()
-        memory_offset += attr_type.size
+        memory_offset += 1
 
 def generate_interface(program_writer, interface, services):
     for name, (parameter_types, return_type) in interface.methods.iteritems():
@@ -429,7 +428,7 @@ def generate_code(writer, entry_service, decls):
             for instantiation in instantiations:
                 instantiation.service_type_id = service_type_id
                 instantiation.memory_offset = memory_offset
-                memory_offset += service_decl.type.attrs_size
+                memory_offset += len(service_decl.type.attrs)
 
         for name, instantiations in grouped_services.iteritems():
             service_decl = service_decls[name]

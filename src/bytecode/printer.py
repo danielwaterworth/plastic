@@ -40,9 +40,9 @@ class BasicBlockPrinter(object):
         print ("NEW_COROUTINE", name, arguments, var)
         return var
 
-    def load(self, address, size):
+    def load(self, address):
         var = self.function.create_variable()
-        print ("LOAD", address, size, var)
+        print ("LOAD", address, var)
         return var
 
     def store(self, address, value):

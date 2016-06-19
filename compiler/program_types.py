@@ -166,10 +166,6 @@ class Service(Type):
         self.interfaces = interfaces
 
     @property
-    def attrs_size(self):
-        return sum([t.size for t in self.attrs.values()])
-
-    @property
     def all_attrs(self):
         all_attrs = dict(self.attrs)
         all_attrs.update(dict(self.dependencies))
