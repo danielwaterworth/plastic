@@ -1,12 +1,15 @@
 coroutine foo() Void -> Byte do
     yield 'a';
-    return 'b';
+    return void;
 end
 
 define main() -> Bool do
     c := foo();
+    sys print_bool(is_done(c));
     sys print_byte(run(c));
+    sys print_bool(is_done(c));
     sys print_byte(resume(c, void));
+    sys print_bool(is_done(c));
     return true;
 end
 

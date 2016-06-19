@@ -86,8 +86,10 @@ class Coroutine(data.Data):
         self.executor = executor
         self.program = program
         self.stack = [ActivationRecord(function, arguments)]
+        self.done = False
 
     def run(self):
+        assert not self.done
         while True:
             instr = self.stack[-1].next_instruction()
             if instr:
@@ -95,12 +97,16 @@ class Coroutine(data.Data):
                     self.stack[-1].retire(self.stack[-1].resolve_variable(instr.inputs[self.stack[-1].last_block_index]))
                 elif isinstance(instr, bytecode.Operation):
                     arguments = self.stack[-1].resolve_variable_list(instr.arguments)
-                    self.stack[-1].retire(data.operation(instr.operator, arguments))
+                    if instr.operator == 'is_done':
+                        assert len(arguments) == 1
+                        coroutine = arguments[0]
+                        assert isinstance(coroutine, Coroutine)
+                        self.stack[-1].retire(data.Bool(coroutine.done))
+                    else:
+                        self.stack[-1].retire(data.operation(instr.operator, arguments))
                 elif isinstance(instr, bytecode.SysCall):
                     arguments = self.stack[-1].resolve_variable_list(instr.arguments)
-                    if instr.function == 'exit':
-                        return None
-                    elif instr.function == 'print_num':
+                    if instr.function == 'print_num':
                         assert len(arguments) == 1
                         a = arguments[0]
                         assert isinstance(a, data.UInt)
@@ -176,6 +182,7 @@ class Coroutine(data.Data):
                     if self.stack:
                         self.stack[-1].retire(value)
                     else:
+                        self.done = True
                         return CoroutineReturn(value)
                 elif isinstance(term, bytecode.Goto):
                     self.stack[-1].goto(term.block_index)

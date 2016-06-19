@@ -35,7 +35,7 @@ def type_check(decls):
                         {},
                         coroutine.receive_type,
                         coroutine.yield_type,
-                        coroutine.yield_type,
+                        program_types.void,
                         {},
                         False,
                         dict(coroutine.parameters)

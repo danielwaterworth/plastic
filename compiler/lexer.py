@@ -52,7 +52,8 @@ keywords = [
     'coroutine',
     'yield',
     'run',
-    'resume'
+    'resume',
+    'is_done'
 ]
 keywords = {keyword: keyword.upper() for keyword in keywords}
 tokens += keywords.values()

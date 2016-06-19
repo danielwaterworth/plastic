@@ -234,6 +234,10 @@ class Resume(Expression):
         self.coroutine = coroutine
         self.value = value
 
+class IsDone(Expression):
+    def __init__(self, coroutine):
+        self.coroutine = coroutine
+
 class ByteLiteral(Expression):
     def __init__(self, b):
         self.b = b

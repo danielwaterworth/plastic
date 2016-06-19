@@ -110,6 +110,10 @@ def type_check_code_block(context, code_block):
             assert isinstance(coroutine, program_types.Coroutine)
             assert value == coroutine.receive_type
             expression.type = coroutine.yield_type
+        elif isinstance(expression, program.IsDone):
+            coroutine = infer_expression_type(expression.coroutine)
+            assert isinstance(coroutine, program_types.Coroutine)
+            expression.type = program_types.bool
         elif isinstance(expression, program.BinOp):
             rhs_type = infer_expression_type(expression.rhs)
             lhs_type = infer_expression_type(expression.lhs)

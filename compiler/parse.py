@@ -302,6 +302,10 @@ def p_expression_resume(p):
     '''expression : RESUME OPEN_PARENS expression COMMA expression CLOSE_PARENS'''
     p[0] = program.Resume(p[3], p[5])
 
+def p_expression_is_done(p):
+    '''expression : IS_DONE OPEN_PARENS expression CLOSE_PARENS'''
+    p[0] = program.IsDone(p[3])
+
 def p_bracketed_expr(p):
     '''expression : OPEN_PARENS expression CLOSE_PARENS'''
     p[0] = p[2]
