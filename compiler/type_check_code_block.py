@@ -46,7 +46,8 @@ class TypeCheckingContext(object):
 sys_call_signatures = {
     'print_num': ([program_types.uint], program_types.void),
     'print_bool': ([program_types.bool], program_types.void),
-    'print_byte': ([program_types.byte], program_types.void)
+    'print_byte': ([program_types.byte], program_types.void),
+    'print_string': ([program_types.string], program_types.void)
 }
 
 def merge_contexts(a, b):
@@ -91,6 +92,8 @@ def type_check_code_block(context, code_block):
             expression.type = program_types.bool
         elif isinstance(expression, program.VoidLiteral):
             expression.type = program_types.void
+        elif isinstance(expression, program.StringLiteral):
+            expression.type = program_types.string
         elif isinstance(expression, program.AttrLoad):
             expression.type = context.lookup_attr(expression.attr)
         elif isinstance(expression, program.Yield):

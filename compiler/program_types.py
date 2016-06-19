@@ -34,6 +34,11 @@ class Byte(Type):
 
 byte = Byte()
 
+class String(Type):
+    pass
+
+string = String()
+
 class UInt(Type):
     pass
 

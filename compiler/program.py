@@ -259,6 +259,13 @@ class VoidLiteral(Expression):
     def evaluate(self, context):
         return data.Void()
 
+class StringLiteral(Expression):
+    def __init__(self, v):
+        self.v = v
+
+    def evaluate(self, context):
+        return data.String(v)
+
 class Return(object):
     def __init__(self, expression):
         self.expression = expression

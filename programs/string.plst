@@ -1,0 +1,15 @@
+service Test()
+    constructor new()
+    end
+
+    implements EntryPoint
+        define main() -> Bool do
+            sys print_string("Hello, world!");
+            return true;
+        end
+    end
+end
+
+entry
+    return Test().new();
+end

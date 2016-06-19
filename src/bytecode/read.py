@@ -40,6 +40,9 @@ def read_bytecode(fd, receiver):
                                     basic_block_receiver.phi(inputs)
                                 elif instruction_type == CONST_BYTE:
                                     basic_block_receiver.constant_byte(fd.read(1))
+                                elif instruction_type == CONST_STRING:
+                                    length = intmask(runpack('>Q', fd.read(8)))
+                                    basic_block_receiver.constant_string(fd.read(length))
                                 elif instruction_type == CONST_BOOL:
                                     basic_block_receiver.constant_bool(fd.read(1) != '\0')
                                 elif instruction_type == CONST_UINT:

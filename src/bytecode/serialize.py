@@ -15,6 +15,8 @@ def serialize_instruction(block_writer, instruction):
         block_writer.constant_bool(instruction.value)
     elif isinstance(instruction, bytecode.ConstantByte):
         block_writer.constant_byte(instruction.value)
+    elif isinstance(instruction, bytecode.ConstantString):
+        block_writer.constant_string(instruction.value)
     elif isinstance(instruction, bytecode.ConstantUInt):
         block_writer.constant_uint(instruction.value)
     elif isinstance(instruction, bytecode.Void):
