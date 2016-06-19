@@ -17,16 +17,16 @@ class Coroutine(Decl):
         self.yield_type = self.yield_type.resolve_type(types)
 
     @property
+    def num_parameters(self):
+        return len(self.parameters)
+
+    @property
     def parameter_types(self):
         return [param[1] for param in self.parameters]
 
     @property
     def parameter_names(self):
         return [param[0] for param in self.parameters]
-
-    @property
-    def parameter_sizes(self):
-        return [t.size for t in self.parameter_types]
 
 class Function(Decl):
     def __init__(self, name, parameters, return_type, body):
@@ -40,6 +40,10 @@ class Function(Decl):
         self.return_type = self.return_type.resolve_type(types)
 
     @property
+    def num_parameters(self):
+        return len(self.parameters)
+
+    @property
     def parameter_types(self):
         return [param[1] for param in self.parameters]
 
@@ -50,10 +54,6 @@ class Function(Decl):
     @property
     def parameter_names(self):
         return [param[0] for param in self.parameters]
-
-    @property
-    def parameter_sizes(self):
-        return [t.size for t in self.parameter_types]
 
 class Record(Decl):
     def __init__(self, name, decls):
@@ -94,16 +94,16 @@ class Constructor(Decl):
         self.parameters = [(name, t.resolve_type(types)) for name, t in self.parameters]
 
     @property
+    def num_parameters(self):
+        return len(self.parameters)
+
+    @property
     def parameter_types(self):
         return [param[1] for param in self.parameters]
 
     @property
     def parameter_names(self):
         return [param[0] for param in self.parameters]
-
-    @property
-    def parameter_sizes(self):
-        return [t.size for t in self.parameter_types]
 
 class Implements(Decl):
     def __init__(self, interface, decls):

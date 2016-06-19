@@ -227,9 +227,9 @@ def generate_code_block(context, code_block):
 
 def generate_function(program_writer, function):
     parameter_names = function.parameter_names
-    parameter_sizes = function.parameter_sizes
+    num_parameters = function.num_parameters
     return_size = function.return_type.size
-    with program_writer.function(function.name, parameter_sizes, return_size) as (function_writer, variables):
+    with program_writer.function(function.name, num_parameters, return_size) as (function_writer, variables):
         variables = dict(zip(parameter_names, variables))
         basic_block = function_writer.basic_block()
         context = FunctionContext(function_writer, basic_block, variables)
@@ -238,9 +238,9 @@ def generate_function(program_writer, function):
 
 def generate_coroutine(program_writer, coroutine):
     parameter_names = coroutine.parameter_names
-    parameter_sizes = coroutine.parameter_sizes
+    num_parameters = coroutine.num_parameters
     return_size = coroutine.yield_type.size
-    with program_writer.function(coroutine.name, parameter_sizes, return_size) as (function_writer, variables):
+    with program_writer.function(coroutine.name, num_parameters, return_size) as (function_writer, variables):
         variables = dict(zip(parameter_names, variables))
         basic_block = function_writer.basic_block()
         context = FunctionContext(function_writer, basic_block, variables)
@@ -253,9 +253,9 @@ def generate_record(program_writer, record):
 
         function_name = '%s.%s' % (record.name, constructor.name)
         parameter_names = constructor.parameter_names
-        parameter_sizes = constructor.parameter_sizes
+        num_parameters = constructor.num_parameters
         return_size = record.type.size
-        with program_writer.function(function_name, parameter_sizes, return_size) as (function_writer, variables):
+        with program_writer.function(function_name, num_parameters, return_size) as (function_writer, variables):
             variables = dict(zip(parameter_names, variables))
             basic_block = function_writer.basic_block()
             context = RecordContext(function_writer, basic_block, variables)
@@ -269,9 +269,9 @@ def generate_record(program_writer, record):
     def generate_method(method):
         function_name = '%s#%s' % (record.name, method.name)
         parameter_names = ['self'] + method.parameter_names
-        parameter_sizes = [record.type.size] + method.parameter_sizes
+        num_parameters = 1 + method.num_parameters
         return_size = method.return_type.size
-        with program_writer.function(function_name, parameter_sizes, return_size) as (function_writer, variables):
+        with program_writer.function(function_name, num_parameters, return_size) as (function_writer, variables):
             basic_block = function_writer.basic_block()
 
             variable_dict = dict(zip(parameter_names, variables))
@@ -297,9 +297,9 @@ def generate_record(program_writer, record):
 def generate_service(program_writer, name, instantiations, service_decl):
     def generate_service_method(function_name, function):
         parameter_names = ['self'] + function.parameter_names
-        parameter_sizes = [8] + function.parameter_sizes
+        num_parameters = 1 + function.num_parameters
         return_size = function.return_type.size
-        with program_writer.function(function_name, parameter_sizes, return_size) as (function_writer, variables):
+        with program_writer.function(function_name, num_parameters, return_size) as (function_writer, variables):
             basic_block = function_writer.basic_block()
             variable_dict = dict(zip(parameter_names, variables))
             context = ServiceContext(
@@ -328,7 +328,7 @@ def generate_service(program_writer, name, instantiations, service_decl):
         instantiation.dependencies = dict(zip(service_decl.dependency_names, instantiation.service_arguments))
 
     for dependency_name in service_decl.dependency_names:
-        with program_writer.function("%s^%s" % (service_decl.name, dependency_name), [8], 16) as (function_writer, variables):
+        with program_writer.function("%s^%s" % (service_decl.name, dependency_name), 1, 16) as (function_writer, variables):
             basic_block = function_writer.basic_block()
             self_variable = variables[0]
             block = 0
@@ -345,7 +345,7 @@ def generate_service(program_writer, name, instantiations, service_decl):
 
     memory_offset = 0
     for attr_name, attr_type in service_decl.type.attrs.iteritems():
-        with program_writer.function("%s^%s" % (service_decl.name, attr_name), [8], 8) as (function_writer, variables):
+        with program_writer.function("%s^%s" % (service_decl.name, attr_name), 1, 8) as (function_writer, variables):
             basic_block = function_writer.basic_block()
             self_variable = variables[0]
 
@@ -366,9 +366,9 @@ def generate_service(program_writer, name, instantiations, service_decl):
 def generate_interface(program_writer, interface, services):
     for name, (parameter_types, return_type) in interface.methods.iteritems():
         function_name = "%s#%s" % (interface.name, name)
-        parameter_sizes = [16] + [param.size for param in parameter_types]
+        num_parameters = 1 + len(parameter_types)
         return_size = return_type.size
-        with program_writer.function(function_name, parameter_sizes, return_size) as (function_writer, variables):
+        with program_writer.function(function_name, num_parameters, return_size) as (function_writer, variables):
             basic_block = function_writer.basic_block()
             zero = basic_block.constant_uint(0)
             eight = basic_block.constant_uint(8)
@@ -451,7 +451,7 @@ def generate_code(writer, entry_service, decls):
             interface_type = interface_types[interface]
             generate_interface(program_writer, interface_type, services)
 
-        with program_writer.function('$main', [], 1) as (function_writer, _):
+        with program_writer.function('$main', 0, 1) as (function_writer, _):
             with function_writer.basic_block() as block_writer:
                 for service in all_services:
                     service_variable = service.service_variable(block_writer)

@@ -6,12 +6,7 @@ import data
 
 class ActivationRecord(object):
     def __init__(self, function, arguments):
-        assert len(function.argument_sizes) == len(arguments)
-        for i in xrange(len(arguments)):
-            size = function.argument_sizes[i]
-            argument = arguments[i]
-            assert size == len(argument)
-
+        assert function.num_arguments == len(arguments)
         self.function = function
 
         block_value_offsets = []

@@ -55,7 +55,7 @@ def serialize_function(function_writer, function):
 def serialize_program(program_writer, program):
     with program_writer as writer:
         for name, function in program.functions.iteritems():
-            argument_sizes = function.argument_sizes
+            num_arguments = function.num_arguments
             return_size = function.return_size
-            with writer.function(name, argument_sizes, return_size) as (function_writer, _):
+            with writer.function(name, num_arguments, return_size) as (function_writer, _):
                 serialize_function(function_writer, function)
