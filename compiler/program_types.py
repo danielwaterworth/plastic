@@ -62,6 +62,22 @@ class ByteString(Type):
 
 bytestring = ByteString()
 
+class String(Type):
+    def method_signature(self, name):
+        return string_methods[name][0]
+
+    def method(self, basic_block, object_variable, name, arguments):
+        operator = string_methods[name][1]
+        return basic_block.operation(operator, [object_variable] + arguments)
+
+    def match(self, _, other):
+        assert isinstance(other, String)
+
+    def template(self, _):
+        return self
+
+string = String()
+
 class UInt(Type):
     def match(self, _, other):
         assert isinstance(other, UInt)
@@ -225,5 +241,10 @@ class Service(Type):
 bytestring_methods = {
     'index': (([uint], byte), 'bytestring_index'),
     'slice': (([uint, uint], bytestring), 'bytestring_slice'),
-    'length': (([], uint), 'bytestring_length')
+    'length': (([], uint), 'bytestring_length'),
+    'decode_utf8': (([], string), 'decode_utf8')
+}
+
+string_methods = {
+    'encode_utf8': (([], bytestring), 'encode_utf8')
 }

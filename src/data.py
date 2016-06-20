@@ -33,6 +33,13 @@ class ByteString(Data):
     def write_out(self, basic_block):
         return basic_block.constant_bytestring(self.v)
 
+class String(Data):
+    def __init__(self, v):
+        self.v = v
+
+    def write_out(self, basic_block):
+        return basic_block.constant_string(self.v)
+
 class Packed(Data):
     def __init__(self, values):
         self.values = values
@@ -75,6 +82,12 @@ def operation(operator, arguments):
     elif operator == 'byte_eq':
         a, b = arguments
         return byte_eq(a, b)
+    elif operator == 'encode_utf8':
+        assert len(arguments) == 1
+        return encode_utf8(arguments[0])
+    elif operator == 'decode_utf8':
+        assert len(arguments) == 1
+        return decode_utf8(arguments[0])
     else:
         raise NotImplementedError('operator not implemented: %s' % operator)
 
@@ -128,3 +141,11 @@ def byte_eq(a, b):
     assert isinstance(a, Byte)
     assert isinstance(b, Byte)
     return Bool(a.b == b.b)
+
+def encode_utf8(x):
+    assert isinstance(x, String)
+    return ByteString(x.v.encode('utf-8'))
+
+def decode_utf8(x):
+    assert isinstance(x, ByteString)
+    return String(x.v.decode('utf-8'))

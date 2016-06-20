@@ -60,7 +60,7 @@ define parse_array_tail(s : ByteString) -> (JArray, ByteString) do
 end
 
 define parse_null_tail(s : ByteString) -> (JSON, ByteString) do
-    if (s == "ull")
+    if (s == "ull".encode_utf8())
         return (j_null(), s.slice(3, s.length()));
     else
         throw;
@@ -68,7 +68,7 @@ define parse_null_tail(s : ByteString) -> (JSON, ByteString) do
 end
 
 define parse_true_tail(s : ByteString) -> (JSON, ByteString) do
-    if (s == "rue")
+    if (s == "rue".encode_utf8())
         return (j_true(), s.slice(3, s.length()));
     else
         throw;
@@ -76,7 +76,7 @@ define parse_true_tail(s : ByteString) -> (JSON, ByteString) do
 end
 
 define parse_false_tail(s : ByteString) -> (JSON, ByteString) do
-    if (s == "alse")
+    if (s == "alse".encode_utf8())
         return (j_false(), s.slice(4, s.length()));
     else
         throw;
@@ -127,13 +127,13 @@ end
 define generate(json : JSON) -> ByteString do
     match (json)
         j_null do
-            result := "null";
+            result := "null".encode_utf8();
         end
         j_true do
-            result := "true";
+            result := "true".encode_utf8();
         end
         j_false do
-            result := "false";
+            result := "false".encode_utf8();
         end
         j_array(elements) do
             result := generate_array(elements);
@@ -154,10 +154,10 @@ service Test()
 
     implements EntryPoint
         define main() -> Bool do
-            sys print_bytestring(generate(parse("null")));
-            sys print_bytestring(generate(parse("true")));
-            sys print_bytestring(generate(parse("false")));
-            sys print_bytestring(generate(parse("{}")));
+            sys print_string(generate(parse("null".encode_utf8())).decode_utf8());
+            sys print_string(generate(parse("true".encode_utf8())).decode_utf8());
+            sys print_string(generate(parse("false".encode_utf8())).decode_utf8());
+            sys print_string(generate(parse("{}".encode_utf8())).decode_utf8());
             return true;
         end
     end

@@ -9,7 +9,8 @@ def type_check(decls):
         'Bool': program_types.bool,
         'Void': program_types.void,
         'Byte': program_types.byte,
-        'ByteString': program_types.bytestring
+        'ByteString': program_types.bytestring,
+        'String': program_types.string
     }
     entry_point = program_types.Interface('EntryPoint', {'main': ([], program_types.bool)})
     interface_types = {'EntryPoint': entry_point}

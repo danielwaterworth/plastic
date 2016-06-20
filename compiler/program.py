@@ -305,7 +305,7 @@ class StringLiteral(Expression):
         self.v = v
 
     def evaluate(self, context):
-        return data.ByteString(v)
+        return data.String(v.decode('utf8'))
 
 class Terminator(object):
     pass

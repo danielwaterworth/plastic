@@ -4,9 +4,9 @@ service Test()
 
     implements EntryPoint
         define main() -> Bool do
-            sys print_bytestring("Hello, world!");
-            sys print_num("hello".length());
-            sys print_bytestring("#foo###".slice(1, 4));
+            sys print_string("Hello, world!");
+            sys print_num("hello".encode_utf8().length());
+            sys print_string("#foo###".encode_utf8().slice(1, 4).decode_utf8());
             return true;
         end
     end

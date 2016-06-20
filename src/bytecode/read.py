@@ -43,6 +43,9 @@ def read_bytecode(fd, receiver):
                                 elif instruction_type == CONST_BYTESTRING:
                                     length = intmask(runpack('>Q', fd.read(8)))
                                     basic_block_receiver.constant_bytestring(fd.read(length))
+                                elif instruction_type == CONST_STRING:
+                                    length = intmask(runpack('>Q', fd.read(8)))
+                                    basic_block_receiver.constant_string(fd.read(length).decode('utf-8'))
                                 elif instruction_type == CONST_BOOL:
                                     basic_block_receiver.constant_bool(fd.read(1) != '\0')
                                 elif instruction_type == CONST_UINT:

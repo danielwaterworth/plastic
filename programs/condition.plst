@@ -9,21 +9,21 @@ end
 
 define main() -> Bool do
     if (foo())
-        sys print_bytestring("first");
+        sys print_string("first");
     end
 
     if (false)
-        sys print_bytestring("BROKEN");
+        sys print_string("BROKEN");
     else
-        sys print_bytestring("second");
+        sys print_string("second");
     end
 
     if (false)
-        sys print_bytestring("BROKEN");
+        sys print_string("BROKEN");
     elsif (false)
-        sys print_bytestring("BROKEN");
+        sys print_string("BROKEN");
     else
-        sys print_bytestring("third");
+        sys print_string("third");
     end
 
     return false;
