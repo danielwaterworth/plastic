@@ -126,6 +126,8 @@ class FunctionConstructor(object):
         pass
 
     def basic_block(self):
+        if self.basic_blocks:
+            assert self.basic_blocks[-1].terminal
         basic_block = BasicBlockConstructor(self, len(self.basic_blocks))
         self.basic_blocks.append(basic_block)
         return basic_block

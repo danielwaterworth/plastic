@@ -194,7 +194,7 @@ def generate_statement(context, statement):
             generate_statement(false_context, false_statement)
 
         last_false_block = false_context.basic_block.index
-        false_goto = false_block.special_goto(0)
+        false_goto = false_context.basic_block.special_goto(0)
 
         context.basic_block = context.function_writer.basic_block()
         true_goto.block_index = context.basic_block.index
