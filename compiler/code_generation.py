@@ -98,7 +98,7 @@ def operator_name(operator, lhs_type):
     if lhs_type == program_types.uint:
         return uint_operators[operator]
     elif lhs_type == program_types.bytestring:
-        return string_operators[operator]
+        return bytestring_operators[operator]
     elif lhs_type == program_types.bool:
         return bool_operators[operator]
     elif lhs_type == program_types.byte:

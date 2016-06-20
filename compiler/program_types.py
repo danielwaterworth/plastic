@@ -223,5 +223,5 @@ class Service(Type):
         return "<Service %s>" % self.name
 
 bytestring_methods = {
-    'index': (([uint], byte), 'string_index')
+    'index': (([uint], byte), 'bytestring_index')
 }
