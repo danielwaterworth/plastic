@@ -54,6 +54,7 @@ keywords = [
     'run',
     'service',
     'sys',
+    'throw',
     'true',
     'void',
     'while',

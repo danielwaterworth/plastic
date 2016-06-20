@@ -429,6 +429,10 @@ def p_return(p):
     '''block_end : RETURN expression SEMICOLON'''
     p[0] = program.Return(p[2])
 
+def p_throw(p):
+    '''block_end : THROW SEMICOLON'''
+    p[0] = program.Throw()
+
 def p_end(p):
     '''block_end : empty'''
     p[0] = None

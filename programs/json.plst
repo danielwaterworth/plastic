@@ -1,17 +1,39 @@
+enum JArray
+    j_empty_list |
+    j_cons_array(JSON, JArray)
+end
+
+enum JObject
+    j_empty_object |
+    j_cons_object(ByteString, JSON, JObject)
+end
+
 enum JSON
     j_null |
     j_true |
-    j_false
+    j_false |
+    j_string(ByteString) |
+    j_array(JArray) |
+    j_object(JObject)
 end
 
 define parse(s : ByteString) -> JSON do
     first_char := s.index(0);
     if (first_char == '{')
-        
+        throw;
+    elsif (first_char == '[')
+        throw;
+    elsif (first_char == 'n')
+        throw;
+    elsif (first_char == 't')
+        throw;
+    elsif (first_char == 'f')
+        throw;
+    elsif (first_char == '"')
+        throw;
     else
-        
+        throw;
     end
-    return j_null();
 end
 
 service Test()
@@ -21,6 +43,7 @@ service Test()
     implements EntryPoint
         define main() -> Bool do
             parse("null");
+            parse("{}");
             return true;
         end
     end

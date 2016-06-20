@@ -169,10 +169,6 @@ def generate_statement(context, statement):
         var = generate_expression(context, statement.value)
         context.attr_add(statement.attr, var)
     elif isinstance(statement, program.Conditional):
-        # FIXME
-        assert not statement.true_block.ret
-        assert not statement.false_block.ret
-
         condition_variable = generate_expression(context, statement.expression)
         entry_conditional = context.basic_block.special_conditional(condition_variable, 0, 0)
 
@@ -182,9 +178,11 @@ def generate_statement(context, statement):
 
         for true_statement in statement.true_block.statements:
             generate_statement(true_context, true_statement)
+        generate_terminator(true_context, statement.true_block.terminator)
 
-        last_true_block = true_context.basic_block.index
-        true_goto = true_context.basic_block.special_goto(0)
+        if not statement.true_block.terminator:
+            last_true_block = true_context.basic_block.index
+            true_goto = true_context.basic_block.special_goto(0)
 
         false_block = context.function_writer.basic_block()
         entry_conditional.false_block = false_block.index
@@ -192,27 +190,39 @@ def generate_statement(context, statement):
 
         for false_statement in statement.false_block.statements:
             generate_statement(false_context, false_statement)
+        generate_terminator(false_context, statement.false_block.terminator)
 
-        last_false_block = false_context.basic_block.index
-        false_goto = false_context.basic_block.special_goto(0)
+        if not statement.false_block.terminator:
+            last_false_block = false_context.basic_block.index
+            false_goto = false_context.basic_block.special_goto(0)
 
         context.basic_block = context.function_writer.basic_block()
-        true_goto.block_index = context.basic_block.index
-        false_goto.block_index = context.basic_block.index
 
-        variables = {}
-        for variable in set(true_context.variables.keys()) & set(false_context.variables.keys()):
-            true_variable = true_context.lookup(variable)
-            false_variable = false_context.lookup(variable)
-            if true_variable == false_variable:
-                variables[variable] = true_variable
-            else:
-                phi_inputs = [(last_true_block, true_variable), (last_false_block, false_variable)]
-                variables[variable] = context.basic_block.phi(phi_inputs)
+        if not statement.true_block.terminator:
+            true_goto.block_index = context.basic_block.index
 
-        context.variables = variables
+        if not statement.false_block.terminator:
+            false_goto.block_index = context.basic_block.index
+
+        if not statement.true_block.terminator and not statement.false_block.terminator:
+            variables = {}
+            for variable in set(true_context.variables.keys()) & set(false_context.variables.keys()):
+                true_variable = true_context.lookup(variable)
+                false_variable = false_context.lookup(variable)
+                if true_variable == false_variable:
+                    variables[variable] = true_variable
+                else:
+                    phi_inputs = [(last_true_block, true_variable), (last_false_block, false_variable)]
+                    variables[variable] = context.basic_block.phi(phi_inputs)
+            context.variables = variables
+        elif not statement.true_block.terminator:
+            context.variables = true_context.variables
+        elif not statement.false_block.terminator:
+            context.variables = false_context.variables
+        else:
+            context.variables = {}
     elif isinstance(statement, program.While):
-        assert not statement.body.ret
+        assert not statement.body.terminator
 
         current_index = context.basic_block.index
         entry_goto = context.basic_block.special_goto(0)
@@ -294,13 +304,21 @@ def generate_statement(context, statement):
     else:
         raise NotImplementedError('unknown statement type: %s' % type(statement))
 
+def generate_terminator(context, terminator):
+    if terminator:
+        if isinstance(terminator, program.Return):
+            variable = generate_expression(context, terminator.expression)
+            context.basic_block.ret(variable)
+        elif isinstance(terminator, program.Throw):
+            context.basic_block.catch_fire_and_die()
+        else:
+            raise NotImplementedError('unknown terminator type: %s' % type(terminator))
+
 def generate_code_block(context, code_block):
     for statement in code_block.statements:
         generate_statement(context, statement)
 
-    if code_block.ret:
-        variable = generate_expression(context, code_block.ret.expression)
-        context.basic_block.ret(variable)
+    generate_terminator(context, code_block.terminator)
 
 def generate_function(program_writer, function):
     parameter_names = function.parameter_names
@@ -311,6 +329,8 @@ def generate_function(program_writer, function):
         context = FunctionContext(function_writer, basic_block, variables)
 
         generate_code_block(context, function.body)
+        if not function.body.terminator:
+            context.basic_block.catch_fire_and_die()
 
 def generate_coroutine(program_writer, coroutine):
     parameter_names = coroutine.parameter_names
@@ -324,7 +344,7 @@ def generate_coroutine(program_writer, coroutine):
 
 def generate_record(program_writer, record):
     def generate_constructor(constructor):
-        assert not constructor.body.ret
+        assert not constructor.body.terminator
 
         function_name = '%s.%s' % (record.name, constructor.name)
         parameter_names = constructor.parameter_names

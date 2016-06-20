@@ -139,14 +139,18 @@ class MethodSignature(object):
         self.return_type = self.return_type.resolve_type(types)
 
 class CodeBlock(object):
-    def __init__(self, statements, ret=None):
+    def __init__(self, statements, terminator=None):
         self.statements = statements
-        self.ret = ret
+        self.terminator = terminator
 
     def evaluate(self, context):
         for statement in self.statements:
             statement.evaluate(context)
-        return self.ret.expression.evaluate(context)
+
+        if isinstance(self.terminator, Return):
+            return self.terminator.expression.evaluate(context)
+        else:
+            raise NotImplementedError()
 
 class Statement(object):
     pass
@@ -298,6 +302,12 @@ class StringLiteral(Expression):
     def evaluate(self, context):
         return data.ByteString(v)
 
-class Return(object):
+class Terminator(object):
+    pass
+
+class Return(Terminator):
     def __init__(self, expression):
         self.expression = expression
+
+class Throw(Terminator):
+    pass

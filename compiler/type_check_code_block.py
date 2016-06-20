@@ -183,24 +183,31 @@ def type_check_code_block(context, code_block):
             if expected_type != actual_type:
                 raise TypeError('expected %s to equal %s' % (actual_type, expected_type))
         elif isinstance(statement, program.Conditional):
-            assert not statement.true_block.ret
-            assert not statement.false_block.ret
-
             assert infer_expression_type(statement.expression) == program_types.bool
 
             before_context = context.copy_types()
 
             for true_statement in statement.true_block.statements:
                 type_check_statement(true_statement)
+            type_check_terminator(statement.true_block.terminator)
 
             context.variable_types, after_true_context = before_context, context.variable_types
 
             for false_statement in statement.false_block.statements:
                 type_check_statement(false_statement)
+            type_check_terminator(statement.false_block.terminator)
 
-            context.variable_types = merge_contexts(context.variable_types, after_true_context)
+            if not statement.true_block.terminator and not statement.false_block.terminator:
+                context.variable_types = merge_contexts(context.variable_types, after_true_context)
+            elif not statement.true_block.terminator:
+                context.variable_types = after_true_context
+            elif not statement.false_block.terminator:
+                pass
+            else:
+                # Both branches terminated, nothing is in scope
+                context.variable_types = {}
         elif isinstance(statement, program.While):
-            assert not statement.body.ret
+            assert not statement.body.terminator
 
             for body_statement in statement.body.statements:
                 type_check_statement(body_statement)
@@ -216,7 +223,7 @@ def type_check_code_block(context, code_block):
 
             constructors = set()
             for clause in statement.clauses:
-                assert not clause.block.ret
+                assert not clause.block.terminator
                 assert not clause.name in constructors
                 arg_types = enum_type.constructors[clause.name]
                 constructors.add(clause.name)
@@ -238,10 +245,18 @@ def type_check_code_block(context, code_block):
         else:
             raise NotImplementedError('unknown statement type: %s' % type(statement))
 
+    def type_check_terminator(terminator):
+        if terminator:
+            if isinstance(terminator, program.Return):
+                return_type = infer_expression_type(terminator.expression)
+                if not return_type.is_subtype_of(context.return_type):
+                    raise TypeError('expected %s, but got %s' % (context.return_type, return_type))
+            elif isinstance(terminator, program.Throw):
+                pass
+            else:
+                raise NotImplementedError()
+
     for statement in code_block.statements:
         type_check_statement(statement)
 
-    if code_block.ret:
-        return_type = infer_expression_type(code_block.ret.expression)
-        if not return_type.is_subtype_of(context.return_type):
-            raise TypeError('expected %s, but got %s' % (context.return_type, return_type))
+    type_check_terminator(code_block.terminator)

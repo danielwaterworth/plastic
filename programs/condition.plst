@@ -1,5 +1,14 @@
-define main() -> Bool do
+define foo() -> Bool do
+    a := false;
     if (true)
+        return true;
+    else
+        return a;
+    end
+end
+
+define main() -> Bool do
+    if (foo())
         sys print_bytestring("first");
     end
 
