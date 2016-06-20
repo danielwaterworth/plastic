@@ -78,12 +78,9 @@ def operator_type(operator, rhs_type, lhs_type):
         assert lhs_type == program_types.uint
         return program_types.bool
     elif operator in ['==', '!=']:
-        assert lhs_type == program_types.uint
-        assert rhs_type == program_types.uint
-        if operator == '==':
-            return program_types.bool
-        else:
-            return program_types.bool
+        assert lhs_type == rhs_type
+        assert lhs_type in [program_types.uint, program_types.bool, program_types.string, program_types.byte]
+        return program_types.bool
     elif operator in arithmetic_operators:
         return program_types.uint
     else:

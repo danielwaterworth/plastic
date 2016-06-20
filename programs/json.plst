@@ -1,0 +1,31 @@
+enum JSON
+    j_null |
+    j_true |
+    j_false
+end
+
+define parse(s : String) -> JSON do
+    first_char := s.index(0);
+    if (first_char == '{')
+        
+    else
+        
+    end
+    return j_null();
+end
+
+service Test()
+    constructor new()
+    end
+
+    implements EntryPoint
+        define main() -> Bool do
+            parse("null");
+            return true;
+        end
+    end
+end
+
+entry
+    return Test().new();
+end

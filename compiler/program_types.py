@@ -19,13 +19,11 @@ void = Void()
 
 class Bool(Type):
     def method_signature(self, name):
-        return bool_methods[name]
+        return bool_methods[name][0]
 
     def method(self, basic_block, object_variable, name, arguments):
-        if name == 'and':
-            return basic_block.operation('and', [object_variable] + arguments)
-        else:
-            raise KeyError('no such method %s on %s' % (name, self))
+        operator = bool_methods[name][1]
+        return basic_block.operation(operator, [object_variable] + arguments)
 
     def match(self, _, other):
         assert isinstance(other, Bool)
@@ -36,7 +34,7 @@ class Bool(Type):
 bool = Bool()
 
 bool_methods = {
-    'and': ([bool], bool)
+    'and': (([bool], bool), 'and')
 }
 
 class Byte(Type):
@@ -49,6 +47,13 @@ class Byte(Type):
 byte = Byte()
 
 class String(Type):
+    def method_signature(self, name):
+        return string_methods[name][0]
+
+    def method(self, basic_block, object_variable, name, arguments):
+        operator = string_methods[name][1]
+        return basic_block.operation(operator, [object_variable] + arguments)
+
     def match(self, _, other):
         assert isinstance(other, String)
 
@@ -216,3 +221,7 @@ class Service(Type):
 
     def __repr__(self):
         return "<Service %s>" % self.name
+
+string_methods = {
+    'index': (([uint], byte), 'string_index')
+}

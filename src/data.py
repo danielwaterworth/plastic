@@ -47,9 +47,6 @@ def operation(operator, arguments):
     elif operator == 'eq':
         a, b = arguments
         return eq(a, b)
-    elif operator == 'string_eq':
-        a, b = arguments
-        return string_eq(a, b)
     elif operator == 'lt':
         a, b = arguments
         return lt(a, b)
@@ -63,6 +60,18 @@ def operation(operator, arguments):
         assert isinstance(a, Packed)
         assert isinstance(b, UInt)
         return a.values[b.n]
+    elif operator == 'string_eq':
+        a, b = arguments
+        return string_eq(a, b)
+    elif operator == 'string_index':
+        string, index = arguments
+        return string_index(string, index)
+    elif operator == 'string_slice':
+        string, start, stop = arguments
+        return string_slice(string, start, stop)
+    elif operator == 'byte_eq':
+        a, b = arguments
+        return byte_eq(a, b)
     else:
         raise NotImplementedError('operator not implemented: %s' % operator)
 
@@ -95,3 +104,20 @@ def string_eq(a, b):
     assert isinstance(a, String)
     assert isinstance(b, String)
     return Bool(a.v == b.v)
+
+def string_index(string, index):
+    assert isinstance(string, String)
+    assert isinstance(index, UInt)
+    assert len(string.v) > index.n
+    return Byte(string.v[index.n])
+
+def string_slice(string, start, stop):
+    assert isinstance(string, String)
+    assert isinstance(start, UInt)
+    assert isinstance(stop, UInt)
+    raise NotImplementedError()
+
+def byte_eq(a, b):
+    assert isinstance(a, Byte)
+    assert isinstance(b, Byte)
+    return Bool(a.b == b.b)

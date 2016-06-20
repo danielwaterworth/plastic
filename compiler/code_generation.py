@@ -72,7 +72,7 @@ class ServiceContext(GenerationContext):
         offset = self.basic_block.fun_call('%s^%s' % (self.name, name), [self.self_variable])
         self.basic_block.store(offset, value)
 
-operators = {
+uint_operators = {
     '<': 'lt',
     '>': 'gt',
     '<=': 'le',
@@ -84,6 +84,27 @@ operators = {
     '==': 'eq',
     '!=': 'ne'
 }
+
+string_operators = {
+    '==': 'string_eq'
+}
+
+bool_operators = {}
+byte_operators = {
+    '==': 'byte_eq'
+}
+
+def operator_name(operator, lhs_type):
+    if lhs_type == program_types.uint:
+        return uint_operators[operator]
+    elif lhs_type == program_types.string:
+        return string_operators[operator]
+    elif lhs_type == program_types.bool:
+        return bool_operators[operator]
+    elif lhs_type == program_types.byte:
+        return byte_operators[operator]
+    else:
+        raise NotImplementedError()
 
 def generate_expression(context, expression):
     if isinstance(expression, program.Variable):
@@ -116,7 +137,7 @@ def generate_expression(context, expression):
     elif isinstance(expression, program.BinOp):
         lhs = generate_expression(context, expression.lhs)
         rhs = generate_expression(context, expression.rhs)
-        operator = operators[expression.operator]
+        operator = operator_name(expression.operator, expression.lhs.type)
         return context.basic_block.operation(operator, [lhs, rhs])
     elif isinstance(expression, program.FunctionCall):
         arguments = [generate_expression(context, argument) for argument in expression.arguments]
