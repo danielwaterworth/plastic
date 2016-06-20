@@ -266,7 +266,7 @@ def generate_statement(context, statement):
 
         for clause in statement.clauses:
             clause_name = context.basic_block.constant_bytestring(clause.name)
-            v = context.basic_block.operation('string_eq', [name, clause_name])
+            v = context.basic_block.operation('bytestring_eq', [name, clause_name])
             cond = context.basic_block.special_conditional(v, 0, 0)
 
             clause_block = context.function_writer.basic_block()
@@ -294,7 +294,7 @@ def generate_statement(context, statement):
         for goto in gotos:
             goto.block_index = context.basic_block.index
 
-        variable_names = reduce(lambda a, b: set(a.variables.keys()) & set(b.variables.keys()), contexts)
+        variable_names = reduce(lambda a, b: a & b, [set(ctx.variables.keys()) for ctx in contexts])
         variables = {}
         for variable_name in variable_names:
             vars = [ctx.lookup(variable_name) for ctx in contexts]
