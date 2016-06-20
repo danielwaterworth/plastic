@@ -127,10 +127,10 @@ class Coroutine(data.Data):
                         assert isinstance(a, data.Byte)
                         print a.b
                         self.stack[-1].retire(data.Void())
-                    elif instr.function == 'print_string':
+                    elif instr.function == 'print_bytestring':
                         assert len(arguments) == 1
                         a = arguments[0]
-                        assert isinstance(a, data.String)
+                        assert isinstance(a, data.ByteString)
                         print a.v
                         self.stack[-1].retire(data.Void())
                     else:
@@ -145,8 +145,8 @@ class Coroutine(data.Data):
                     self.stack[-1].retire(data.Bool(instr.value))
                 elif isinstance(instr, bytecode.ConstantByte):
                     self.stack[-1].retire(data.Byte(instr.value))
-                elif isinstance(instr, bytecode.ConstantString):
-                    self.stack[-1].retire(data.String(instr.value))
+                elif isinstance(instr, bytecode.ConstantByteString):
+                    self.stack[-1].retire(data.ByteString(instr.value))
                 elif isinstance(instr, bytecode.ConstantUInt):
                     self.stack[-1].retire(data.UInt(instr.value))
                 elif isinstance(instr, bytecode.Void):

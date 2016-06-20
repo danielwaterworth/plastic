@@ -85,8 +85,8 @@ uint_operators = {
     '!=': 'ne'
 }
 
-string_operators = {
-    '==': 'string_eq'
+bytestring_operators = {
+    '==': 'bytestring_eq'
 }
 
 bool_operators = {}
@@ -97,7 +97,7 @@ byte_operators = {
 def operator_name(operator, lhs_type):
     if lhs_type == program_types.uint:
         return uint_operators[operator]
-    elif lhs_type == program_types.string:
+    elif lhs_type == program_types.bytestring:
         return string_operators[operator]
     elif lhs_type == program_types.bool:
         return bool_operators[operator]
@@ -118,7 +118,7 @@ def generate_expression(context, expression):
     elif isinstance(expression, program.VoidLiteral):
         return context.basic_block.void()
     elif isinstance(expression, program.StringLiteral):
-        return context.basic_block.constant_string(expression.v)
+        return context.basic_block.constant_bytestring(expression.v)
     elif isinstance(expression, program.AttrLoad):
         return context.attr_lookup(expression.attr)
     elif isinstance(expression, program.Yield):
@@ -249,7 +249,7 @@ def generate_statement(context, statement):
         gotos = []
 
         for clause in statement.clauses:
-            clause_name = context.basic_block.constant_string(clause.name)
+            clause_name = context.basic_block.constant_bytestring(clause.name)
             v = context.basic_block.operation('string_eq', [name, clause_name])
             cond = context.basic_block.special_conditional(v, 0, 0)
 
@@ -371,7 +371,7 @@ def generate_enum(program_writer, enum):
     for constructor in enum.constructors:
         with program_writer.function(constructor.name, len(constructor.types)) as (function_writer, variables):
             with function_writer.basic_block() as basic_block:
-                name = basic_block.constant_string(constructor.name)
+                name = basic_block.constant_bytestring(constructor.name)
                 result = basic_block.operation('pack', [name] + variables)
                 basic_block.ret(result)
 

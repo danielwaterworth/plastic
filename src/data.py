@@ -26,12 +26,12 @@ class Byte(Data):
     def write_out(self, basic_block):
         return basic_block.constant_byte(self.b)
 
-class String(Data):
+class ByteString(Data):
     def __init__(self, v):
         self.v = v
 
     def write_out(self, basic_block):
-        return basic_block.constant_string(self.v)
+        return basic_block.constant_bytestring(self.v)
 
 class Packed(Data):
     def __init__(self, values):
@@ -60,15 +60,15 @@ def operation(operator, arguments):
         assert isinstance(a, Packed)
         assert isinstance(b, UInt)
         return a.values[b.n]
-    elif operator == 'string_eq':
+    elif operator == 'bytestring_eq':
         a, b = arguments
-        return string_eq(a, b)
-    elif operator == 'string_index':
+        return bytestring_eq(a, b)
+    elif operator == 'bytestring_index':
         string, index = arguments
-        return string_index(string, index)
-    elif operator == 'string_slice':
+        return bytestring_index(string, index)
+    elif operator == 'bytestring_slice':
         string, start, stop = arguments
-        return string_slice(string, start, stop)
+        return bytestring_slice(string, start, stop)
     elif operator == 'byte_eq':
         a, b = arguments
         return byte_eq(a, b)
@@ -100,19 +100,19 @@ def eq(a, b):
     assert isinstance(b, UInt)
     return Bool(a.n == b.n)
 
-def string_eq(a, b):
-    assert isinstance(a, String)
-    assert isinstance(b, String)
+def bytestring_eq(a, b):
+    assert isinstance(a, ByteString)
+    assert isinstance(b, ByteString)
     return Bool(a.v == b.v)
 
-def string_index(string, index):
-    assert isinstance(string, String)
+def bytestring_index(string, index):
+    assert isinstance(string, ByteString)
     assert isinstance(index, UInt)
     assert len(string.v) > index.n
     return Byte(string.v[index.n])
 
-def string_slice(string, start, stop):
-    assert isinstance(string, String)
+def bytestring_slice(string, start, stop):
+    assert isinstance(string, ByteString)
     assert isinstance(start, UInt)
     assert isinstance(stop, UInt)
     raise NotImplementedError()

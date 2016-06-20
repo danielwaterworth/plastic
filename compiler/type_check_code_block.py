@@ -56,7 +56,7 @@ sys_call_signatures = {
     'print_num': ([program_types.uint], program_types.void),
     'print_bool': ([program_types.bool], program_types.void),
     'print_byte': ([program_types.byte], program_types.void),
-    'print_string': ([program_types.string], program_types.void)
+    'print_bytestring': ([program_types.bytestring], program_types.void)
 }
 
 def merge_contexts(a, b):
@@ -79,7 +79,7 @@ def operator_type(operator, rhs_type, lhs_type):
         return program_types.bool
     elif operator in ['==', '!=']:
         assert lhs_type == rhs_type
-        assert lhs_type in [program_types.uint, program_types.bool, program_types.string, program_types.byte]
+        assert lhs_type in [program_types.uint, program_types.bool, program_types.bytestring, program_types.byte]
         return program_types.bool
     elif operator in arithmetic_operators:
         return program_types.uint
@@ -99,7 +99,7 @@ def type_check_code_block(context, code_block):
         elif isinstance(expression, program.VoidLiteral):
             expression.type = program_types.void
         elif isinstance(expression, program.StringLiteral):
-            expression.type = program_types.string
+            expression.type = program_types.bytestring
         elif isinstance(expression, program.AttrLoad):
             expression.type = context.lookup_attr(expression.attr)
         elif isinstance(expression, program.Yield):

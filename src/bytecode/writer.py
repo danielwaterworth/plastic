@@ -43,9 +43,9 @@ class BasicBlockWriter(object):
         self.block_writer.write(value)
         return self.function.create_variable()
 
-    def constant_string(self, value):
+    def constant_bytestring(self, value):
         assert not self.terminated
-        self.block_writer.write(struct.pack('>B', CONST_STRING))
+        self.block_writer.write(struct.pack('>B', CONST_BYTESTRING))
         self.block_writer.write(struct.pack('>Q', len(value)))
         self.block_writer.write(value)
         return self.function.create_variable()

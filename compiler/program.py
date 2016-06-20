@@ -296,7 +296,7 @@ class StringLiteral(Expression):
         self.v = v
 
     def evaluate(self, context):
-        return data.String(v)
+        return data.ByteString(v)
 
 class Return(object):
     def __init__(self, expression):

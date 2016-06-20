@@ -4,7 +4,7 @@ service Test()
 
     implements EntryPoint
         define main() -> Bool do
-            sys print_string("Hello, world!");
+            sys print_bytestring("Hello, world!");
             return true;
         end
     end

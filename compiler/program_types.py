@@ -46,21 +46,21 @@ class Byte(Type):
 
 byte = Byte()
 
-class String(Type):
+class ByteString(Type):
     def method_signature(self, name):
-        return string_methods[name][0]
+        return bytestring_methods[name][0]
 
     def method(self, basic_block, object_variable, name, arguments):
-        operator = string_methods[name][1]
+        operator = bytestring_methods[name][1]
         return basic_block.operation(operator, [object_variable] + arguments)
 
     def match(self, _, other):
-        assert isinstance(other, String)
+        assert isinstance(other, ByteString)
 
     def template(self, _):
         return self
 
-string = String()
+bytestring = ByteString()
 
 class UInt(Type):
     def match(self, _, other):
@@ -222,6 +222,6 @@ class Service(Type):
     def __repr__(self):
         return "<Service %s>" % self.name
 
-string_methods = {
+bytestring_methods = {
     'index': (([uint], byte), 'string_index')
 }

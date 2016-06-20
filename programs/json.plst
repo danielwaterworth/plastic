@@ -4,7 +4,7 @@ enum JSON
     j_false
 end
 
-define parse(s : String) -> JSON do
+define parse(s : ByteString) -> JSON do
     first_char := s.index(0);
     if (first_char == '{')
         
