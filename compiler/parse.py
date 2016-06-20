@@ -25,6 +25,10 @@ def p_record(p):
     '''top_level_decl : RECORD UPPER_NAME record_decl_list END'''
     p[0] = program.Record(p[2], p[3])
 
+def p_enum(p):
+    '''top_level_decl : ENUM UPPER_NAME enum_constructors END'''
+    p[0] = program.Enum(p[2], p[3])
+
 def p_interface(p):
     '''top_level_decl : INTERFACE UPPER_NAME interface_decl_list END'''
     p[0] = program.Interface(p[2], p[3])
@@ -36,6 +40,19 @@ def p_service(p):
 def p_entry(p):
     '''top_level_decl : ENTRY code_block END'''
     p[0] = program.Entry(p[2])
+
+def p_enum_constructors_initial(p):
+    '''enum_constructors : enum_constructor'''
+    p[0] = [p[1]]
+
+def p_enum_constructors(p):
+    '''enum_constructors : enum_constructors PIPE enum_constructor'''
+    p[1].append(p[3])
+    p[0] = p[1]
+
+def p_enum_constructor(p):
+    '''enum_constructor : LOWER_NAME OPEN_PARENS type_list CLOSE_PARENS'''
+    p[0] = program.EnumConstructor(p[1], p[3])
 
 def p_function(p):
     '''function : DEFINE LOWER_NAME OPEN_PARENS parameter_list CLOSE_PARENS ARROW type DO code_block END'''
@@ -246,6 +263,10 @@ def p_while(p):
     '''statement : DO code_block WHILE OPEN_PARENS expression CLOSE_PARENS'''
     p[0] = program.While(p[2], p[5])
 
+def p_match(p):
+    '''statement : MATCH OPEN_PARENS expression CLOSE_PARENS match_clauses END'''
+    p[0] = program.Match(p[3], p[5])
+
 def p_expression_variable(p):
     '''expression : LOWER_NAME'''
     p[0] = program.Variable(p[1])
@@ -344,6 +365,36 @@ def p_expression_binop(p):
 def p_method_call_expression(p):
     '''expression : expression DOT LOWER_NAME function_call'''
     p[0] = program.MethodCall(p[1], p[3], p[4])
+
+def p_clauses_empty(p):
+    '''match_clauses : empty'''
+    p[0] = []
+
+def p_clauses(p):
+    '''match_clauses : match_clauses match_clause'''
+    p[1].append(p[2])
+    p[0] = p[1]
+
+def p_clause(p):
+    '''match_clause : LOWER_NAME OPEN_PARENS match_list CLOSE_PARENS DO code_block END'''
+    p[0] = program.Clause(p[1], p[3], p[6])
+
+def p_match_list_empty(p):
+    '''match_list : empty'''
+    p[0] = []
+
+def p_match_list(p):
+    '''match_list : non_empty_match_list'''
+    p[0] = p[1]
+
+def p_non_empty_match_list_initial(p):
+    '''non_empty_match_list : LOWER_NAME'''
+    p[0] = [p[1]]
+
+def p_non_empty_match_list(p):
+    '''non_empty_match_list : non_empty_match_list COMMA LOWER_NAME'''
+    p[1].append(p[3])
+    p[0] = p[1]
 
 def p_return(p):
     '''block_end : RETURN expression SEMICOLON'''

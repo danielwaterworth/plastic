@@ -161,6 +161,17 @@ class Record(Type):
     def template(self, _):
         return self
 
+class Enum(Type):
+    def __init__(self, name, constructors):
+        self.name = name
+        self.constructors = constructors
+
+    def match(self, _, other):
+        assert self == other
+
+    def template(self, _):
+        return self
+
 class Interface(Type):
     def __init__(self, name, methods):
         self.name = name

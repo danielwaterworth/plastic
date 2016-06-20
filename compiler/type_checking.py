@@ -78,6 +78,7 @@ def type_check(decls):
     function_decls = []
     coroutine_decls = []
     record_decls = []
+    enum_decls = []
     interface_decls = []
     service_decls = []
     entry = None
@@ -88,6 +89,8 @@ def type_check(decls):
             coroutine_decls.append(decl)
         elif isinstance(decl, program.Record):
             record_decls.append(decl)
+        elif isinstance(decl, program.Enum):
+            enum_decls.append(decl)
         elif isinstance(decl, program.Interface):
             interface_decls.append(decl)
         elif isinstance(decl, program.Service):
@@ -107,6 +110,18 @@ def type_check(decls):
         record.type = program_types.Record(record.name, attrs, {}, {})
         assert not record.name in types
         types[record.name] = record.type
+
+    for enum in enum_decls:
+        enum.type = program_types.Enum(enum.name, {})
+        types[enum.name] = enum.type
+
+    for enum in enum_decls:
+        for constructor in enum.constructors:
+            constructor.resolve_types(types)
+            assert not constructor.name in enum.type.constructors
+            enum.type.constructors[constructor.name] = constructor.types
+            signature = type_check_code_block.FunctionSignature(constructor.types, enum.type)
+            signatures[constructor.name] = signature
 
     for record in record_decls:
         constructor_signatures = record.type.constructor_signatures

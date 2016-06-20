@@ -209,6 +209,33 @@ def type_check_code_block(context, code_block):
                 type_check_statement(body_statement)
 
             assert infer_expression_type(statement.expression) == program_types.bool
+        elif isinstance(statement, program.Match):
+            enum_type = infer_expression_type(statement.expression)
+            assert isinstance(enum_type, program_types.Enum)
+
+            before_context = context.copy_types()
+
+            after_contexts = []
+
+            constructors = set()
+            for clause in statement.clauses:
+                assert not clause.block.ret
+                assert not clause.name in constructors
+                arg_types = enum_type.constructors[clause.name]
+                constructors.add(clause.name)
+                assert len(arg_types) == len(clause.parameters)
+
+                for name, t in zip(clause.parameters, arg_types):
+                    context.add(name, t)
+
+                for clause_statement in clause.block.statements:
+                    type_check_statement(clause_statement)
+
+                after_contexts.append(context.variable_types)
+                context.variable_types = dict(before_context)
+
+            assert constructors == set(enum_type.constructors)
+            context.variable_types = reduce(merge_contexts, after_contexts)
         elif isinstance(statement, program.Expression):
             infer_expression_type(statement)
         else:

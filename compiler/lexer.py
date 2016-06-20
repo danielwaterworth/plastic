@@ -7,6 +7,7 @@ tokens = [
     "SEMICOLON",
     "COMMA",
     "DOT",
+    "PIPE",
     "ASSIGNMENT",
     "ARROW",
     "OPEN_PARENS",
@@ -30,30 +31,32 @@ tokens = [
     "WHITESPACE",
 ]
 keywords = [
-    'define',
-    'end',
-    'sys',
-    'return',
-    'do',
-    'while',
-    'if',
-    'else',
-    'true',
-    'false',
-    'record',
     'attr',
     'constructor',
-    'service',
-    'interface',
-    'implements',
-    'private',
-    'entry',
-    'void',
     'coroutine',
-    'yield',
-    'run',
+    'define',
+    'do',
+    'else',
+    'end',
+    'entry',
+    'enum',
+    'false',
+    'if',
+    'implements',
+    'interface',
+    'is_done',
+    'match',
+    'private',
+    'record',
     'resume',
-    'is_done'
+    'return',
+    'run',
+    'service',
+    'sys',
+    'true',
+    'void',
+    'while',
+    'yield',
 ]
 keywords = {keyword: keyword.upper() for keyword in keywords}
 tokens += keywords.values()
@@ -64,6 +67,7 @@ t_COLON = r':'
 t_SEMICOLON = r';'
 t_DOT = r'\.'
 t_COMMA = r','
+t_PIPE = r'\|'
 t_ASSIGNMENT = r':='
 t_ARROW = r'->'
 t_OPEN_PARENS = r'\('

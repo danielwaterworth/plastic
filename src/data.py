@@ -47,6 +47,9 @@ def operation(operator, arguments):
     elif operator == 'eq':
         a, b = arguments
         return eq(a, b)
+    elif operator == 'string_eq':
+        a, b = arguments
+        return string_eq(a, b)
     elif operator == 'lt':
         a, b = arguments
         return lt(a, b)
@@ -87,3 +90,8 @@ def eq(a, b):
     assert isinstance(a, UInt)
     assert isinstance(b, UInt)
     return Bool(a.n == b.n)
+
+def string_eq(a, b):
+    assert isinstance(a, String)
+    assert isinstance(b, String)
+    return Bool(a.v == b.v)

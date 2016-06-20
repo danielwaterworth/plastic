@@ -219,6 +219,55 @@ def generate_statement(context, statement):
         body_conditional = context.basic_block.special_conditional(condition_variable, last_body_index, 0)
         context.basic_block = context.function_writer.basic_block()
         body_conditional.false_block = context.basic_block.index
+    elif isinstance(statement, program.Match):
+        var = generate_expression(context, statement.expression)
+        zero = context.basic_block.constant_uint(0)
+        name = context.basic_block.operation('index', [var, zero])
+
+        contexts = []
+        gotos = []
+
+        for clause in statement.clauses:
+            clause_name = context.basic_block.constant_string(clause.name)
+            v = context.basic_block.operation('string_eq', [name, clause_name])
+            cond = context.basic_block.special_conditional(v, 0, 0)
+
+            clause_block = context.function_writer.basic_block()
+            cond.true_block = clause_block.index
+            clause_context = context.new_context(clause_block)
+
+            index = 1
+            for param in clause.parameters:
+                index_var = clause_context.basic_block.constant_uint(index)
+                param_var = clause_context.basic_block.operation('index', [var, index_var])
+                clause_context.add(param, param_var)
+                index += 1
+
+            for clause_statement in clause.block.statements:
+                generate_statement(clause_context, clause_statement)
+
+            gotos.append(clause_context.basic_block.special_goto(0))
+            contexts.append(clause_context)
+
+            context.basic_block = context.function_writer.basic_block()
+            cond.false_block = context.basic_block.index
+
+        context.basic_block.catch_fire_and_die()
+        context.basic_block = context.function_writer.basic_block()
+        for goto in gotos:
+            goto.block_index = context.basic_block.index
+
+        variable_names = reduce(lambda a, b: set(a.variables.keys()) & set(b.variables.keys()), contexts)
+        variables = {}
+        for variable_name in variable_names:
+            vars = [ctx.lookup(variable_name) for ctx in contexts]
+            if all([v == vars[0] for v in vars]):
+                variables[variable_name] = vars[0]
+            else:
+                phi_inputs = [(ctx.basic_block.index, ctx.lookup(variable_name)) for ctx in contexts]
+                variables[variable_name] = context.basic_block.phi(phi_inputs)
+
+        context.variables = variables
     elif isinstance(statement, program.Expression):
         generate_expression(context, statement)
     else:
@@ -296,6 +345,14 @@ def generate_record(program_writer, record):
             generate_constructor(decl)
         elif isinstance(decl, program.Function):
             generate_method(decl)
+
+def generate_enum(program_writer, enum):
+    for constructor in enum.constructors:
+        with program_writer.function(constructor.name, len(constructor.types)) as (function_writer, variables):
+            with function_writer.basic_block() as basic_block:
+                name = basic_block.constant_string(constructor.name)
+                result = basic_block.operation('pack', [name] + variables)
+                basic_block.ret(result)
 
 def generate_service(program_writer, name, instantiations, service_decl):
     def generate_service_method(function_name, function):
@@ -420,6 +477,8 @@ def generate_code(writer, entry_service, decls):
                 generate_coroutine(program_writer, decl)
             elif isinstance(decl, program.Record):
                 generate_record(program_writer, decl)
+            elif isinstance(decl, program.Enum):
+                generate_enum(program_writer, decl)
             elif isinstance(decl, program.Service):
                 service_decls[decl.name] = decl
             elif isinstance(decl, program.Interface):

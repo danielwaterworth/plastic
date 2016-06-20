@@ -61,6 +61,11 @@ class Record(Decl):
         self.name = name
         self.decls = decls
 
+class Enum(Decl):
+    def __init__(self, name, constructors):
+        self.name = name
+        self.constructors = constructors
+
 class Interface(Decl):
     def __init__(self, name, decls):
         self.name = name
@@ -115,6 +120,14 @@ class Private(Decl):
     def __init__(self, decls):
         self.decls = decls
 
+class EnumConstructor(object):
+    def __init__(self, name, types):
+        self.name = name
+        self.types = types
+
+    def resolve_types(self, types):
+        self.types = [t.resolve_type(types) for t in self.types]
+
 class MethodSignature(object):
     def __init__(self, name, parameters, return_type):
         self.name = name
@@ -166,6 +179,17 @@ class While(Statement):
     def __init__(self, body, expression):
         self.expression = expression
         self.body = body
+
+class Match(Statement):
+    def __init__(self, expression, clauses):
+        self.expression = expression
+        self.clauses = clauses
+
+class Clause(object):
+    def __init__(self, name, parameters, block):
+        self.name = name
+        self.parameters = parameters
+        self.block = block
 
 class Expression(Statement):
     pass
