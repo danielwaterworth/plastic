@@ -1,0 +1,14 @@
+service Test()
+    constructor new()
+    end
+
+    implements EntryPoint
+        define main() -> Bool do
+            throw;
+        end
+    end
+end
+
+entry
+    return Test().new();
+end
