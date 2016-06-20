@@ -17,48 +17,135 @@ enum JSON
     j_object(JObject)
 end
 
-define parse_object(s : ByteString) -> (JSON, ByteString) do
+define next(s : ByteString) -> (Byte, ByteString) do
+    return (s.index(0), s.slice(1, s.length()));
+end
+
+define skip_whitespace(s : ByteString) -> ByteString do
+    tail := s;
+    do
+        s := tail;
+        first_char, tail := next(s);
+    while (first_char == ' ')
+    return s;
+end
+
+define parse_string_tail(s : ByteString) -> (ByteString, ByteString) do
     throw;
 end
 
-define parse_array(s : ByteString) -> (JSON, ByteString) do
-    throw;
-end
-
-define parse_null(s : ByteString) -> (JSON, ByteString) do
-    throw;
-end
-
-define parse_true(s : ByteString) -> (JSON, ByteString) do
-    throw;
-end
-
-define parse_false(s : ByteString) -> (JSON, ByteString) do
-    throw;
-end
-
-define parse_string(s : ByteString) -> (JSON, ByteString) do
-    throw;
-end
-
-define parse(s : ByteString) -> (JSON, ByteString) do
-    first_char := s.index(0);
-    tail := s.slice(1, s.length());
-    if (first_char == '{')
-        return parse_object(tail);
-    elsif (first_char == '[')
-        return parse_array(tail);
-    elsif (first_char == 'n')
-        return parse_null(tail);
-    elsif (first_char == 't')
-        return parse_true(tail);
-    elsif (first_char == 'f')
-        return parse_false(tail);
+define parse_object_tail(s : ByteString) -> (JObject, ByteString) do
+    s := skip_whitespace(s);
+    first_char, s := next(s);
+    if (first_char == '}')
+        return (j_empty_object(), s);
     elsif (first_char == '"')
-        return parse_string(tail);
+        string, s := parse_string_tail(s);
+        s := skip_whitespace(s);
+        colon, s := next(s);
+        if (colon == ':')
+            value, s := parse_any(s);
+            rest, s := parse_object_tail(s);
+            return (j_cons_object(string, value, rest), s);
+        else
+            throw;
+        end
     else
         throw;
     end
+end
+
+define parse_array_tail(s : ByteString) -> (JArray, ByteString) do
+    throw;
+end
+
+define parse_null_tail(s : ByteString) -> (JSON, ByteString) do
+    if (s == "ull")
+        return (j_null(), s.slice(3, s.length()));
+    else
+        throw;
+    end
+end
+
+define parse_true_tail(s : ByteString) -> (JSON, ByteString) do
+    if (s == "rue")
+        return (j_true(), s.slice(3, s.length()));
+    else
+        throw;
+    end
+end
+
+define parse_false_tail(s : ByteString) -> (JSON, ByteString) do
+    if (s == "alse")
+        return (j_false(), s.slice(4, s.length()));
+    else
+        throw;
+    end
+end
+
+define parse_any(s : ByteString) -> (JSON, ByteString) do
+    s := skip_whitespace(s);
+
+    first_char, s := next(s);
+    if (first_char == '{')
+        obj, s := parse_object_tail(s);
+        return (j_object(obj), s);
+    elsif (first_char == '[')
+        array, s := parse_array_tail(s);
+        return (j_array(array), s);
+    elsif (first_char == 'n')
+        return parse_null_tail(s);
+    elsif (first_char == 't')
+        return parse_true_tail(s);
+    elsif (first_char == 'f')
+        return parse_false_tail(s);
+    elsif (first_char == '"')
+        string, s := parse_string_tail(s);
+        return (j_string(string), s);
+    else
+        throw;
+    end
+end
+
+define parse(s : ByteString) -> JSON do
+    x, s := parse_any(s);
+    return x;
+end
+
+define generate_array(json : JArray) -> ByteString do
+    throw;
+end
+
+define generate_object(json : JObject) -> ByteString do
+    throw;
+end
+
+define generate_string(json : ByteString) -> ByteString do
+    throw;
+end
+
+define generate(json : JSON) -> ByteString do
+    match (json)
+        j_null do
+            result := "null";
+        end
+        j_true do
+            result := "true";
+        end
+        j_false do
+            result := "false";
+        end
+        j_array(elements) do
+            result := generate_array(elements);
+        end
+        j_object(object) do
+            result := generate_object(object);
+        end
+        j_string(string) do
+            result := generate_string(string);
+        end
+    end
+    return result;
 end
 
 service Test()
@@ -67,8 +154,10 @@ service Test()
 
     implements EntryPoint
         define main() -> Bool do
-            parse("null");
-            parse("{}");
+            sys print_bytestring(generate(parse("null")));
+            sys print_bytestring(generate(parse("true")));
+            sys print_bytestring(generate(parse("false")));
+            sys print_bytestring(generate(parse("{}")));
             return true;
         end
     end
