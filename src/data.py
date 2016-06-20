@@ -69,6 +69,9 @@ def operation(operator, arguments):
     elif operator == 'bytestring_slice':
         string, start, stop = arguments
         return bytestring_slice(string, start, stop)
+    elif operator == 'bytestring_length':
+        assert len(arguments) == 1
+        return bytestring_length(arguments[0])
     elif operator == 'byte_eq':
         a, b = arguments
         return byte_eq(a, b)
@@ -115,7 +118,11 @@ def bytestring_slice(string, start, stop):
     assert isinstance(string, ByteString)
     assert isinstance(start, UInt)
     assert isinstance(stop, UInt)
-    raise NotImplementedError()
+    return ByteString(string.v[start.n:stop.n])
+
+def bytestring_length(string):
+    assert isinstance(string, ByteString)
+    return UInt(len(string.v))
 
 def byte_eq(a, b):
     assert isinstance(a, Byte)

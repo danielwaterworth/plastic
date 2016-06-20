@@ -17,20 +17,45 @@ enum JSON
     j_object(JObject)
 end
 
-define parse(s : ByteString) -> JSON do
+define parse_object(s : ByteString) -> (JSON, ByteString) do
+    throw;
+end
+
+define parse_array(s : ByteString) -> (JSON, ByteString) do
+    throw;
+end
+
+define parse_null(s : ByteString) -> (JSON, ByteString) do
+    throw;
+end
+
+define parse_true(s : ByteString) -> (JSON, ByteString) do
+    throw;
+end
+
+define parse_false(s : ByteString) -> (JSON, ByteString) do
+    throw;
+end
+
+define parse_string(s : ByteString) -> (JSON, ByteString) do
+    throw;
+end
+
+define parse(s : ByteString) -> (JSON, ByteString) do
     first_char := s.index(0);
+    tail := s.slice(1, s.length());
     if (first_char == '{')
-        throw;
+        return parse_object(tail);
     elsif (first_char == '[')
-        throw;
+        return parse_array(tail);
     elsif (first_char == 'n')
-        throw;
+        return parse_null(tail);
     elsif (first_char == 't')
-        throw;
+        return parse_true(tail);
     elsif (first_char == 'f')
-        throw;
+        return parse_false(tail);
     elsif (first_char == '"')
-        throw;
+        return parse_string(tail);
     else
         throw;
     end
