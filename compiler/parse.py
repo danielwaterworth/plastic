@@ -51,8 +51,25 @@ def p_enum_constructors(p):
     p[0] = p[1]
 
 def p_enum_constructor(p):
-    '''enum_constructor : LOWER_NAME OPEN_PARENS type_list CLOSE_PARENS'''
-    p[0] = program.EnumConstructor(p[1], p[3])
+    '''enum_constructor : LOWER_NAME enum_type_list'''
+    p[0] = program.EnumConstructor(p[1], p[2])
+
+def p_empty_enum_type_list(p):
+    '''enum_type_list : empty'''
+    p[0] = []
+
+def p_non_empty_enum_type_list(p):
+    '''enum_type_list : OPEN_PARENS non_empty_enum_type_list CLOSE_PARENS'''
+    p[0] = p[2]
+
+def p_enum_type_list_initial(p):
+    '''non_empty_enum_type_list : type'''
+    p[0] = [p[1]]
+
+def p_enum_type_list(p):
+    '''non_empty_enum_type_list : non_empty_enum_type_list COMMA type'''
+    p[1].append(p[3])
+    p[0] = p[1]
 
 def p_function(p):
     '''function : DEFINE LOWER_NAME OPEN_PARENS parameter_list CLOSE_PARENS ARROW type DO code_block END'''
@@ -376,16 +393,16 @@ def p_clauses(p):
     p[0] = p[1]
 
 def p_clause(p):
-    '''match_clause : LOWER_NAME OPEN_PARENS match_list CLOSE_PARENS DO code_block END'''
-    p[0] = program.Clause(p[1], p[3], p[6])
+    '''match_clause : LOWER_NAME match_list DO code_block END'''
+    p[0] = program.Clause(p[1], p[2], p[4])
 
 def p_match_list_empty(p):
     '''match_list : empty'''
     p[0] = []
 
 def p_match_list(p):
-    '''match_list : non_empty_match_list'''
-    p[0] = p[1]
+    '''match_list : OPEN_PARENS non_empty_match_list CLOSE_PARENS'''
+    p[0] = p[2]
 
 def p_non_empty_match_list_initial(p):
     '''non_empty_match_list : LOWER_NAME'''
