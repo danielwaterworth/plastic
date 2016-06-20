@@ -273,8 +273,20 @@ def p_attr_assignment(p):
     p[0] = program.AttrStore(p[2], p[4])
 
 def p_conditional(p):
-    '''statement : IF OPEN_PARENS expression CLOSE_PARENS code_block ELSE code_block END'''
-    p[0] = program.Conditional(p[3], p[5], p[7])
+    '''statement : IF OPEN_PARENS expression CLOSE_PARENS code_block if_end'''
+    p[0] = program.Conditional(p[3], p[5], p[6])
+
+def p_condition_end(p):
+    '''if_end : END'''
+    p[0] = program.CodeBlock([])
+
+def p_else(p):
+    '''if_end : ELSE code_block END'''
+    p[0] = p[2]
+
+def p_elif(p):
+    '''if_end : ELSIF OPEN_PARENS expression CLOSE_PARENS code_block if_end'''
+    p[0] = program.CodeBlock([program.Conditional(p[3], p[5], p[6])])
 
 def p_while(p):
     '''statement : DO code_block WHILE OPEN_PARENS expression CLOSE_PARENS'''

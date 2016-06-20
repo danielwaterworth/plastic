@@ -1,12 +1,21 @@
 define main() -> Bool do
-    if (40 < 50)
-        a := true;
-        sys print_num(1);
-    else
-        a := false;
-        sys print_num(2);
+    if (true)
+        sys print_bytestring("first");
     end
-    sys print_bool(a);
+
+    if (false)
+        sys print_bytestring("BROKEN");
+    else
+        sys print_bytestring("second");
+    end
+
+    if (false)
+        sys print_bytestring("BROKEN");
+    elsif (false)
+        sys print_bytestring("BROKEN");
+    else
+        sys print_bytestring("third");
+    end
 
     return false;
 end

@@ -36,6 +36,7 @@ keywords = [
     'coroutine',
     'define',
     'do',
+    'elsif',
     'else',
     'end',
     'entry',
