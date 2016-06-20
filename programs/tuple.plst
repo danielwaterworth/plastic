@@ -2,12 +2,19 @@ define foo(a : (UInt, Bool)) -> (UInt, Bool) do
     return a;
 end
 
+define fst(v : (a, b)) -> a do
+    x, y := v;
+    return x;
+end
+
 service Test()
     constructor new()
     end
 
     implements EntryPoint
         define main() -> Bool do
+            a := fst(foo((3, true)));
+            sys print_num(a);
             return false;
         end
     end

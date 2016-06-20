@@ -173,6 +173,11 @@ class AttrStore(Statement):
         value = self.value.evaluate(context)
         context.attr_add(self.attr, value)
 
+class TupleDestructure(Statement):
+    def __init__(self, names, expression):
+        self.names = names
+        self.expression = expression
+
 class Conditional(Statement):
     def __init__(self, expression, true_block, false_block):
         self.expression = expression

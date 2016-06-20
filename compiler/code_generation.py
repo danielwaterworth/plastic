@@ -168,6 +168,12 @@ def generate_statement(context, statement):
     elif isinstance(statement, program.AttrStore):
         var = generate_expression(context, statement.value)
         context.attr_add(statement.attr, var)
+    elif isinstance(statement, program.TupleDestructure):
+        var = generate_expression(context, statement.expression)
+        for name, i in zip(statement.names, itertools.count()):
+            i_var = context.basic_block.constant_uint(i)
+            v = context.basic_block.operation('index', [var, i_var])
+            context.add(name, v)
     elif isinstance(statement, program.Conditional):
         condition_variable = generate_expression(context, statement.expression)
         entry_conditional = context.basic_block.special_conditional(condition_variable, 0, 0)

@@ -182,6 +182,12 @@ def type_check_code_block(context, code_block):
             actual_type = infer_expression_type(statement.value)
             if expected_type != actual_type:
                 raise TypeError('expected %s to equal %s' % (actual_type, expected_type))
+        elif isinstance(statement, program.TupleDestructure):
+            expression_type = infer_expression_type(statement.expression)
+            assert isinstance(expression_type, program_types.Tuple)
+            assert len(statement.names) == len(expression_type.types)
+            for name, t in zip(statement.names, expression_type.types):
+                context.add(name, t)
         elif isinstance(statement, program.Conditional):
             assert infer_expression_type(statement.expression) == program_types.bool
 

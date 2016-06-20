@@ -272,6 +272,11 @@ def p_attr_assignment(p):
     '''statement : ATTR LOWER_NAME ASSIGNMENT expression SEMICOLON'''
     p[0] = program.AttrStore(p[2], p[4])
 
+def p_tuple_assignment(p):
+    '''statement : non_empty_match_list COMMA LOWER_NAME ASSIGNMENT expression SEMICOLON'''
+    p[1].append(p[3])
+    p[0] = program.TupleDestructure(p[1], p[5])
+
 def p_conditional(p):
     '''statement : IF OPEN_PARENS expression CLOSE_PARENS code_block if_end'''
     p[0] = program.Conditional(p[3], p[5], p[6])
