@@ -40,6 +40,8 @@ def read_bytecode(fd, receiver):
                                     basic_block_receiver.phi(inputs)
                                 elif instruction_type == CONST_BYTE:
                                     basic_block_receiver.constant_byte(fd.read(1))
+                                elif instruction_type == CONST_CHAR:
+                                    basic_block_receiver.constant_char(unichr(runpack('>I', structfd.read(4))))
                                 elif instruction_type == CONST_BYTESTRING:
                                     length = intmask(runpack('>Q', fd.read(8)))
                                     basic_block_receiver.constant_bytestring(fd.read(length))

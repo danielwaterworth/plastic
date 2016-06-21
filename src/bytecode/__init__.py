@@ -48,6 +48,10 @@ class ConstantByte(Instruction):
     def __init__(self, value):
         self.value = value
 
+class ConstantChar(Instruction):
+    def __init__(self, value):
+        self.value = value
+
 class ConstantByteString(Instruction):
     def __init__(self, value):
         self.value = value

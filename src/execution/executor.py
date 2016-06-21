@@ -145,6 +145,8 @@ class Coroutine(data.Data):
                     self.stack[-1].retire(data.Bool(instr.value))
                 elif isinstance(instr, bytecode.ConstantByte):
                     self.stack[-1].retire(data.Byte(instr.value))
+                elif isinstance(instr, bytecode.ConstantChar):
+                    self.stack[-1].retire(data.Char(instr.value))
                 elif isinstance(instr, bytecode.ConstantByteString):
                     self.stack[-1].retire(data.ByteString(instr.value))
                 elif isinstance(instr, bytecode.ConstantString):

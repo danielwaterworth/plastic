@@ -38,6 +38,10 @@ class BasicBlockConstructor(object):
         self.instructions.append(bytecode.ConstantByte(value))
         return self.function.create_variable()
 
+    def constant_char(self, value):
+        self.instructions.append(bytecode.ConstantChar(value))
+        return self.function.create_variable()
+
     def constant_string(self, value):
         self.instructions.append(bytecode.ConstantString(value))
         return self.function.create_variable()

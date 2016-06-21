@@ -26,6 +26,13 @@ class Byte(Data):
     def write_out(self, basic_block):
         return basic_block.constant_byte(self.b)
 
+class Char(Data):
+    def __init__(self, b):
+        self.b = b
+
+    def write_out(self, basic_block):
+        return basic_block.constant_char(self.b)
+
 class ByteString(Data):
     def __init__(self, v):
         self.v = v

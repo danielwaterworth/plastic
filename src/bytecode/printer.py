@@ -25,6 +25,11 @@ class BasicBlockPrinter(object):
         print ("CONST_BYTE", value, var)
         return var
 
+    def constant_char(self, value):
+        var = self.function.create_variable()
+        print ("CONST_CHAR", value, var)
+        return var
+
     def constant_bytestring(self, value):
         var = self.function.create_variable()
         print ("CONST_BYTESTRING", value, var)
