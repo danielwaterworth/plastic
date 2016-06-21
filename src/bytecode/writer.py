@@ -129,6 +129,17 @@ class BasicBlockWriter(object):
         self.block_writer.write(struct.pack('>Q', value))
         return self.function.create_variable()
 
+    def get(self):
+        assert not self.terminated
+        self.block_writer.write(struct.pack('>B', GET))
+        return self.function.create_variable()
+
+    def put(self, variable):
+        assert not self.terminated
+        self.block_writer.write(struct.pack('>B', PUT))
+        self.block_writer.write(struct.pack('>Q', variable))
+        return self.function.create_variable()
+
     def run_coroutine(self, coroutine):
         assert not self.terminated
         self.block_writer.write(struct.pack('>B', RUN_COROUTINE))

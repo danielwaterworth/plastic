@@ -76,6 +76,13 @@ class Store(Instruction):
         self.address = address
         self.variable = variable
 
+class Get(Instruction):
+    pass
+
+class Put(Instruction):
+    def __init__(self, variable):
+        self.variable = variable
+
 class RunCoroutine(Instruction):
     def __init__(self, coroutine):
         self.coroutine = coroutine

@@ -93,6 +93,11 @@ def read_bytecode(fd, receiver):
                                     address = runpack('>Q', fd.read(8))
                                     variable = runpack('>Q', fd.read(8))
                                     basic_block_receiver.store(address, variable)
+                                elif instruction_type == GET:
+                                    basic_block_receiver.get()
+                                elif instruction_type == PUT:
+                                    variable = runpack('>Q', fd.read(8))
+                                    basic_block_receiver.put(variable)
                                 elif instruction_type == RUN_COROUTINE:
                                     coroutine = runpack('>Q', fd.read(8))
                                     basic_block_receiver.run_coroutine(coroutine)

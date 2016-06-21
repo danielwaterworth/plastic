@@ -80,6 +80,16 @@ class BasicBlockPrinter(object):
         print ("STORE", address, value, var)
         return var
 
+    def get(self):
+        var = self.function.create_variable()
+        print ("GET", var)
+        return var
+
+    def put(self, variable):
+        var = self.function.create_variable()
+        print ("PUT", varible, var)
+        return var
+
     def run_coroutine(self, coroutine):
         var = self.function.create_variable()
         print ("RUN_COROUTINE", coroutine, var)

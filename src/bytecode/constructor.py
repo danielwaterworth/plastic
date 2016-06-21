@@ -78,6 +78,14 @@ class BasicBlockConstructor(object):
         self.instructions.append(bytecode.Store(address, variable))
         return self.function.create_variable()
 
+    def get(self):
+        self.instructions.append(bytecode.Get())
+        return self.function.create_variable()
+
+    def put(self, variable):
+        self.instructions.append(bytecode.Put(variable))
+        return self.function.create_variable()
+
     def run_coroutine(self, coroutine):
         self.instructions.append(bytecode.RunCoroutine(coroutine))
         return self.function.create_variable()

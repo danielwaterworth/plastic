@@ -87,6 +87,7 @@ class Coroutine(data.Data):
         self.program = program
         self.stack = [ActivationRecord(function, arguments)]
         self.done = False
+        self.var = data.Void()
 
     def run(self):
         assert not self.done
@@ -165,6 +166,11 @@ class Coroutine(data.Data):
                     value = self.stack[-1].resolve_variable(instr.variable)
                     assert isinstance(address, data.UInt)
                     self.executor.memory[address.n] = value
+                    self.stack[-1].retire(data.Void())
+                elif isinstance(instr, bytecode.Get):
+                    self.stack[-1].retire(self.var)
+                elif isinstance(instr, bytecode.Put):
+                    self.var = self.stack[-1].resolve_variable(instr.variable)
                     self.stack[-1].retire(data.Void())
                 elif isinstance(instr, bytecode.RunCoroutine):
                     coroutine = self.stack[-1].resolve_variable(instr.coroutine)

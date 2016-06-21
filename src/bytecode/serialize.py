@@ -29,6 +29,10 @@ def serialize_instruction(block_writer, instruction):
         block_writer.load(instruction.address)
     elif isinstance(instruction, bytecode.Store):
         block_writer.store(instruction.address, instruction.variable)
+    elif isinstance(instruction, bytecode.Get):
+        block_writer.get()
+    elif isinstance(instruction, bytecode.Put):
+        block_writer.put(instruction.variable)
     elif isinstance(instruction, bytecode.RunCoroutine):
         block_writer.run_coroutine(instruction.coroutine)
     elif isinstance(instruction, bytecode.Yield):
