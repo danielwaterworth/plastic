@@ -315,4 +315,5 @@ class Return(Terminator):
         self.expression = expression
 
 class Throw(Terminator):
-    pass
+    def __init__(self, exception):
+        self.exception = exception

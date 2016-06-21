@@ -4,7 +4,7 @@ service Test()
 
     implements EntryPoint
         define main() -> Bool do
-            throw;
+            throw void;
         end
     end
 end

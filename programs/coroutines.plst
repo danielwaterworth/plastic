@@ -1,6 +1,6 @@
 coroutine foo() Void -> Char do
     yield 'a';
-    return void;
+    return;
 end
 
 define main() -> Bool do

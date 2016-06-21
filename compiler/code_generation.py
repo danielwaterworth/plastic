@@ -329,7 +329,8 @@ def generate_terminator(context, terminator):
             variable = generate_expression(context, terminator.expression)
             context.basic_block.ret(variable)
         elif isinstance(terminator, program.Throw):
-            context.basic_block.catch_fire_and_die()
+            exception = generate_expression(context, terminator.exception)
+            context.basic_block.throw(exception)
         else:
             raise NotImplementedError('unknown terminator type: %s' % type(terminator))
 

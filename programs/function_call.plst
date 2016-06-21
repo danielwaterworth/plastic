@@ -1,6 +1,6 @@
 define foo(a : UInt) -> Void do
     sys print_num(a);
-    return void;
+    return;
 end
 
 define main() -> Bool do

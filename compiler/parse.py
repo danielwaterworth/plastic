@@ -430,13 +430,17 @@ def p_non_empty_match_list(p):
     p[1].append(p[3])
     p[0] = p[1]
 
+def p_empty_return(p):
+    '''block_end : RETURN SEMICOLON'''
+    p[0] = program.Return(program.VoidLiteral())
+
 def p_return(p):
     '''block_end : RETURN expression SEMICOLON'''
     p[0] = program.Return(p[2])
 
 def p_throw(p):
-    '''block_end : THROW SEMICOLON'''
-    p[0] = program.Throw()
+    '''block_end : THROW expression SEMICOLON'''
+    p[0] = program.Throw(p[2])
 
 def p_end(p):
     '''block_end : empty'''

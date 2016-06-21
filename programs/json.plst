@@ -31,7 +31,7 @@ define skip_whitespace(s : String) -> String do
 end
 
 define parse_string_tail(s : String) -> (String, String) do
-    throw;
+    throw void;
 end
 
 define parse_object_tail(s : String) -> (JObject, String) do
@@ -48,10 +48,10 @@ define parse_object_tail(s : String) -> (JObject, String) do
             rest, s := parse_object_tail(s);
             return (j_cons_object(string, value, rest), s);
         else
-            throw;
+            throw void;
         end
     else
-        throw;
+        throw void;
     end
 end
 
@@ -71,7 +71,7 @@ define parse_null_tail(s : String) -> (JSON, String) do
     if (s == "ull")
         return (j_null(), s.drop(3));
     else
-        throw;
+        throw void;
     end
 end
 
@@ -79,7 +79,7 @@ define parse_true_tail(s : String) -> (JSON, String) do
     if (s == "rue")
         return (j_true(), s.drop(3));
     else
-        throw;
+        throw void;
     end
 end
 
@@ -87,7 +87,7 @@ define parse_false_tail(s : String) -> (JSON, String) do
     if (s == "alse")
         return (j_false(), s.drop(4));
     else
-        throw;
+        throw void;
     end
 end
 
@@ -108,7 +108,7 @@ define parse_start(next_char : Char, s : String) -> (JSON, String) do
         string, s := parse_string_tail(s);
         return (j_string(string), s);
     else
-        throw;
+        throw void;
     end
 end
 
@@ -125,15 +125,15 @@ define parse(s : String) -> JSON do
 end
 
 define generate_array(json : JArray) -> String do
-    throw;
+    throw void;
 end
 
 define generate_object(json : JObject) -> String do
-    throw;
+    throw void;
 end
 
 define generate_string(json : String) -> String do
-    throw;
+    throw void;
 end
 
 define generate(json : JSON) -> String do

@@ -267,7 +267,7 @@ def type_check_code_block(context, code_block):
                 if not return_type.is_subtype_of(context.return_type):
                     raise TypeError('expected %s, but got %s' % (context.return_type, return_type))
             elif isinstance(terminator, program.Throw):
-                pass
+                exception_type = infer_expression_type(terminator.exception)
             else:
                 raise NotImplementedError()
 
