@@ -84,8 +84,9 @@ def type_check(modules):
     enum_decls = []
     interface_decls = []
     service_decls = []
-    entry = None
+    entry_blocks = []
     for module_name, module in modules.iteritems():
+        entry = None
         for decl in module.decls:
             if isinstance(decl, program.Function):
                 function_decls.append(decl)
@@ -102,6 +103,8 @@ def type_check(modules):
             elif isinstance(decl, program.Entry):
                 assert not entry
                 entry = decl
+        if entry:
+            entry_blocks.append(entry)
 
     for record in record_decls:
         attrs = []
@@ -229,6 +232,6 @@ def type_check(modules):
     for coroutine in coroutine_decls:
         type_check_coroutine(coroutine)
 
-    if entry:
+    for entry in entry_blocks:
         context = type_check_code_block.TypeCheckingContext(signatures, types, services, None, None, entry_point, {}, False, {})
         type_check_code_block.type_check_code_block(context, entry.body)
