@@ -532,24 +532,25 @@ def group_services(services):
 
     return grouped_services
 
-def generate_code(writer, entry_service, decls):
+def generate_code(writer, entry_service, modules):
     with writer as program_writer:
         service_decls = {}
         entry_point = program_types.Interface('EntryPoint', {'main': ([], program_types.bool)})
         interface_types = {'EntryPoint': entry_point}
-        for decl in decls:
-            if isinstance(decl, program.Function):
-                generate_function(program_writer, decl)
-            elif isinstance(decl, program.Coroutine):
-                generate_coroutine(program_writer, decl)
-            elif isinstance(decl, program.Record):
-                generate_record(program_writer, decl)
-            elif isinstance(decl, program.Enum):
-                generate_enum(program_writer, decl)
-            elif isinstance(decl, program.Service):
-                service_decls[decl.name] = decl
-            elif isinstance(decl, program.Interface):
-                interface_types[decl.name] = decl.type
+        for module_name, module in modules.iteritems():
+            for decl in module.decls:
+                if isinstance(decl, program.Function):
+                    generate_function(program_writer, decl)
+                elif isinstance(decl, program.Coroutine):
+                    generate_coroutine(program_writer, decl)
+                elif isinstance(decl, program.Record):
+                    generate_record(program_writer, decl)
+                elif isinstance(decl, program.Enum):
+                    generate_enum(program_writer, decl)
+                elif isinstance(decl, program.Service):
+                    service_decls[decl.name] = decl
+                elif isinstance(decl, program.Interface):
+                    interface_types[decl.name] = decl.type
 
         service_types = {}
         all_services = transitive_closure_services(entry_service)

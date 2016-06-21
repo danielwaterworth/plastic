@@ -12,9 +12,9 @@ import bytecode.constructor
 import bytecode.writer
 import load_imports
 
-ast = load_imports.load_imports(sys.argv[1])
+entry_module, ast = load_imports.load_imports(sys.argv[1])
 type_checking.type_check(ast)
-entry_service = evaluation.evaluate_entry_block(ast)
+entry_service = evaluation.evaluate_entry_block(ast, entry_module)
 constructor = bytecode.constructor.BytecodeConstructor()
 code_generation.generate_code(constructor, entry_service, ast)
 

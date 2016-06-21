@@ -2,7 +2,7 @@ import program
 import program_types
 import type_check_code_block
 
-def type_check(decls):
+def type_check(modules):
     signatures = {}
     types = {
         'UInt': program_types.uint,
@@ -85,22 +85,23 @@ def type_check(decls):
     interface_decls = []
     service_decls = []
     entry = None
-    for decl in decls:
-        if isinstance(decl, program.Function):
-            function_decls.append(decl)
-        elif isinstance(decl, program.Coroutine):
-            coroutine_decls.append(decl)
-        elif isinstance(decl, program.Record):
-            record_decls.append(decl)
-        elif isinstance(decl, program.Enum):
-            enum_decls.append(decl)
-        elif isinstance(decl, program.Interface):
-            interface_decls.append(decl)
-        elif isinstance(decl, program.Service):
-            service_decls.append(decl)
-        elif isinstance(decl, program.Entry):
-            assert not entry
-            entry = decl
+    for module_name, module in modules.iteritems():
+        for decl in module.decls:
+            if isinstance(decl, program.Function):
+                function_decls.append(decl)
+            elif isinstance(decl, program.Coroutine):
+                coroutine_decls.append(decl)
+            elif isinstance(decl, program.Record):
+                record_decls.append(decl)
+            elif isinstance(decl, program.Enum):
+                enum_decls.append(decl)
+            elif isinstance(decl, program.Interface):
+                interface_decls.append(decl)
+            elif isinstance(decl, program.Service):
+                service_decls.append(decl)
+            elif isinstance(decl, program.Entry):
+                assert not entry
+                entry = decl
 
     for record in record_decls:
         attrs = []

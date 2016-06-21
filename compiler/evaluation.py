@@ -43,17 +43,21 @@ class EvaluationContext(object):
         self.services.append(instantiation)
         return instantiation
 
-def evaluate_entry_block(decls):
+def evaluate_entry_block(modules, entry_module):
     service_constructors = {}
 
     entry_block = None
-    for decl in decls:
+    for decl in modules[entry_module].decls:
         if isinstance(decl, program.Entry):
+            assert not entry_block
             entry_block = decl.body
-        elif isinstance(decl, program.Service):
-            for service_decl in decl.decls:
-                if isinstance(service_decl, program.Constructor):
-                    service_constructors[(decl.name, service_decl.name)] = service_decl
+
+    for module_name, module in modules.iteritems():
+        for decl in module.decls:
+            if isinstance(decl, program.Service):
+                for service_decl in decl.decls:
+                    if isinstance(service_decl, program.Constructor):
+                        service_constructors[(decl.name, service_decl.name)] = service_decl
 
     assert entry_block
     context = EvaluationContext(service_constructors, {})

@@ -20,9 +20,4 @@ def load_imports(filename):
             modules[module] = m
             to_load.extend(m.imports)
 
-    decls = []
-    for module in modules.itervalues():
-        for decl in module.decls:
-            decls.append(decl)
-
-    return decls
+    return (name, modules)
