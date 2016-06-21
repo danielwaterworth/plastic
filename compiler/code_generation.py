@@ -89,9 +89,18 @@ bytestring_operators = {
     '==': 'bytestring_eq'
 }
 
+string_operators = {
+    '==': 'string_eq'
+}
+
 bool_operators = {}
+
 byte_operators = {
     '==': 'byte_eq'
+}
+
+char_operators = {
+    '==': 'char_eq'
 }
 
 def operator_name(operator, lhs_type):
@@ -99,18 +108,22 @@ def operator_name(operator, lhs_type):
         return uint_operators[operator]
     elif lhs_type == program_types.bytestring:
         return bytestring_operators[operator]
+    elif lhs_type == program_types.string:
+        return string_operators[operator]
     elif lhs_type == program_types.bool:
         return bool_operators[operator]
     elif lhs_type == program_types.byte:
         return byte_operators[operator]
+    elif lhs_type == program_types.char:
+        return char_operators[operator]
     else:
         raise NotImplementedError()
 
 def generate_expression(context, expression):
     if isinstance(expression, program.Variable):
         return context.lookup(expression.name)
-    elif isinstance(expression, program.ByteLiteral):
-        return context.basic_block.constant_byte(expression.b)
+    elif isinstance(expression, program.CharLiteral):
+        return context.basic_block.constant_char(expression.b)
     elif isinstance(expression, program.NumberLiteral):
         return context.basic_block.constant_uint(expression.n)
     elif isinstance(expression, program.BoolLiteral):

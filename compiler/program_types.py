@@ -62,6 +62,15 @@ class ByteString(Type):
 
 bytestring = ByteString()
 
+class Char(Type):
+    def match(self, _, other):
+        assert isinstance(other, Char)
+
+    def template(self, _):
+        return self
+
+char = Char()
+
 class String(Type):
     def method_signature(self, name):
         return string_methods[name][0]
@@ -246,5 +255,7 @@ bytestring_methods = {
 }
 
 string_methods = {
+    'head': (([], char), 'string_head'),
+    'drop': (([uint], string), 'string_drop'),
     'encode_utf8': (([], bytestring), 'encode_utf8')
 }

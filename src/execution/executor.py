@@ -121,10 +121,10 @@ class Coroutine(data.Data):
                         else:
                             print 'False'
                         self.stack[-1].retire(data.Void())
-                    elif instr.function == 'print_byte':
+                    elif instr.function == 'print_char':
                         assert len(arguments) == 1
                         a = arguments[0]
-                        assert isinstance(a, data.Byte)
+                        assert isinstance(a, data.Char)
                         print a.b
                         self.stack[-1].retire(data.Void())
                     elif instr.function == 'print_string':

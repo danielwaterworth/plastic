@@ -275,12 +275,12 @@ class IsDone(Expression):
     def __init__(self, coroutine):
         self.coroutine = coroutine
 
-class ByteLiteral(Expression):
+class CharLiteral(Expression):
     def __init__(self, b):
         self.b = b
 
     def evaluate(self, context):
-        return data.Byte(self.b)
+        return data.Char(self.b)
 
 class NumberLiteral(Expression):
     def __init__(self, n):

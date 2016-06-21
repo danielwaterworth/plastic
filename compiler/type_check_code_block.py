@@ -55,7 +55,7 @@ class TypeCheckingContext(object):
 sys_call_signatures = {
     'print_num': ([program_types.uint], program_types.void),
     'print_bool': ([program_types.bool], program_types.void),
-    'print_byte': ([program_types.byte], program_types.void),
+    'print_char': ([program_types.char], program_types.void),
     'print_string': ([program_types.string], program_types.void)
 }
 
@@ -71,6 +71,14 @@ def merge_contexts(a, b):
 
 comparison_operators = ['<', '>', '<=', '>=']
 arithmetic_operators = ['+', '-', '*', '/']
+equality_types = [
+    program_types.uint,
+    program_types.bool,
+    program_types.byte,
+    program_types.bytestring,
+    program_types.string,
+    program_types.char,
+]
 
 def operator_type(operator, rhs_type, lhs_type):
     if operator in comparison_operators:
@@ -79,7 +87,8 @@ def operator_type(operator, rhs_type, lhs_type):
         return program_types.bool
     elif operator in ['==', '!=']:
         assert lhs_type == rhs_type
-        assert lhs_type in [program_types.uint, program_types.bool, program_types.bytestring, program_types.byte]
+        if not lhs_type in equality_types:
+            raise Exception("%s doesn't have equality" % type(lhs_type))
         return program_types.bool
     elif operator in arithmetic_operators:
         return program_types.uint
@@ -90,8 +99,8 @@ def type_check_code_block(context, code_block):
     def infer_expression_type(expression):
         if isinstance(expression, program.Variable):
             expression.type = context.lookup(expression.name)
-        elif isinstance(expression, program.ByteLiteral):
-            expression.type = program_types.byte
+        elif isinstance(expression, program.CharLiteral):
+            expression.type = program_types.char
         elif isinstance(expression, program.NumberLiteral):
             expression.type = program_types.uint
         elif isinstance(expression, program.BoolLiteral):

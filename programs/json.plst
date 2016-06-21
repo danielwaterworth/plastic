@@ -5,23 +5,23 @@ end
 
 enum JObject
     j_empty_object |
-    j_cons_object(ByteString, JSON, JObject)
+    j_cons_object(String, JSON, JObject)
 end
 
 enum JSON
     j_null |
     j_true |
     j_false |
-    j_string(ByteString) |
+    j_string(String) |
     j_array(JArray) |
     j_object(JObject)
 end
 
-define next(s : ByteString) -> (Byte, ByteString) do
-    return (s.index(0), s.slice(1, s.length()));
+define next(s : String) -> (Char, String) do
+    return (s.head(), s.drop(1));
 end
 
-define skip_whitespace(s : ByteString) -> ByteString do
+define skip_whitespace(s : String) -> String do
     tail := s;
     do
         s := tail;
@@ -30,11 +30,11 @@ define skip_whitespace(s : ByteString) -> ByteString do
     return s;
 end
 
-define parse_string_tail(s : ByteString) -> (ByteString, ByteString) do
+define parse_string_tail(s : String) -> (String, String) do
     throw;
 end
 
-define parse_object_tail(s : ByteString) -> (JObject, ByteString) do
+define parse_object_tail(s : String) -> (JObject, String) do
     s := skip_whitespace(s);
     first_char, s := next(s);
     if (first_char == '}')
@@ -55,35 +55,35 @@ define parse_object_tail(s : ByteString) -> (JObject, ByteString) do
     end
 end
 
-define parse_array_tail(s : ByteString) -> (JArray, ByteString) do
+define parse_array_tail(s : String) -> (JArray, String) do
     throw;
 end
 
-define parse_null_tail(s : ByteString) -> (JSON, ByteString) do
-    if (s == "ull".encode_utf8())
-        return (j_null(), s.slice(3, s.length()));
+define parse_null_tail(s : String) -> (JSON, String) do
+    if (s == "ull")
+        return (j_null(), s.drop(3));
     else
         throw;
     end
 end
 
-define parse_true_tail(s : ByteString) -> (JSON, ByteString) do
-    if (s == "rue".encode_utf8())
-        return (j_true(), s.slice(3, s.length()));
+define parse_true_tail(s : String) -> (JSON, String) do
+    if (s == "rue")
+        return (j_true(), s.drop(3));
     else
         throw;
     end
 end
 
-define parse_false_tail(s : ByteString) -> (JSON, ByteString) do
-    if (s == "alse".encode_utf8())
-        return (j_false(), s.slice(4, s.length()));
+define parse_false_tail(s : String) -> (JSON, String) do
+    if (s == "alse")
+        return (j_false(), s.drop(4));
     else
         throw;
     end
 end
 
-define parse_any(s : ByteString) -> (JSON, ByteString) do
+define parse_any(s : String) -> (JSON, String) do
     s := skip_whitespace(s);
 
     first_char, s := next(s);
@@ -107,33 +107,33 @@ define parse_any(s : ByteString) -> (JSON, ByteString) do
     end
 end
 
-define parse(s : ByteString) -> JSON do
+define parse(s : String) -> JSON do
     x, s := parse_any(s);
     return x;
 end
 
-define generate_array(json : JArray) -> ByteString do
+define generate_array(json : JArray) -> String do
     throw;
 end
 
-define generate_object(json : JObject) -> ByteString do
+define generate_object(json : JObject) -> String do
     throw;
 end
 
-define generate_string(json : ByteString) -> ByteString do
+define generate_string(json : String) -> String do
     throw;
 end
 
-define generate(json : JSON) -> ByteString do
+define generate(json : JSON) -> String do
     match (json)
         j_null do
-            result := "null".encode_utf8();
+            result := "null";
         end
         j_true do
-            result := "true".encode_utf8();
+            result := "true";
         end
         j_false do
-            result := "false".encode_utf8();
+            result := "false";
         end
         j_array(elements) do
             result := generate_array(elements);
@@ -154,10 +154,10 @@ service Test()
 
     implements EntryPoint
         define main() -> Bool do
-            sys print_string(generate(parse("null".encode_utf8())).decode_utf8());
-            sys print_string(generate(parse("true".encode_utf8())).decode_utf8());
-            sys print_string(generate(parse("false".encode_utf8())).decode_utf8());
-            sys print_string(generate(parse("{}".encode_utf8())).decode_utf8());
+            sys print_string(generate(parse("null")));
+            sys print_string(generate(parse("true")));
+            sys print_string(generate(parse("false")));
+            sys print_string(generate(parse("{}")));
             return true;
         end
     end
