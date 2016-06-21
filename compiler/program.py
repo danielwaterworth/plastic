@@ -226,16 +226,15 @@ class SysCall(Expression):
         self.name = name
         self.arguments = arguments
 
-class FunctionCall(Expression):
-    def __init__(self, name, arguments):
-        self.name = name
+class Call(Expression):
+    def __init__(self, function, arguments):
+        self.function = function
         self.arguments = arguments
 
-class MethodCall(Expression):
-    def __init__(self, obj, name, arguments):
+class RecordAccess(Expression):
+    def __init__(self, obj, name):
         self.obj = obj
         self.name = name
-        self.arguments = arguments
 
 class ConstructorCall(Expression):
     def __init__(self, ty, name, arguments):

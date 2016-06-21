@@ -152,19 +152,25 @@ def generate_expression(context, expression):
         rhs = generate_expression(context, expression.rhs)
         operator = operator_name(expression.operator, expression.lhs.type)
         return context.basic_block.operation(operator, [lhs, rhs])
-    elif isinstance(expression, program.FunctionCall):
-        arguments = [generate_expression(context, argument) for argument in expression.arguments]
-        if expression.coroutine_call:
-            return context.basic_block.new_coroutine(expression.name, arguments)
+    elif isinstance(expression, program.Call):
+        if isinstance(expression.function, program.Variable):
+            name = expression.function.name
+            arguments = [generate_expression(context, argument) for argument in expression.arguments]
+            if expression.coroutine_call:
+                return context.basic_block.new_coroutine(name, arguments)
+            else:
+                return context.basic_block.fun_call(name, arguments)
+        elif isinstance(expression.function, program.RecordAccess):
+            obj = expression.function.obj
+            name = expression.function.name
+            arguments = [generate_expression(context, argument) for argument in expression.arguments]
+            object_variable = generate_expression(context, obj)
+            return obj.type.method(context.basic_block, object_variable, name, arguments)
         else:
-            return context.basic_block.fun_call(expression.name, arguments)
+            raise NotImplementedError()
     elif isinstance(expression, program.SysCall):
         arguments = [generate_expression(context, argument) for argument in expression.arguments]
         return context.basic_block.sys_call(expression.name, arguments)
-    elif isinstance(expression, program.MethodCall):
-        arguments = [generate_expression(context, argument) for argument in expression.arguments]
-        object_variable = generate_expression(context, expression.obj)
-        return expression.obj.type.method(context.basic_block, object_variable, expression.name, arguments)
     elif isinstance(expression, program.ConstructorCall):
         arguments = [generate_expression(context, argument) for argument in expression.arguments]
         return context.basic_block.fun_call('%s.%s' % (expression.ty, expression.name), arguments)

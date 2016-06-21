@@ -133,28 +133,36 @@ def type_check_code_block(context, code_block):
             rhs_type = infer_expression_type(expression.rhs)
             lhs_type = infer_expression_type(expression.lhs)
             expression.type = operator_type(expression.operator, rhs_type, lhs_type)
-        elif isinstance(expression, program.FunctionCall):
-            signature = context.signatures[expression.name]
-            if isinstance(signature, FunctionSignature):
+        elif isinstance(expression, program.Call):
+            if isinstance(expression.function, program.Variable):
+                name = expression.function.name
+                signature = context.signatures[name]
+                if isinstance(signature, FunctionSignature):
+                    argument_types = [infer_expression_type(argument) for argument in expression.arguments]
+                    return_type = signature.produce_return_type(argument_types)
+                    expression.coroutine_call = False
+                    expression.type = return_type
+                elif isinstance(signature, CoroutineSignature):
+                    argument_types = [infer_expression_type(argument) for argument in expression.arguments]
+                    assert signature.parameter_types == argument_types
+                    expression.coroutine_call = True
+                    expression.type = program_types.Coroutine(signature.receive_type, signature.yield_type)
+                else:
+                    raise NotImplementedError('not implemented signature type: %s' % type(signature))
+            elif isinstance(expression.function, program.RecordAccess):
+                obj = expression.function.obj
+                name = expression.function.name
+                object_type = infer_expression_type(obj)
+                expected_arg_types, return_type = object_type.method_signature(name)
                 argument_types = [infer_expression_type(argument) for argument in expression.arguments]
-                return_type = signature.produce_return_type(argument_types)
-                expression.coroutine_call = False
+                assert expected_arg_types == argument_types
                 expression.type = return_type
-            elif isinstance(signature, CoroutineSignature):
-                argument_types = [infer_expression_type(argument) for argument in expression.arguments]
-                assert signature.parameter_types == argument_types
-                expression.coroutine_call = True
-                expression.type = program_types.Coroutine(signature.receive_type, signature.yield_type)
             else:
-                raise NotImplementedError('not implemented signature type: %s' % type(signature))
+                raise NotImplementedError('unsupported type of call')
+        elif isinstance(expression, program.RecordAccess):
+            raise Exception('naked record access')
         elif isinstance(expression, program.SysCall):
             expected_arg_types, return_type = sys_call_signatures[expression.name]
-            argument_types = [infer_expression_type(argument) for argument in expression.arguments]
-            assert expected_arg_types == argument_types
-            expression.type = return_type
-        elif isinstance(expression, program.MethodCall):
-            object_type = infer_expression_type(expression.obj)
-            expected_arg_types, return_type = object_type.method_signature(expression.name)
             argument_types = [infer_expression_type(argument) for argument in expression.arguments]
             assert expected_arg_types == argument_types
             expression.type = return_type

@@ -350,10 +350,6 @@ def p_expression_sys_call(p):
     '''expression : SYS LOWER_NAME function_call'''
     p[0] = program.SysCall(p[2], p[3])
 
-def p_expression_call(p):
-    '''expression : LOWER_NAME function_call'''
-    p[0] = program.FunctionCall(p[1], p[2])
-
 def p_expression_constructor(p):
     '''expression : UPPER_NAME DOT LOWER_NAME function_call'''
     p[0] = program.ConstructorCall(p[1], p[3], p[4])
@@ -413,9 +409,13 @@ def p_expression_binop(p):
                   | expression NE expression'''
     p[0] = program.BinOp(p[1], p[3], p[2])
 
-def p_method_call_expression(p):
-    '''expression : expression DOT LOWER_NAME function_call'''
-    p[0] = program.MethodCall(p[1], p[3], p[4])
+def p_call(p):
+    '''expression : expression function_call'''
+    p[0] = program.Call(p[1], p[2])
+
+def p_record_access(p):
+    '''expression : expression DOT LOWER_NAME'''
+    p[0] = program.RecordAccess(p[1], p[3])
 
 def p_clauses_empty(p):
     '''match_clauses : empty'''
