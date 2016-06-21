@@ -184,6 +184,11 @@ class BasicBlockWriter(object):
         self.terminator()
         self.block_writer.write(struct.pack('>B', CATCH_FIRE_AND_DIE))
 
+    def throw(self, exception):
+        self.terminator()
+        self.block_writer.write(struct.pack('>B', THROW))
+        self.block_writer.write(struct.pack('>Q', exception))
+
     def write_out(self):
         self.writer.write(self.block_writer.getvalue())
 

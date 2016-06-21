@@ -205,6 +205,10 @@ class Coroutine(data.Data):
                         self.stack[-1].goto(term.false_block)
                 elif isinstance(term, bytecode.CatchFireAndDie):
                     raise Exception('catching fire and dying')
+                elif isinstance(term, bytecode.Throw):
+                    exception = self.stack[-1].resolve_variable(term.exception)
+                    print exception
+                    raise Exception('throw')
                 else:
                     raise NotImplementedError('missing terminator implementation')
 

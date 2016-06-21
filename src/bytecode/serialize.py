@@ -54,6 +54,8 @@ def serialize_terminator(block_writer, terminator):
         block_writer.conditional(variable, true_block, false_block)
     elif isinstance(terminator, bytecode.CatchFireAndDie):
         block_writer.catch_fire_and_die()
+    elif isinstance(terminator, bytecode.Throw):
+        block_writer.throw(terminator.exception)
     else:
         raise NotImplementedError('unknown terminator type: %s' % type(terminator))
 

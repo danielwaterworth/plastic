@@ -117,6 +117,9 @@ class BasicBlockPrinter(object):
     def catch_fire_and_die(self):
         print "CATCH_FIRE_AND_DIE"
 
+    def throw(self, exception):
+        print ("THROW", exception)
+
 class FunctionPrinter(object):
     def __init__(self, name, num_arguments):
         self.name = name

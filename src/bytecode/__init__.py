@@ -115,3 +115,7 @@ class Conditional(Terminator):
 
 class CatchFireAndDie(Terminator):
     pass
+
+class Throw(Terminator):
+    def __init__(self, exception):
+        self.exception = exception

@@ -120,6 +120,9 @@ class BasicBlockConstructor(object):
     def catch_fire_and_die(self):
         self.terminal = bytecode.CatchFireAndDie()
 
+    def throw(self, exception):
+        self.terminal = bytecode.Throw(exception)
+
     def get_basic_block(self):
         return bytecode.BasicBlock(self.instructions, self.terminal)
 
