@@ -1,6 +1,11 @@
 import struct
 import data
 
+class Program(object):
+    def __init__(self, imports, decls):
+        self.imports = imports
+        self.decls = decls
+
 class Decl(object):
     pass
 

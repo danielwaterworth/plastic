@@ -1,3 +1,4 @@
 #!/bin/bash
-source config.sh;
-python print_bc.py $1;
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source $DIR/config.sh;
+python $DIR/print_bc.py $1;

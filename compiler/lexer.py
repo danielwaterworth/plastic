@@ -44,6 +44,7 @@ keywords = [
     'false',
     'if',
     'implements',
+    'import',
     'interface',
     'is_done',
     'match',

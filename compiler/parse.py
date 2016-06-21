@@ -5,11 +5,28 @@ import program
 import program_types
 
 def p_program_empty(p):
-    '''program : empty'''
+    '''program : imports top_level_decls'''
+    p[0] = program.Program(p[1], p[2])
+
+def p_imports_empty(p):
+    '''imports : empty'''
     p[0] = []
 
-def p_program(p):
-    '''program : program top_level_decl'''
+def p_imports(p):
+    '''imports : imports import_decl'''
+    p[1].append(p[2])
+    p[0] = p[1]
+
+def p_import(p):
+    '''import_decl : IMPORT LOWER_NAME'''
+    p[0] = p[2]
+
+def p_top_level_decls_empty(p):
+    '''top_level_decls : empty'''
+    p[0] = []
+
+def p_top_level_decls(p):
+    '''top_level_decls : top_level_decls top_level_decl'''
     p[1].append(p[2])
     p[0] = p[1]
 
