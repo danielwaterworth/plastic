@@ -12,6 +12,7 @@ def load_imports(filename):
         return parse.parser.parse(source)
 
     modules = {}
+    ordered_modules = []
     to_load = [name]
     while to_load:
         module = to_load.pop()
@@ -19,5 +20,7 @@ def load_imports(filename):
             m = load_module(module)
             modules[module] = m
             to_load.extend(m.imports)
+            ordered_modules.append((module, m))
+    ordered_modules.reverse()
 
-    return (name, modules)
+    return (name, ordered_modules)

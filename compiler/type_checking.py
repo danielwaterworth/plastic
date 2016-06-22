@@ -3,28 +3,26 @@ import program_types
 import type_check_code_block
 import module_interface
 
-def type_check(modules):
-    module_interfaces = {}
-    for module_name, module in modules.iteritems():
-        module.interface = module_interface.ModuleInterface(module_name, module.imports)
-        module_interfaces[module_name] = module.interface
+primitives = {
+    'UInt': program_types.uint,
+    'Bool': program_types.bool,
+    'Void': program_types.void,
+    'Byte': program_types.byte,
+    'ByteString': program_types.bytestring,
+    'Char': program_types.char,
+    'String': program_types.string
+}
+entry_point = program_types.Interface('EntryPoint', {'main': ([], program_types.bool)})
+builtin_interfaces = {'EntryPoint': entry_point}
 
-    primitives = {
-        'UInt': program_types.uint,
-        'Bool': program_types.bool,
-        'Void': program_types.void,
-        'Byte': program_types.byte,
-        'ByteString': program_types.bytestring,
-        'Char': program_types.char,
-        'String': program_types.string
-    }
-    entry_point = program_types.Interface('EntryPoint', {'main': ([], program_types.bool)})
-    builtin_interfaces = {'EntryPoint': entry_point}
+def type_check_module(module_interfaces, module_name, module_decl):
+    module = module_interface.ModuleInterface(module_name, module_decl.imports)
+    module_interfaces[module_name] = module
 
     def type_check_function(function):
         context = type_check_code_block.TypeCheckingContext(
                         module_interfaces,
-                        function.module_interface,
+                        module,
                         None,
                         None,
                         function.return_type,
@@ -38,7 +36,7 @@ def type_check(modules):
     def type_check_coroutine(coroutine):
         context = type_check_code_block.TypeCheckingContext(
                         module_interfaces,
-                        coroutine.module_interface,
+                        module,
                         coroutine.receive_type,
                         coroutine.yield_type,
                         program_types.void,
@@ -49,10 +47,10 @@ def type_check(modules):
 
         type_check_code_block.type_check_code_block(context, coroutine.body)
 
-    def type_check_constructor(current_module, attr_types, constructor):
+    def type_check_constructor(attr_types, constructor):
         context = type_check_code_block.TypeCheckingContext(
                         module_interfaces,
-                        current_module,
+                        module,
                         None,
                         None,
                         program_types.void,
@@ -63,12 +61,12 @@ def type_check(modules):
 
         type_check_code_block.type_check_code_block(context, constructor.body)
 
-    def type_check_method(current_module, self_type, attr_types, method, store_attributes=False):
+    def type_check_method(self_type, attr_types, method, store_attributes=False):
         scope = dict(method.parameters)
         scope['self'] = self_type
         context = type_check_code_block.TypeCheckingContext(
                         module_interfaces,
-                        current_module,
+                        module,
                         None,
                         None,
                         method.return_type,
@@ -85,35 +83,32 @@ def type_check(modules):
     enum_decls = []
     interface_decls = []
     service_decls = []
-    entry_blocks = []
-    for module_name, module in modules.iteritems():
-        entry = None
-        for decl in module.decls:
-            decl.module_interface = module.interface
-            if isinstance(decl, program.Function):
-                function_decls.append(decl)
-            elif isinstance(decl, program.Coroutine):
-                coroutine_decls.append(decl)
-            elif isinstance(decl, program.Record):
-                record_decls.append(decl)
-            elif isinstance(decl, program.Enum):
-                enum_decls.append(decl)
-            elif isinstance(decl, program.Interface):
-                interface_decls.append(decl)
-            elif isinstance(decl, program.Service):
-                service_decls.append(decl)
-            elif isinstance(decl, program.Entry):
-                assert not entry
-                entry = decl
-        if entry:
-            entry_blocks.append(entry)
+    entry = None
+
+    for decl in module_decl.decls:
+        decl.module_interface = module
+        if isinstance(decl, program.Function):
+            function_decls.append(decl)
+        elif isinstance(decl, program.Coroutine):
+            coroutine_decls.append(decl)
+        elif isinstance(decl, program.Record):
+            record_decls.append(decl)
+        elif isinstance(decl, program.Enum):
+            enum_decls.append(decl)
+        elif isinstance(decl, program.Interface):
+            interface_decls.append(decl)
+        elif isinstance(decl, program.Service):
+            service_decls.append(decl)
+        elif isinstance(decl, program.Entry):
+            assert not entry
+            entry = decl
 
     for record in record_decls:
         attrs = []
 
         types = {}
         types.update(primitives)
-        types.update(record.module_interface.types)
+        types.update(module.types)
 
         for decl in record.decls:
             if isinstance(decl, program.Attr):
@@ -122,28 +117,28 @@ def type_check(modules):
 
         record.type = program_types.Record(record.name, attrs, {}, {})
         assert not record.name in types
-        record.module_interface.types[record.name] = record.type
+        module.types[record.name] = record.type
 
     for enum in enum_decls:
         enum.type = program_types.Enum(enum.name, {})
-        enum.module_interface.types[enum.name] = enum.type
+        module.types[enum.name] = enum.type
 
     for enum in enum_decls:
         types = {}
         types.update(primitives)
-        types.update(enum.module_interface.types)
+        types.update(module.types)
 
         for constructor in enum.constructors:
             constructor.resolve_types(module_interfaces, types)
             assert not constructor.name in enum.type.constructors
             enum.type.constructors[constructor.name] = constructor.types
             signature = type_check_code_block.FunctionSignature(constructor.types, enum.type)
-            enum.module_interface.signatures[constructor.name] = signature
+            module.signatures[constructor.name] = signature
 
     for record in record_decls:
         types = {}
         types.update(primitives)
-        types.update(record.module_interface.types)
+        types.update(module.types)
 
         constructor_signatures = record.type.constructor_signatures
         methods = record.type.methods
@@ -159,14 +154,14 @@ def type_check(modules):
     for record in record_decls:
         for decl in record.decls:
             if isinstance(decl, program.Constructor):
-                type_check_constructor(record.module_interface, dict(record.type.attrs), decl)
+                type_check_constructor(dict(record.type.attrs), decl)
             elif isinstance(decl, program.Function):
-                type_check_method(record.module_interface, record.type, dict(record.type.attrs), decl)
+                type_check_method(record.type, dict(record.type.attrs), decl)
 
     for interface in interface_decls:
         types = {}
         types.update(primitives)
-        types.update(interface.module_interface.types)
+        types.update(module.types)
 
         methods = {}
 
@@ -176,17 +171,17 @@ def type_check(modules):
 
         interface.type = program_types.Interface(interface.name, methods)
         assert not interface.name in builtin_interfaces
-        assert not interface.name in interface.module_interface.interface_types
-        interface.module_interface.interface_types[interface.name] = interface.type
+        assert not interface.name in module.interface_types
+        module.interface_types[interface.name] = interface.type
 
     for service in service_decls:
         types = {}
         types.update(primitives)
-        types.update(service.module_interface.types)
+        types.update(module.types)
 
         interface_types = {}
         interface_types.update(builtin_interfaces)
-        interface_types.update(service.module_interface.interface_types)
+        interface_types.update(module.interface_types)
 
         attrs = {}
         dependency_names = {name for name, interface_name in service.dependencies}
@@ -220,27 +215,27 @@ def type_check(modules):
                 constructor_signatures[service_decl.name] = service_decl.parameter_types
         service.type = program_types.Service(service.name, dependencies, attrs, constructor_signatures, interfaces)
         service.private_type = program_types.PrivateService(service.name, private_methods)
-        service.module_interface.services[service.name] = service.type
+        module.services[service.name] = service.type
 
     for function in function_decls:
         types = {}
         types.update(primitives)
-        types.update(function.module_interface.types)
+        types.update(module.types)
 
-        assert not function.name in function.module_interface.signatures
+        assert not function.name in module.signatures
         function.resolve_types(module_interfaces, types)
         signature = type_check_code_block.FunctionSignature(
                         function.parameter_types,
                         function.return_type
                     )
-        function.module_interface.signatures[function.name] = signature
+        module.signatures[function.name] = signature
 
     for coroutine in coroutine_decls:
         types = {}
         types.update(primitives)
-        types.update(coroutine.module_interface.types)
+        types.update(module.types)
 
-        assert not coroutine.name in coroutine.module_interface.signatures
+        assert not coroutine.name in module.signatures
         coroutine.resolve_types(module_interfaces, types)
         arg_types = coroutine.parameter_types
         signature = type_check_code_block.CoroutineSignature(
@@ -248,19 +243,19 @@ def type_check(modules):
                         coroutine.receive_type,
                         coroutine.yield_type
                     )
-        coroutine.module_interface.signatures[coroutine.name] = signature
+        module.signatures[coroutine.name] = signature
 
     for service in service_decls:
         all_attrs = service.type.all_attrs
         for service_decl in service.decls:
             if isinstance(service_decl, program.Implements):
                 for method_decl in service_decl.decls:
-                    type_check_method(service.module_interface, service.private_type, all_attrs, method_decl, True)
+                    type_check_method(service.private_type, all_attrs, method_decl, True)
             elif isinstance(service_decl, program.Private):
                 for private_decl in service_decl.decls:
-                    type_check_method(service.module_interface, service.private_type, all_attrs, private_decl, True)
+                    type_check_method(service.private_type, all_attrs, private_decl, True)
             elif isinstance(service_decl, program.Constructor):
-                type_check_constructor(service.module_interface, attrs, service_decl)
+                type_check_constructor(attrs, service_decl)
 
     for function in function_decls:
         type_check_function(function)
@@ -268,6 +263,6 @@ def type_check(modules):
     for coroutine in coroutine_decls:
         type_check_coroutine(coroutine)
 
-    for entry in entry_blocks:
-        context = type_check_code_block.TypeCheckingContext(module_interfaces, entry.module_interface, None, None, entry_point, {}, False, {})
+    if entry:
+        context = type_check_code_block.TypeCheckingContext(module_interfaces, module, None, None, entry_point, {}, False, {})
         type_check_code_block.type_check_code_block(context, entry.body)
