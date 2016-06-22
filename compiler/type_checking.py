@@ -25,7 +25,6 @@ def type_check(modules):
         context = type_check_code_block.TypeCheckingContext(
                         module_interfaces,
                         function.module_interface,
-                        types,
                         None,
                         None,
                         function.return_type,
@@ -40,7 +39,6 @@ def type_check(modules):
         context = type_check_code_block.TypeCheckingContext(
                         module_interfaces,
                         coroutine.module_interface,
-                        types,
                         coroutine.receive_type,
                         coroutine.yield_type,
                         program_types.void,
@@ -55,7 +53,6 @@ def type_check(modules):
         context = type_check_code_block.TypeCheckingContext(
                         module_interfaces,
                         current_module,
-                        types,
                         None,
                         None,
                         program_types.void,
@@ -72,7 +69,6 @@ def type_check(modules):
         context = type_check_code_block.TypeCheckingContext(
                         module_interfaces,
                         current_module,
-                        types,
                         None,
                         None,
                         method.return_type,
@@ -243,5 +239,5 @@ def type_check(modules):
         type_check_coroutine(coroutine)
 
     for entry in entry_blocks:
-        context = type_check_code_block.TypeCheckingContext(module_interfaces, entry.module_interface, types, None, None, entry_point, {}, False, {})
+        context = type_check_code_block.TypeCheckingContext(module_interfaces, entry.module_interface, None, None, entry_point, {}, False, {})
         type_check_code_block.type_check_code_block(context, entry.body)

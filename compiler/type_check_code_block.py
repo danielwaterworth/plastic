@@ -52,10 +52,9 @@ class FunctionSignature(Signature):
         return self.return_type.template(quantified)
 
 class TypeCheckingContext(object):
-    def __init__(self, module_interfaces, current_module, types, receive_type, yield_type, return_type, attrs, attr_store, variable_types):
+    def __init__(self, module_interfaces, current_module, receive_type, yield_type, return_type, attrs, attr_store, variable_types):
         self.module_interfaces = module_interfaces
         self.current_module = current_module
-        self.types = types
         self.receive_type = receive_type
         self.yield_type = yield_type
         self.return_type = return_type
