@@ -1,0 +1,29 @@
+import foo
+
+service Bar()
+    constructor new()
+    end
+
+    implements foo.Foo
+        define foo(t : Bool) -> Bool do
+            return t;
+        end
+    end
+end
+
+service Test(f : foo.Foo)
+    constructor new()
+    end
+
+    implements EntryPoint
+        define main() -> Bool do
+            sys print_bool(attr f.foo(true));
+            return true;
+        end
+    end
+end
+
+entry
+    bar := Bar().new();
+    return Test(bar).new();
+end

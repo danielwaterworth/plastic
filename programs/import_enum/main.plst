@@ -1,0 +1,25 @@
+import foo
+
+define test(a : foo.Foo) -> Bool do
+    match (a)
+        bar(b) do
+            result := b;
+        end
+    end
+    return result;
+end
+
+service Test()
+    constructor new()
+    end
+
+    implements EntryPoint
+        define main() -> Bool do
+            return false;
+        end
+    end
+end
+
+entry
+    return Test().new();
+end
