@@ -426,7 +426,9 @@ def generate_enum(program_writer, enum):
                 result = basic_block.operation('pack', [name] + variables)
                 basic_block.ret(result)
 
-def generate_service(program_writer, name, instantiations, service_decl):
+def generate_service_methods(program_writer, service_decl):
+    name = service_decl.name
+
     def generate_service_method(function_name, function):
         parameter_names = ['self'] + function.parameter_names
         num_parameters = 1 + function.num_parameters
@@ -453,9 +455,10 @@ def generate_service(program_writer, name, instantiations, service_decl):
         elif isinstance(decl, program.Implements):
             interface = decl.interface
             for function in decl.decls:
-                function_name = "%s.%s#%s" % (name, interface, function.name)
+                function_name = "%s.%s#%s" % (name, interface.name, function.name)
                 generate_service_method(function_name, function)
 
+def generate_service_instantiations(program_writer, name, instantiations, service_decl):
     for instantiation in instantiations:
         instantiation.dependencies = dict(zip(service_decl.dependency_names, instantiation.service_arguments))
 
@@ -529,6 +532,19 @@ def transitive_closure_services(entry_service):
             stack.extend(service.service_arguments)
     return services
 
+def generate_module(program_writer, module):
+    for decl in module.decls:
+        if isinstance(decl, program.Function):
+            generate_function(program_writer, decl)
+        elif isinstance(decl, program.Coroutine):
+            generate_coroutine(program_writer, decl)
+        elif isinstance(decl, program.Record):
+            generate_record(program_writer, decl)
+        elif isinstance(decl, program.Enum):
+            generate_enum(program_writer, decl)
+        elif isinstance(decl, program.Service):
+            generate_service_methods(program_writer, decl)
+
 def group_services(services):
     grouped_services = collections.defaultdict(list)
 
@@ -538,60 +554,47 @@ def group_services(services):
 
     return grouped_services
 
-def generate_code(writer, entry_service, modules):
-    with writer as program_writer:
-        service_decls = {}
-        entry_point = program_types.Interface('EntryPoint', {'main': ([], program_types.bool)})
-        interface_types = {'EntryPoint': entry_point}
-        for module_name, module in modules.iteritems():
-            for decl in module.decls:
-                if isinstance(decl, program.Function):
-                    generate_function(program_writer, decl)
-                elif isinstance(decl, program.Coroutine):
-                    generate_coroutine(program_writer, decl)
-                elif isinstance(decl, program.Record):
-                    generate_record(program_writer, decl)
-                elif isinstance(decl, program.Enum):
-                    generate_enum(program_writer, decl)
-                elif isinstance(decl, program.Service):
-                    service_decls[decl.name] = decl
-                elif isinstance(decl, program.Interface):
-                    interface_types[decl.name] = decl.type
+def generate_entry(program_writer, entry_service, modules):
+    service_decls = {}
+    for module_name, module in modules.iteritems():
+        for decl in module.decls:
+            if isinstance(decl, program.Service):
+                service_decls[decl.name] = decl
 
-        service_types = {}
-        all_services = transitive_closure_services(entry_service)
-        grouped_services = group_services(all_services)
-        memory_offset = 0
-        for (name, instantiations), service_type_id in zip(grouped_services.iteritems(), itertools.count()):
-            service_decl = service_decls[name]
-            service_types[name] = service_type_id
-            for instantiation in instantiations:
-                instantiation.service_type_id = service_type_id
-                instantiation.memory_offset = memory_offset
-                memory_offset += len(service_decl.type.attrs)
+    service_types = {}
+    all_services = transitive_closure_services(entry_service)
+    grouped_services = group_services(all_services)
+    memory_offset = 0
+    for (name, instantiations), service_type_id in zip(grouped_services.iteritems(), itertools.count()):
+        service_decl = service_decls[name]
+        service_types[name] = service_type_id
+        for instantiation in instantiations:
+            instantiation.service_type_id = service_type_id
+            instantiation.memory_offset = memory_offset
+            memory_offset += len(service_decl.type.attrs)
 
-        for name, instantiations in grouped_services.iteritems():
-            service_decl = service_decls[name]
-            generate_service(program_writer, name, instantiations, service_decl)
+    for name, instantiations in grouped_services.iteritems():
+        service_decl = service_decls[name]
+        generate_service_instantiations(program_writer, name, instantiations, service_decl)
 
-        services_by_interface = collections.defaultdict(set)
-        for name in grouped_services:
-            service_decl = service_decls[name]
-            for interface in service_decl.type.interfaces:
-                services_by_interface[interface].add((name, service_types[name]))
+    services_by_interface = collections.defaultdict(set)
+    for name in grouped_services:
+        service_decl = service_decls[name]
+        for interface in service_decl.type.interfaces:
+            services_by_interface[interface].add((name, service_types[name]))
 
-        for interface_type, services in services_by_interface.iteritems():
-            generate_interface(program_writer, interface_type, services)
+    for interface_type, services in services_by_interface.iteritems():
+        generate_interface(program_writer, interface_type, services)
 
-        with program_writer.function('$main', 0) as (function_writer, _):
-            with function_writer.basic_block() as block_writer:
-                for service in all_services:
-                    service_variable = service.service_variable(block_writer)
-                    for attr_name, value in service.attrs.iteritems():
-                        attr_address = block_writer.fun_call('%s^%s' % (service.service, attr_name), [service_variable])
-                        var = value.write_out(block_writer)
-                        block_writer.store(attr_address, var)
+    with program_writer.function('$main', 0) as (function_writer, _):
+        with function_writer.basic_block() as block_writer:
+            for service in all_services:
+                service_variable = service.service_variable(block_writer)
+                for attr_name, value in service.attrs.iteritems():
+                    attr_address = block_writer.fun_call('%s^%s' % (service.service, attr_name), [service_variable])
+                    var = value.write_out(block_writer)
+                    block_writer.store(attr_address, var)
 
-                service = entry_service.interface_variable(block_writer)
-                x = block_writer.fun_call("EntryPoint#main", [service])
-                block_writer.ret(x)
+            service = entry_service.interface_variable(block_writer)
+            x = block_writer.fun_call("EntryPoint#main", [service])
+            block_writer.ret(x)

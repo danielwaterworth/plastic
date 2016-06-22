@@ -18,9 +18,14 @@ module_interfaces = {}
 for module_name, module in modules:
     type_checking.type_check_module(module_interfaces, module_name, module)
 
-entry_service = evaluation.evaluate_entry_block(dict(modules), entry_module)
+modules = dict(modules)
 constructor = bytecode.constructor.BytecodeConstructor()
-code_generation.generate_code(constructor, entry_service, dict(modules))
+with constructor as writer:
+    for module in modules.itervalues():
+        code_generation.generate_module(writer, module)
+
+    entry_service = evaluation.evaluate_entry_block(modules, entry_module)
+    code_generation.generate_entry(writer, entry_service, modules)
 
 with open(sys.argv[2], 'w') as fd:
     writer = bytecode.writer.BytecodeWriter(fd)
