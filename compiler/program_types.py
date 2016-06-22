@@ -2,7 +2,7 @@ class Type(object):
     def method_signature(self, name):
         raise KeyError('no such method %s on %s' % (name, self))
 
-    def resolve_type(self, types):
+    def resolve_type(self, modules, types):
         return self
 
     def is_subtype_of(self, other):
@@ -97,11 +97,15 @@ class UInt(Type):
 uint = UInt()
 
 class NamedType(Type):
-    def __init__(self, name):
+    def __init__(self, module, name):
+        self.module = module
         self.name = name
 
-    def resolve_type(self, types):
-        return types[self.name]
+    def resolve_type(self, modules, types):
+        if self.module:
+            return modules[self.module].types[self.name]
+        else:
+            return types[self.name]
 
 class Variable(Type):
     def __init__(self, name):
@@ -135,8 +139,8 @@ class Array(Type):
         self.ty = ty
         self.count = count
 
-    def resolve_type(self, types):
-        self.ty = self.ty.resolve_type(types)
+    def resolve_type(self, modules, types):
+        self.ty = self.ty.resolve_type(modules, types)
         return self
 
     def __eq__(self, other):
@@ -149,8 +153,8 @@ class Tuple(Type):
     def __init__(self, types):
         self.types = types
 
-    def resolve_type(self, types):
-        self.types = [t.resolve_type(types) for t in self.types]
+    def resolve_type(self, modules, types):
+        self.types = [t.resolve_type(modules, types) for t in self.types]
         return self
 
     def __eq__(self, other):

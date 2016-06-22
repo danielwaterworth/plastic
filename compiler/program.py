@@ -17,10 +17,10 @@ class Coroutine(Decl):
         self.yield_type = yield_type
         self.body = body
 
-    def resolve_types(self, types):
-        self.parameters = [(name, param.resolve_type(types)) for name, param in self.parameters]
-        self.receive_type = self.receive_type.resolve_type(types)
-        self.yield_type = self.yield_type.resolve_type(types)
+    def resolve_types(self, modules, types):
+        self.parameters = [(name, param.resolve_type(modules, types)) for name, param in self.parameters]
+        self.receive_type = self.receive_type.resolve_type(modules, types)
+        self.yield_type = self.yield_type.resolve_type(modules, types)
 
     @property
     def num_parameters(self):
@@ -41,9 +41,9 @@ class Function(Decl):
         self.return_type = return_type
         self.body = body
 
-    def resolve_types(self, types):
-        self.parameters = [(name, param.resolve_type(types)) for name, param in self.parameters]
-        self.return_type = self.return_type.resolve_type(types)
+    def resolve_types(self, modules, types):
+        self.parameters = [(name, param.resolve_type(modules, types)) for name, param in self.parameters]
+        self.return_type = self.return_type.resolve_type(modules, types)
 
     @property
     def num_parameters(self):
@@ -101,8 +101,8 @@ class Constructor(Decl):
         self.parameters = parameters
         self.body = body
 
-    def resolve_types(self, types):
-        self.parameters = [(name, t.resolve_type(types)) for name, t in self.parameters]
+    def resolve_types(self, modules, types):
+        self.parameters = [(name, t.resolve_type(modules, types)) for name, t in self.parameters]
 
     @property
     def num_parameters(self):
@@ -130,8 +130,8 @@ class EnumConstructor(object):
         self.name = name
         self.types = types
 
-    def resolve_types(self, types):
-        self.types = [t.resolve_type(types) for t in self.types]
+    def resolve_types(self, modules, types):
+        self.types = [t.resolve_type(modules, types) for t in self.types]
 
 class MethodSignature(object):
     def __init__(self, name, parameters, return_type):
@@ -139,9 +139,9 @@ class MethodSignature(object):
         self.parameters = parameters
         self.return_type = return_type
 
-    def resolve_types(self, types):
-        self.parameters = [param.resolve_type(types) for param in self.parameters]
-        self.return_type = self.return_type.resolve_type(types)
+    def resolve_types(self, modules, types):
+        self.parameters = [param.resolve_type(modules, types) for param in self.parameters]
+        self.return_type = self.return_type.resolve_type(modules, types)
 
 class CodeBlock(object):
     def __init__(self, statements, terminator=None):

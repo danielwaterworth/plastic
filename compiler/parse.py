@@ -214,9 +214,9 @@ def p_type_variable(p):
     '''type : LOWER_NAME'''
     p[0] = program_types.Variable(p[1])
 
-def p_type_named(p):
-    '''type : UPPER_NAME'''
-    p[0] = program_types.NamedType(p[1])
+def p_named_type(p):
+    '''type : named_type'''
+    p[0] = p[1]
 
 def p_type_array(p):
     '''type : type OPEN_SQUARE NUMBER CLOSE_SQUARE'''
@@ -225,6 +225,14 @@ def p_type_array(p):
 def p_type_tuple(p):
     '''type : OPEN_PARENS type_list CLOSE_PARENS'''
     p[0] = program_types.Tuple(p[2])
+
+def p_type_named(p):
+    '''named_type : UPPER_NAME'''
+    p[0] = program_types.NamedType(None, p[1])
+
+def p_type_named_qualified(p):
+    '''named_type : LOWER_NAME DOT UPPER_NAME'''
+    p[0] = program_types.NamedType(p[1], p[3])
 
 def p_empty_type_list(p):
     '''type_list : empty'''

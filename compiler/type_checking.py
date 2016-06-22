@@ -9,7 +9,7 @@ def type_check(modules):
         module.interface = module_interface.ModuleInterface(module_name, module.imports)
         module_interfaces[module_name] = module.interface
 
-    types = {
+    primitives = {
         'UInt': program_types.uint,
         'Bool': program_types.bool,
         'Void': program_types.void,
@@ -111,39 +111,49 @@ def type_check(modules):
     for record in record_decls:
         attrs = []
 
+        types = {}
+        types.update(primitives)
+        types.update(record.module_interface.types)
+
         for decl in record.decls:
             if isinstance(decl, program.Attr):
-                decl.type = decl.type.resolve_type(types)
+                decl.type = decl.type.resolve_type(module_interfaces, types)
                 attrs.append((decl.name, decl.type))
 
         record.type = program_types.Record(record.name, attrs, {}, {})
         assert not record.name in types
-        types[record.name] = record.type
         record.module_interface.types[record.name] = record.type
 
     for enum in enum_decls:
         enum.type = program_types.Enum(enum.name, {})
-        types[enum.name] = enum.type
         enum.module_interface.types[enum.name] = enum.type
 
     for enum in enum_decls:
+        types = {}
+        types.update(primitives)
+        types.update(enum.module_interface.types)
+
         for constructor in enum.constructors:
-            constructor.resolve_types(types)
+            constructor.resolve_types(module_interfaces, types)
             assert not constructor.name in enum.type.constructors
             enum.type.constructors[constructor.name] = constructor.types
             signature = type_check_code_block.FunctionSignature(constructor.types, enum.type)
             enum.module_interface.signatures[constructor.name] = signature
 
     for record in record_decls:
+        types = {}
+        types.update(primitives)
+        types.update(record.module_interface.types)
+
         constructor_signatures = record.type.constructor_signatures
         methods = record.type.methods
 
         for decl in record.decls:
             if isinstance(decl, program.Constructor):
-                decl.resolve_types(types)
+                decl.resolve_types(module_interfaces, types)
                 constructor_signatures[decl.name] = decl.parameter_types
             elif isinstance(decl, program.Function):
-                decl.resolve_types(types)
+                decl.resolve_types(module_interfaces, types)
                 methods[decl.name] = decl.signature
 
     for record in record_decls:
@@ -154,10 +164,14 @@ def type_check(modules):
                 type_check_method(record.module_interface, record.type, dict(record.type.attrs), decl)
 
     for interface in interface_decls:
+        types = {}
+        types.update(primitives)
+        types.update(interface.module_interface.types)
+
         methods = {}
 
         for decl in interface.decls:
-            decl.resolve_types(types)
+            decl.resolve_types(module_interfaces, types)
             methods[decl.name] = (decl.parameters, decl.return_type)
 
         interface.type = program_types.Interface(interface.name, methods)
@@ -166,6 +180,10 @@ def type_check(modules):
         interface.module_interface.interface_types[interface.name] = interface.type
 
     for service in service_decls:
+        types = {}
+        types.update(primitives)
+        types.update(service.module_interface.types)
+
         attrs = {}
         dependency_names = {name for name, interface_name in service.dependencies}
         dependencies = [(name, interface_types[interface_name]) for name, interface_name in service.dependencies]
@@ -175,7 +193,7 @@ def type_check(modules):
 
         for service_decl in service.decls:
             if isinstance(service_decl, program.Attr):
-                service_decl.type = service_decl.type.resolve_type(types)
+                service_decl.type = service_decl.type.resolve_type(module_interfaces, types)
                 assert not service_decl.name in attrs
                 assert not service_decl.name in dependency_names
                 attrs[service_decl.name] = service_decl.type
@@ -184,25 +202,29 @@ def type_check(modules):
                 methods = {}
 
                 for method_decl in service_decl.decls:
-                    method_decl.resolve_types(types)
+                    method_decl.resolve_types(module_interfaces, types)
                     methods[method_decl.name] = method_decl.signature
 
                 assert methods == interface.methods
                 interfaces.add(service_decl.interface)
             elif isinstance(service_decl, program.Private):
                 for private_decl in service_decl.decls:
-                    private_decl.resolve_types(types)
+                    private_decl.resolve_types(module_interfaces, types)
                     private_methods[private_decl.name] = private_decl.signature
             elif isinstance(service_decl, program.Constructor):
-                service_decl.resolve_types(types)
+                service_decl.resolve_types(module_interfaces, types)
                 constructor_signatures[service_decl.name] = service_decl.parameter_types
         service.type = program_types.Service(service.name, dependencies, attrs, constructor_signatures, interfaces)
         service.private_type = program_types.PrivateService(service.name, private_methods)
         service.module_interface.services[service.name] = service.type
 
     for function in function_decls:
+        types = {}
+        types.update(primitives)
+        types.update(function.module_interface.types)
+
         assert not function.name in function.module_interface.signatures
-        function.resolve_types(types)
+        function.resolve_types(module_interfaces, types)
         signature = type_check_code_block.FunctionSignature(
                         function.parameter_types,
                         function.return_type
@@ -210,8 +232,12 @@ def type_check(modules):
         function.module_interface.signatures[function.name] = signature
 
     for coroutine in coroutine_decls:
+        types = {}
+        types.update(primitives)
+        types.update(coroutine.module_interface.types)
+
         assert not coroutine.name in coroutine.module_interface.signatures
-        coroutine.resolve_types(types)
+        coroutine.resolve_types(module_interfaces, types)
         arg_types = coroutine.parameter_types
         signature = type_check_code_block.CoroutineSignature(
                         coroutine.parameter_types,
