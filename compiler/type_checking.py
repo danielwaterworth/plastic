@@ -19,7 +19,7 @@ def type_check(modules):
         'String': program_types.string
     }
     entry_point = program_types.Interface('EntryPoint', {'main': ([], program_types.bool)})
-    interface_types = {'EntryPoint': entry_point}
+    builtin_interfaces = {'EntryPoint': entry_point}
 
     def type_check_function(function):
         context = type_check_code_block.TypeCheckingContext(
@@ -175,8 +175,8 @@ def type_check(modules):
             methods[decl.name] = (decl.parameters, decl.return_type)
 
         interface.type = program_types.Interface(interface.name, methods)
-        assert not interface.name in interface_types
-        interface_types[interface.name] = interface.type
+        assert not interface.name in builtin_interfaces
+        assert not interface.name in interface.module_interface.interface_types
         interface.module_interface.interface_types[interface.name] = interface.type
 
     for service in service_decls:
@@ -184,9 +184,13 @@ def type_check(modules):
         types.update(primitives)
         types.update(service.module_interface.types)
 
+        interface_types = {}
+        interface_types.update(builtin_interfaces)
+        interface_types.update(service.module_interface.interface_types)
+
         attrs = {}
         dependency_names = {name for name, interface_name in service.dependencies}
-        dependencies = [(name, interface_types[interface_name]) for name, interface_name in service.dependencies]
+        dependencies = [(name, interface.resolve_interface(module_interfaces, interface_types)) for name, interface in service.dependencies]
         constructor_signatures = {}
         interfaces = set()
         private_methods = {}
@@ -198,7 +202,7 @@ def type_check(modules):
                 assert not service_decl.name in dependency_names
                 attrs[service_decl.name] = service_decl.type
             elif isinstance(service_decl, program.Implements):
-                interface = interface_types[service_decl.interface]
+                interface = service_decl.interface.resolve_interface(module_interfaces, interface_types)
                 methods = {}
 
                 for method_decl in service_decl.decls:
@@ -206,7 +210,7 @@ def type_check(modules):
                     methods[method_decl.name] = method_decl.signature
 
                 assert methods == interface.methods
-                interfaces.add(service_decl.interface)
+                interfaces.add(interface)
             elif isinstance(service_decl, program.Private):
                 for private_decl in service_decl.decls:
                     private_decl.resolve_types(module_interfaces, types)

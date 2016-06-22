@@ -107,6 +107,12 @@ class NamedType(Type):
         else:
             return types[self.name]
 
+    def resolve_interface(self, modules, interface_types):
+        if self.module:
+            return modules[self.module].interface_types[self.name]
+        else:
+            return interface_types[self.name]
+
 class Variable(Type):
     def __init__(self, name):
         self.name = name
@@ -245,7 +251,7 @@ class Service(Type):
 
     def is_subtype_of(self, other):
         if isinstance(other, Interface):
-            return other.name in self.interfaces
+            return other in self.interfaces
         return self == other
 
     def __repr__(self):

@@ -114,7 +114,7 @@ def p_non_empty_dependencies(p):
     p[0] = p[1]
 
 def p_dependency(p):
-    '''dependency : LOWER_NAME COLON UPPER_NAME'''
+    '''dependency : LOWER_NAME COLON named_type'''
     p[0] = (p[1], p[3])
 
 def p_parameter_list_empty(p):
@@ -194,7 +194,7 @@ def p_service_decl_private(p):
     p[0] = program.Private(p[2])
 
 def p_service_decl_implements(p):
-    '''service_decl : IMPLEMENTS UPPER_NAME service_method_list END'''
+    '''service_decl : IMPLEMENTS named_type service_method_list END'''
     p[0] = program.Implements(p[2], p[3])
 
 def p_service_method_list_empty(p):

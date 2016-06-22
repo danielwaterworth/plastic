@@ -580,8 +580,7 @@ def generate_code(writer, entry_service, modules):
             for interface in service_decl.type.interfaces:
                 services_by_interface[interface].add((name, service_types[name]))
 
-        for interface, services in services_by_interface.iteritems():
-            interface_type = interface_types[interface]
+        for interface_type, services in services_by_interface.iteritems():
             generate_interface(program_writer, interface_type, services)
 
         with program_writer.function('$main', 0) as (function_writer, _):
