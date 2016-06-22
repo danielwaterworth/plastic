@@ -1,0 +1,11 @@
+service Test()
+    constructor new()
+    end
+
+    implements EntryPoint
+        define main() -> Bool do
+            sys print_num(42);
+            return false;
+        end
+    end
+end

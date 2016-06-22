@@ -1,0 +1,5 @@
+import test
+
+entry
+    return test.Test().new();
+end
