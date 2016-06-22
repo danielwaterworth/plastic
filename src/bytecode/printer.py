@@ -3,122 +3,92 @@ class BasicBlockPrinter(object):
         self.function = function
 
     def __enter__(self):
-        print "BASIC BLOCK START"
+        print "  BASIC BLOCK START"
         return self
 
     def __exit__(self, type, value, traceback):
         if not value:
-            print "BASIC BLOCK END"
+            print "  BASIC BLOCK END"
+
+    def instruction(self, t, *args):
+        var = self.function.create_variable()
+        print "    %s: %s(%s)" % (var, t, ', '.join([repr(arg) for arg in args]))
+        return var
+
+    def terminator(self, t, *args):
+        print "    %s(%s)" % (t, ', '.join([repr(arg) for arg in args]))
 
     def phi(self, inputs):
-        var = self.function.create_variable()
-        print ("PHI", inputs, var)
-        return var
+        return self.instruction("PHI", inputs)
 
     def constant_bool(self, value):
-        var = self.function.create_variable()
-        print ("CONST_BOOL", value, var)
-        return var
+        return self.instruction("CONST_BOOL", value)
 
     def constant_byte(self, value):
-        var = self.function.create_variable()
-        print ("CONST_BYTE", value, var)
-        return var
+        return self.instruction("CONST_BYTE", value)
 
     def constant_char(self, value):
-        var = self.function.create_variable()
-        print ("CONST_CHAR", value, var)
-        return var
+        return self.instruction("CONST_CHAR", value)
 
     def constant_bytestring(self, value):
-        var = self.function.create_variable()
-        print ("CONST_BYTESTRING", value, var)
-        return var
+        return self.instruction("CONST_BYTESTRING", value)
 
     def constant_string(self, value):
-        var = self.function.create_variable()
-        print ("CONST_STRING", value, var)
-        return var
+        return self.instruction("CONST_STRING", value)
 
     def constant_uint(self, value):
-        var = self.function.create_variable()
-        print ("CONST_UINT", value, var)
-        return var
+        return self.instruction("CONST_UINT", value)
 
     def void(self):
-        var = self.function.create_variable()
-        print ("VOID", var)
-        return var
+        return self.instruction("VOID")
 
     def operation(self, name, arguments):
-        var = self.function.create_variable()
-        print ("OPERATION", name, arguments, var)
-        return var
+        return self.instruction("OPERATION", name, arguments)
 
     def sys_call(self, name, arguments):
-        var = self.function.create_variable()
-        print ("SYS_CALL", name, arguments, var)
-        return var
+        return self.instruction("SYS_CALL", name, arguments)
 
     def fun_call(self, name, arguments):
-        var = self.function.create_variable()
-        print ("FUN_CALL", name, arguments, var)
-        return var
+        return self.instruction("FUN_CALL", name, arguments)
 
     def new_coroutine(self, name, arguments):
-        var = self.function.create_variable()
-        print ("NEW_COROUTINE", name, arguments, var)
-        return var
+        return self.instruction("NEW_COROUTINE", name, arguments)
 
     def load(self, address):
-        var = self.function.create_variable()
-        print ("LOAD", address, var)
-        return var
+        return self.instruction("LOAD", address)
 
     def store(self, address, value):
-        var = self.function.create_variable()
-        print ("STORE", address, value, var)
-        return var
+        return self.instruction("STORE", address, value)
 
     def get(self):
-        var = self.function.create_variable()
-        print ("GET", var)
-        return var
+        return self.instruction("GET")
 
     def put(self, variable):
-        var = self.function.create_variable()
-        print ("PUT", varible, var)
-        return var
+        return self.instruction("PUT", variable)
 
     def run_coroutine(self, coroutine):
-        var = self.function.create_variable()
-        print ("RUN_COROUTINE", coroutine, var)
-        return var
+        return self.instruction("RUN_COROUTINE", coroutine)
 
     def yield_(self, value):
-        var = self.function.create_variable()
-        print ("YIELD", value, var)
-        return var
+        return self.instruction("YIELD", value)
 
     def resume(self, coroutine, value):
-        var = self.function.create_variable()
-        print ("RESUME", coroutine, value, var)
-        return var
+        return self.instruction("RESUME", coroutine, value)
 
     def ret(self, variable):
-        print ("RET", variable)
+        self.terminator("RET", variable)
 
     def goto(self, block):
-        print ("GOTO", block)
+        self.terminator("GOTO", block)
 
     def conditional(self, variable, true_block, false_block):
-        print ("CONDITIONAL", variable, true_block, false_block)
+        self.terminator("CONDITIONAL", variable, true_block, false_block)
 
     def catch_fire_and_die(self):
-        print "CATCH_FIRE_AND_DIE"
+        self.terminator("CATCH_FIRE_AND_DIE")
 
     def throw(self, exception):
-        print ("THROW", exception)
+        self.terminator("THROW", exception)
 
 class FunctionPrinter(object):
     def __init__(self, name, num_arguments):
