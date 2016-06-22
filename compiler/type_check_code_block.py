@@ -181,8 +181,15 @@ def type_check_code_block(context, code_block):
                     expression.call = FunctionCall(context.module_interfaces[obj.name])
                 elif isinstance(obj, program.TypeName):
                     expression.call = RecordConstructorCall(context.current_module, obj.name)
-                elif isinstance(obj, program.Call) and isinstance(obj.function, program.TypeName):
-                    expression.call = ServiceConstructorCall(context.current_module, obj.function.name, obj.arguments)
+                elif isinstance(obj, program.Call):
+                    if isinstance(obj.function, program.TypeName):
+                        expression.call = ServiceConstructorCall(context.current_module, obj.function.name, obj.arguments)
+                    elif isinstance(obj.function, program.TypeAccess):
+                        assert isinstance(obj.function.obj, program.Variable)
+                        module = context.module_interfaces[obj.function.obj.name]
+                        expression.call = ServiceConstructorCall(module, obj.function.name, obj.arguments)
+                    else:
+                        expression.call = MethodCall(obj)
                 elif isinstance(obj, program.TypeAccess):
                     assert isinstance(obj.obj, program.Variable)
                     module = context.module_interfaces[obj.obj.name]
