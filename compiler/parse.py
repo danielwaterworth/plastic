@@ -413,6 +413,10 @@ def p_record_access(p):
     '''expression : expression DOT LOWER_NAME'''
     p[0] = program.RecordAccess(p[1], p[3])
 
+def p_type_access(p):
+    '''expression : expression DOT UPPER_NAME'''
+    p[0] = program.TypeAccess(p[1], p[3])
+
 def p_clauses_empty(p):
     '''match_clauses : empty'''
     p[0] = []

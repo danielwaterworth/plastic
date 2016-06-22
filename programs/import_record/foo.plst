@@ -1,0 +1,13 @@
+record Foo
+    attr foo : UInt;
+    attr bar : UInt;
+
+    constructor new(a : UInt)
+        attr foo := a;
+        attr bar := a;
+    end
+
+    define plah(a : UInt) -> Bool do
+        return a < attr bar;
+    end
+end

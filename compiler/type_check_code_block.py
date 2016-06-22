@@ -132,6 +132,8 @@ def type_check_code_block(context, code_block):
             expression.type = context.lookup(expression.name)
         elif isinstance(expression, program.TypeName):
             raise Exception('naked type name')
+        elif isinstance(expression, program.TypeAccess):
+            raise Exception('naked type access')
         elif isinstance(expression, program.CharLiteral):
             expression.type = program_types.char
         elif isinstance(expression, program.NumberLiteral):
@@ -181,6 +183,10 @@ def type_check_code_block(context, code_block):
                     expression.call = RecordConstructorCall(context.current_module, obj.name)
                 elif isinstance(obj, program.Call) and isinstance(obj.function, program.TypeName):
                     expression.call = ServiceConstructorCall(context.current_module, obj.function.name, obj.arguments)
+                elif isinstance(obj, program.TypeAccess):
+                    assert isinstance(obj.obj, program.Variable)
+                    module = context.module_interfaces[obj.obj.name]
+                    expression.call = RecordConstructorCall(module, obj.name)
                 else:
                     expression.call = MethodCall(obj)
             else:

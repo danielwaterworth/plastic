@@ -243,6 +243,11 @@ class RecordAccess(Expression):
         self.obj = obj
         self.name = name
 
+class TypeAccess(Expression):
+    def __init__(self, obj, name):
+        self.obj = obj
+        self.name = name
+
 class TupleConstructor(Expression):
     def __init__(self, values):
         self.values = values
