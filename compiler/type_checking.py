@@ -26,7 +26,6 @@ def type_check(modules):
                         module_interfaces,
                         function.module_interface,
                         types,
-                        {},
                         None,
                         None,
                         function.return_type,
@@ -42,7 +41,6 @@ def type_check(modules):
                         module_interfaces,
                         coroutine.module_interface,
                         types,
-                        {},
                         coroutine.receive_type,
                         coroutine.yield_type,
                         program_types.void,
@@ -58,7 +56,6 @@ def type_check(modules):
                         module_interfaces,
                         current_module,
                         types,
-                        {},
                         None,
                         None,
                         program_types.void,
@@ -76,7 +73,6 @@ def type_check(modules):
                         module_interfaces,
                         current_module,
                         types,
-                        {},
                         None,
                         None,
                         method.return_type,
@@ -173,7 +169,6 @@ def type_check(modules):
         interface_types[interface.name] = interface.type
         interface.module_interface.interface_types[interface.name] = interface.type
 
-    services = {}
     for service in service_decls:
         attrs = {}
         dependency_names = {name for name, interface_name in service.dependencies}
@@ -207,7 +202,6 @@ def type_check(modules):
                 constructor_signatures[service_decl.name] = service_decl.parameter_types
         service.type = program_types.Service(service.name, dependencies, attrs, constructor_signatures, interfaces)
         service.private_type = program_types.PrivateService(service.name, private_methods)
-        services[service.name] = service.type
         service.module_interface.services[service.name] = service.type
 
     for function in function_decls:
@@ -249,5 +243,5 @@ def type_check(modules):
         type_check_coroutine(coroutine)
 
     for entry in entry_blocks:
-        context = type_check_code_block.TypeCheckingContext(module_interfaces, entry.module_interface, types, services, None, None, entry_point, {}, False, {})
+        context = type_check_code_block.TypeCheckingContext(module_interfaces, entry.module_interface, types, None, None, entry_point, {}, False, {})
         type_check_code_block.type_check_code_block(context, entry.body)

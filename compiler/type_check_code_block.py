@@ -52,11 +52,10 @@ class FunctionSignature(Signature):
         return self.return_type.template(quantified)
 
 class TypeCheckingContext(object):
-    def __init__(self, module_interfaces, current_module, types, services, receive_type, yield_type, return_type, attrs, attr_store, variable_types):
+    def __init__(self, module_interfaces, current_module, types, receive_type, yield_type, return_type, attrs, attr_store, variable_types):
         self.module_interfaces = module_interfaces
         self.current_module = current_module
         self.types = types
-        self.services = services
         self.receive_type = receive_type
         self.yield_type = yield_type
         self.return_type = return_type
@@ -217,12 +216,12 @@ def type_check_code_block(context, code_block):
                 assert expected_arg_types == argument_types
                 expression.type = return_type
             elif isinstance(expression.call, RecordConstructorCall):
-                record_type = context.types[expression.call.record]
+                record_type = expression.call.module.types[expression.call.record]
                 expected_arg_types = record_type.constructor_signatures[function]
                 assert expected_arg_types == argument_types
                 expression.type = record_type
             elif isinstance(expression.call, ServiceConstructorCall):
-                service = context.services[expression.call.service]
+                service = expression.call.module.services[expression.call.service]
                 dependency_types = [infer_expression_type(argument) for argument in expression.call.dependencies]
                 assert len(dependency_types) == len(service.dependency_types)
                 for service_arg, interface in zip(dependency_types, service.dependency_types):
