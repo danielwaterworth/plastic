@@ -215,6 +215,10 @@ class Variable(Expression):
     def evaluate(self, context):
         return context.lookup(self.name)
 
+class TypeName(Expression):
+    def __init__(self, name):
+        self.name = name
+
 class BinOp(Expression):
     def __init__(self, lhs, rhs, operator):
         self.lhs = lhs
@@ -231,28 +235,13 @@ class Call(Expression):
         self.function = function
         self.arguments = arguments
 
+    def evaluate(self, context):
+        return self.call.evaluate(context, self.function_name, self.arguments)
+
 class RecordAccess(Expression):
     def __init__(self, obj, name):
         self.obj = obj
         self.name = name
-
-class ConstructorCall(Expression):
-    def __init__(self, ty, name, arguments):
-        self.ty = ty
-        self.name = name
-        self.arguments = arguments
-
-class ServiceConstructorCall(Expression):
-    def __init__(self, service, service_arguments, name, arguments):
-        self.service = service
-        self.service_arguments = service_arguments
-        self.name = name
-        self.arguments = arguments
-
-    def evaluate(self, context):
-        service_arguments = [arg.evaluate(context) for arg in self.service_arguments]
-        arguments = [arg.evaluate(context) for arg in self.arguments]
-        return context.service(self.service, service_arguments, self.name, arguments)
 
 class TupleConstructor(Expression):
     def __init__(self, values):

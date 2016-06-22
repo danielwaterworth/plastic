@@ -1,6 +1,33 @@
 import program
 import program_types
 
+class Call(object):
+    pass
+
+class FunctionCall(Call):
+    def __init__(self, module):
+        self.module = module
+
+class MethodCall(Call):
+    def __init__(self, obj):
+        self.obj = obj
+
+class RecordConstructorCall(Call):
+    def __init__(self, module, record):
+        self.module = module
+        self.record = record
+
+class ServiceConstructorCall(Call):
+    def __init__(self, module, service, dependencies):
+        self.module = module
+        self.service = service
+        self.dependencies = dependencies
+
+    def evaluate(self, context, function, arguments):
+        service_arguments = [arg.evaluate(context) for arg in self.dependencies]
+        arguments = [arg.evaluate(context) for arg in arguments]
+        return context.service(self.service, service_arguments, function, arguments)
+
 class Signature(object):
     pass
 
@@ -25,8 +52,9 @@ class FunctionSignature(Signature):
         return self.return_type.template(quantified)
 
 class TypeCheckingContext(object):
-    def __init__(self, signatures, types, services, receive_type, yield_type, return_type, attrs, attr_store, variable_types):
-        self.signatures = signatures
+    def __init__(self, module_interfaces, current_module, types, services, receive_type, yield_type, return_type, attrs, attr_store, variable_types):
+        self.module_interfaces = module_interfaces
+        self.current_module = current_module
         self.types = types
         self.services = services
         self.receive_type = receive_type
@@ -37,6 +65,9 @@ class TypeCheckingContext(object):
         self.variable_types = variable_types
 
     def add(self, name, type):
+        if name in self.current_module.imports:
+            raise Exception('variable name shadows import')
+
         if name in self.variable_types:
             if self.variable_types[name] != type:
                 raise TypeError('expected %s to be %s instead of %s' % (name, self.variable_types[name], type))
@@ -99,6 +130,8 @@ def type_check_code_block(context, code_block):
     def infer_expression_type(expression):
         if isinstance(expression, program.Variable):
             expression.type = context.lookup(expression.name)
+        elif isinstance(expression, program.TypeName):
+            raise Exception('naked type name')
         elif isinstance(expression, program.CharLiteral):
             expression.type = program_types.char
         elif isinstance(expression, program.NumberLiteral):
@@ -134,31 +167,55 @@ def type_check_code_block(context, code_block):
             lhs_type = infer_expression_type(expression.lhs)
             expression.type = operator_type(expression.operator, rhs_type, lhs_type)
         elif isinstance(expression, program.Call):
+            argument_types = [infer_expression_type(argument) for argument in expression.arguments]
+
             if isinstance(expression.function, program.Variable):
-                name = expression.function.name
-                signature = context.signatures[name]
+                expression.call = FunctionCall(context.current_module)
+                expression.function_name = expression.function.name
+            elif isinstance(expression.function, program.RecordAccess):
+                obj = expression.function.obj
+                expression.function_name = expression.function.name
+                if isinstance(obj, program.Variable) and obj.name in context.current_module.imports:
+                    expression.call = FunctionCall(context.module_interfaces[obj.name])
+                elif isinstance(obj, program.TypeName):
+                    expression.call = RecordConstructorCall(context.current_module, obj.name)
+                elif isinstance(obj, program.Call) and isinstance(obj.function, program.TypeName):
+                    expression.call = ServiceConstructorCall(context.current_module, obj.function.name, obj.arguments)
+                else:
+                    expression.call = MethodCall(obj)
+            else:
+                raise NotImplementedError('unsupported type of call')
+
+            function = expression.function_name
+            if isinstance(expression.call, FunctionCall):
+                signature = expression.call.module.signatures[function]
                 if isinstance(signature, FunctionSignature):
-                    argument_types = [infer_expression_type(argument) for argument in expression.arguments]
-                    return_type = signature.produce_return_type(argument_types)
-                    expression.coroutine_call = False
-                    expression.type = return_type
+                    expression.call.coroutine_call = False
+                    expression.type = signature.produce_return_type(argument_types)
                 elif isinstance(signature, CoroutineSignature):
-                    argument_types = [infer_expression_type(argument) for argument in expression.arguments]
                     assert signature.parameter_types == argument_types
-                    expression.coroutine_call = True
+                    expression.call.coroutine_call = True
                     expression.type = program_types.Coroutine(signature.receive_type, signature.yield_type)
                 else:
                     raise NotImplementedError('not implemented signature type: %s' % type(signature))
-            elif isinstance(expression.function, program.RecordAccess):
-                obj = expression.function.obj
-                name = expression.function.name
-                object_type = infer_expression_type(obj)
-                expected_arg_types, return_type = object_type.method_signature(name)
-                argument_types = [infer_expression_type(argument) for argument in expression.arguments]
+            elif isinstance(expression.call, MethodCall):
+                object_type = infer_expression_type(expression.call.obj)
+                expected_arg_types, return_type = object_type.method_signature(function)
                 assert expected_arg_types == argument_types
                 expression.type = return_type
-            else:
-                raise NotImplementedError('unsupported type of call')
+            elif isinstance(expression.call, RecordConstructorCall):
+                record_type = context.types[expression.call.record]
+                expected_arg_types = record_type.constructor_signatures[function]
+                assert expected_arg_types == argument_types
+                expression.type = record_type
+            elif isinstance(expression.call, ServiceConstructorCall):
+                service = context.services[expression.call.service]
+                dependency_types = [infer_expression_type(argument) for argument in expression.call.dependencies]
+                assert len(dependency_types) == len(service.dependency_types)
+                for service_arg, interface in zip(dependency_types, service.dependency_types):
+                    assert service_arg.is_subtype_of(interface)
+                assert argument_types == service.constructor_signatures[function]
+                expression.type = service
         elif isinstance(expression, program.RecordAccess):
             raise Exception('naked record access')
         elif isinstance(expression, program.SysCall):
@@ -166,21 +223,6 @@ def type_check_code_block(context, code_block):
             argument_types = [infer_expression_type(argument) for argument in expression.arguments]
             assert expected_arg_types == argument_types
             expression.type = return_type
-        elif isinstance(expression, program.ConstructorCall):
-            record_type = context.types[expression.ty]
-            expected_arg_types = record_type.constructor_signatures[expression.name]
-            argument_types = [infer_expression_type(argument) for argument in expression.arguments]
-            assert expected_arg_types == argument_types
-            expression.type = record_type
-        elif isinstance(expression, program.ServiceConstructorCall):
-            service = context.services[expression.service]
-            dependency_types = [infer_expression_type(argument) for argument in expression.service_arguments]
-            assert len(dependency_types) == len(service.dependency_types)
-            for service_arg, interface in zip(dependency_types, service.dependency_types):
-                assert service_arg.is_subtype_of(interface)
-            constructor_arg_types = [infer_expression_type(argument) for argument in expression.arguments]
-            assert constructor_arg_types == service.constructor_signatures[expression.name]
-            expression.type = service
         elif isinstance(expression, program.TupleConstructor):
             value_types = [infer_expression_type(value) for value in expression.values]
             expression.type = program_types.Tuple(value_types)

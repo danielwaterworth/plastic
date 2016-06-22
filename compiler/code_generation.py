@@ -2,9 +2,11 @@ import collections
 import itertools
 import program
 import program_types
+import type_check_code_block
 
 class GenerationContext(object):
-    def __init__(self, function_writer, basic_block, variables):
+    def __init__(self, current_module_name, function_writer, basic_block, variables):
+        self.current_module_name = current_module_name
         self.function_writer = function_writer
         self.basic_block = basic_block
         self.variables = variables
@@ -26,11 +28,11 @@ class GenerationContext(object):
 
 class FunctionContext(GenerationContext):
     def new_context(self, basic_block):
-        return FunctionContext(self.function_writer, basic_block, dict(self.variables))
+        return FunctionContext(self.current_module_name, self.function_writer, basic_block, dict(self.variables))
 
 class RecordContext(GenerationContext):
     def new_context(self, basic_block):
-        return RecordContext(self.function_writer, basic_block, dict(self.variables))
+        return RecordContext(self.current_module_name, self.function_writer, basic_block, dict(self.variables))
 
     def attr_add(self, name, value):
         self.add('@%s' % name, value)
@@ -39,7 +41,8 @@ class RecordContext(GenerationContext):
         return self.lookup('@%s' % name)
 
 class ServiceContext(GenerationContext):
-    def __init__(self, name, dependencies, attrs, self_variable, function_writer, basic_block, variables):
+    def __init__(self, current_module_name, name, dependencies, attrs, self_variable, function_writer, basic_block, variables):
+        self.current_module_name = current_module_name
         self.name = name
         self.dependencies = dependencies
         self.attrs = attrs
@@ -50,6 +53,7 @@ class ServiceContext(GenerationContext):
 
     def new_context(self, basic_block):
         return ServiceContext(
+                    self.current_module_name,
                     self.name,
                     self.dependencies,
                     self.attrs,
@@ -153,27 +157,25 @@ def generate_expression(context, expression):
         operator = operator_name(expression.operator, expression.lhs.type)
         return context.basic_block.operation(operator, [lhs, rhs])
     elif isinstance(expression, program.Call):
-        if isinstance(expression.function, program.Variable):
-            name = expression.function.name
-            arguments = [generate_expression(context, argument) for argument in expression.arguments]
-            if expression.coroutine_call:
+        arguments = [generate_expression(context, argument) for argument in expression.arguments]
+        function = expression.function_name
+        if isinstance(expression.call, type_check_code_block.FunctionCall):
+            name = "%s::%s" % (expression.call.module.name, function)
+            if expression.call.coroutine_call:
                 return context.basic_block.new_coroutine(name, arguments)
             else:
                 return context.basic_block.fun_call(name, arguments)
-        elif isinstance(expression.function, program.RecordAccess):
-            obj = expression.function.obj
-            name = expression.function.name
-            arguments = [generate_expression(context, argument) for argument in expression.arguments]
+        elif isinstance(expression.call, type_check_code_block.MethodCall):
+            obj = expression.call.obj
             object_variable = generate_expression(context, obj)
-            return obj.type.method(context.basic_block, object_variable, name, arguments)
+            return obj.type.method(context.basic_block, object_variable, function, arguments)
+        elif isinstance(expression.call, type_check_code_block.RecordConstructorCall):
+            return context.basic_block.fun_call('%s.%s' % (expression.call.record, function), arguments)
         else:
-            raise NotImplementedError()
+            raise NotImplementedError('unknown call type: %s' % type(expression.call))
     elif isinstance(expression, program.SysCall):
         arguments = [generate_expression(context, argument) for argument in expression.arguments]
         return context.basic_block.sys_call(expression.name, arguments)
-    elif isinstance(expression, program.ConstructorCall):
-        arguments = [generate_expression(context, argument) for argument in expression.arguments]
-        return context.basic_block.fun_call('%s.%s' % (expression.ty, expression.name), arguments)
     elif isinstance(expression, program.TupleConstructor):
         values = [generate_expression(context, value) for value in expression.values]
         return context.basic_block.operation('pack', values)
@@ -349,10 +351,11 @@ def generate_code_block(context, code_block):
 def generate_function(program_writer, function):
     parameter_names = function.parameter_names
     num_parameters = function.num_parameters
-    with program_writer.function(function.name, num_parameters) as (function_writer, variables):
+    name = "%s::%s" % (function.module_interface.name, function.name)
+    with program_writer.function(name, num_parameters) as (function_writer, variables):
         variables = dict(zip(parameter_names, variables))
         basic_block = function_writer.basic_block()
-        context = FunctionContext(function_writer, basic_block, variables)
+        context = FunctionContext(function.module_interface.name, function_writer, basic_block, variables)
 
         generate_code_block(context, function.body)
         if not function.body.terminator:
@@ -361,10 +364,11 @@ def generate_function(program_writer, function):
 def generate_coroutine(program_writer, coroutine):
     parameter_names = coroutine.parameter_names
     num_parameters = coroutine.num_parameters
-    with program_writer.function(coroutine.name, num_parameters) as (function_writer, variables):
+    name = "%s::%s" % (coroutine.module_interface.name, coroutine.name)
+    with program_writer.function(name, num_parameters) as (function_writer, variables):
         variables = dict(zip(parameter_names, variables))
         basic_block = function_writer.basic_block()
-        context = FunctionContext(function_writer, basic_block, variables)
+        context = FunctionContext(coroutine.module_interface.name, function_writer, basic_block, variables)
 
         generate_code_block(context, coroutine.body)
 
@@ -378,7 +382,7 @@ def generate_record(program_writer, record):
         with program_writer.function(function_name, num_parameters) as (function_writer, variables):
             variables = dict(zip(parameter_names, variables))
             basic_block = function_writer.basic_block()
-            context = RecordContext(function_writer, basic_block, variables)
+            context = RecordContext(record.module_interface.name, function_writer, basic_block, variables)
 
             generate_code_block(context, constructor.body)
 
@@ -403,7 +407,7 @@ def generate_record(program_writer, record):
                 variable_dict['@%s' % attr] = var
                 offset_var = new_offset_var
 
-            context = RecordContext(function_writer, basic_block, variable_dict)
+            context = RecordContext(record.module_interface.name, function_writer, basic_block, variable_dict)
 
             generate_code_block(context, method.body)
 
@@ -415,7 +419,8 @@ def generate_record(program_writer, record):
 
 def generate_enum(program_writer, enum):
     for constructor in enum.constructors:
-        with program_writer.function(constructor.name, len(constructor.types)) as (function_writer, variables):
+        name = "%s::%s" % (enum.module_interface.name, constructor.name)
+        with program_writer.function(name, len(constructor.types)) as (function_writer, variables):
             with function_writer.basic_block() as basic_block:
                 name = basic_block.constant_bytestring(constructor.name)
                 result = basic_block.operation('pack', [name] + variables)
@@ -429,6 +434,7 @@ def generate_service(program_writer, name, instantiations, service_decl):
             basic_block = function_writer.basic_block()
             variable_dict = dict(zip(parameter_names, variables))
             context = ServiceContext(
+                            service_decl.module_interface.name,
                             name,
                             service_decl.dependency_names,
                             service_decl.type.attrs,

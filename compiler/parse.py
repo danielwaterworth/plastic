@@ -322,6 +322,10 @@ def p_expression_variable(p):
     '''expression : LOWER_NAME'''
     p[0] = program.Variable(p[1])
 
+def p_expression_type_name(p):
+    '''expression : UPPER_NAME'''
+    p[0] = program.TypeName(p[1])
+
 def p_expression_char(p):
     '''expression : CHAR'''
     p[0] = program.CharLiteral(unicode(p[1][1]))
@@ -349,14 +353,6 @@ def p_expression_string(p):
 def p_expression_sys_call(p):
     '''expression : SYS LOWER_NAME function_call'''
     p[0] = program.SysCall(p[2], p[3])
-
-def p_expression_constructor(p):
-    '''expression : UPPER_NAME DOT LOWER_NAME function_call'''
-    p[0] = program.ConstructorCall(p[1], p[3], p[4])
-
-def p_expression_service_constructor(p):
-    '''expression : UPPER_NAME function_call DOT LOWER_NAME function_call'''
-    p[0] = program.ServiceConstructorCall(p[1], p[2], p[4], p[5])
 
 def p_expression_attr(p):
     '''expression : ATTR LOWER_NAME'''
