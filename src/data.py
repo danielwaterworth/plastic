@@ -118,7 +118,7 @@ def sub(a, b):
 def add(a, b):
     assert isinstance(a, UInt)
     assert isinstance(b, UInt)
-    return UInt(a.n - b.n)
+    return UInt(a.n + b.n)
 
 def lt(a, b):
     assert isinstance(a, UInt)
