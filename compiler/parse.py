@@ -400,8 +400,8 @@ precedence = (
     ('nonassoc', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE'),
     ('left', 'PLUS', 'MINUS'),
     ('left', 'MUL', 'DIV'),
-    ('right', 'ATTR'),
-    ('right', 'DOT')
+    ('right', 'DOT'),
+    ('nonassoc', 'OPEN_PARENS')
 )
 
 def p_expression_binop(p):
