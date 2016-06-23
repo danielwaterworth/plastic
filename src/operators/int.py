@@ -152,3 +152,16 @@ class ToString(data.BuiltinOperator):
         return data.String(str(x.n).decode('utf-8'))
 
 ToString().register()
+
+class FromString(data.BuiltinOperator):
+    def __init__(self):
+        self.name = 'int.from_string'
+
+    def call(self, arguments):
+        assert len(arguments) == 1
+        x = arguments[0]
+        if not isinstance(x, data.String):
+            raise TypeError()
+        return data.Int(int(x.v))
+
+FromString().register()

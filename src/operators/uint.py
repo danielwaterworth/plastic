@@ -152,3 +152,24 @@ class ToString(data.BuiltinOperator):
         return data.String(str(x.n).decode('utf-8'))
 
 ToString().register()
+
+class FromString(data.BuiltinOperator):
+    def __init__(self):
+        self.name = 'uint.from_string'
+
+    def call(self, arguments):
+        assert len(arguments) == 1
+        x = arguments[0]
+        if not isinstance(x, data.String):
+            raise TypeError()
+        n = 0
+        for c in x.v:
+            n *= 10
+            c = ord(c)
+            assert c >= ord('0') and c <= ord('9')
+            c = c - ord('0')
+            assert c >= 0
+            n += c
+        return data.UInt(n)
+
+FromString().register()
