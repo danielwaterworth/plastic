@@ -67,7 +67,7 @@ class Slice(data.BuiltinOperator):
     def __init__(self):
         self.name = 'bytestring.slice'
 
-    def bytestring_slice(self, arguments):
+    def call(self, arguments):
         string, start, stop = arguments
         assert isinstance(string, data.ByteString)
         assert isinstance(start, data.UInt)

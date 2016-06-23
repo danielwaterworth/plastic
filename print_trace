@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e;
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source $DIR/config.sh;
-python $DIR/main.py $1 $2;
+python $DIR/print_trace.py $1;

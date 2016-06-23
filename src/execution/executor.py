@@ -1,7 +1,6 @@
 import bytecode
 import data
 import operators
-import sys_calls
 
 class ActivationRecord(object):
     def __init__(self, function, arguments):
@@ -109,7 +108,7 @@ class Coroutine(data.Data):
                         self.stack[-1].retire(operators.operation(instr.operator, arguments))
                 elif isinstance(instr, bytecode.SysCall):
                     arguments = self.stack[-1].resolve_variable_list(instr.arguments)
-                    self.stack[-1].retire(sys_calls.sys_call(instr.function, arguments))
+                    self.stack[-1].retire(self.executor.sys_caller.sys_call(instr.function, arguments))
                 elif isinstance(instr, bytecode.FunctionCall):
                     arguments = self.stack[-1].resolve_variable_list(instr.arguments)
                     self.stack.append(ActivationRecord(self.program.functions[instr.function], arguments))
@@ -195,7 +194,8 @@ class Coroutine(data.Data):
         return self.run()
 
 class Executor(object):
-    def __init__(self, program):
+    def __init__(self, sys_caller, program):
+        self.sys_caller = sys_caller
         self.program = program
         self.coroutine_stack = [Coroutine(self, program, program.functions['$main'], [])]
         self.memory = [data.Void()] * 1024**2
