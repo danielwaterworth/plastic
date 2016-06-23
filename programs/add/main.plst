@@ -1,5 +1,5 @@
 define main() -> Bool do
-    sys print_num(40 + 50);
+    sys print_uint(40 + 50);
 
     return false;
 end

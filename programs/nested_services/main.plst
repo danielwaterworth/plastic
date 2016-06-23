@@ -1,5 +1,5 @@
 interface Printer
-    print_num(UInt) -> Bool;
+    print_uint(UInt) -> Bool;
 end
 
 service SysPrinter()
@@ -7,8 +7,8 @@ service SysPrinter()
     end
 
     implements Printer
-        define print_num(n : UInt) -> Bool do
-            sys print_num(n);
+        define print_uint(n : UInt) -> Bool do
+            sys print_uint(n);
             return false;
         end
     end
@@ -20,7 +20,7 @@ service Test(printer : Printer)
 
     implements EntryPoint
         define main() -> Bool do
-            attr printer.print_num(42);
+            attr printer.print_uint(42);
             return false;
         end
     end

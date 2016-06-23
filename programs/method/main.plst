@@ -1,8 +1,8 @@
 define main() -> Bool do
     if (true.and(true).and(true))
-        sys print_num(1);
+        sys print_uint(1);
     else
-        sys print_num(2);
+        sys print_uint(2);
     end
 
     return false;

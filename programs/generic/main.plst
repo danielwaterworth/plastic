@@ -12,7 +12,7 @@ service Test()
 
     implements EntryPoint
         define main() -> Bool do
-            sys print_num(foo(bar(3, 4)));
+            sys print_uint(foo(bar(3, 4)));
             return true;
         end
     end

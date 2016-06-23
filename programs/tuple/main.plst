@@ -14,7 +14,7 @@ service Test()
     implements EntryPoint
         define main() -> Bool do
             a := fst(foo((3, true)));
-            sys print_num(a);
+            sys print_uint(a);
             return false;
         end
     end

@@ -4,7 +4,7 @@ service Test()
 
     implements EntryPoint
         define main() -> Bool do
-            sys print_num(42);
+            sys print_uint(42);
             return false;
         end
     end

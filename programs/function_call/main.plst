@@ -1,5 +1,5 @@
 define foo(a : UInt) -> Void do
-    sys print_num(a);
+    sys print_uint(a);
     return;
 end
 

@@ -82,7 +82,7 @@ class TypeCheckingContext(object):
         return dict(self.variable_types)
 
 sys_call_signatures = {
-    'print_num': ([program_types.uint], program_types.void),
+    'print_uint': ([program_types.uint], program_types.void),
     'print_bool': ([program_types.bool], program_types.void),
     'print_char': ([program_types.char], program_types.void),
     'print_string': ([program_types.string], program_types.void)

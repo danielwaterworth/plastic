@@ -1,6 +1,6 @@
 define foo() -> Bool do
     do
-        sys print_num(100);
+        sys print_uint(100);
     while (true)
     return false;
 end
