@@ -31,12 +31,14 @@ void = Primitive('void', {})
 bool_methods = {}
 bool = Primitive('bool', bool_methods)
 
-byte = Primitive('byte', {})
+byte_methods = {}
+byte = Primitive('byte', byte_methods)
 
 bytestring_methods = {}
 bytestring = Primitive('bytestring', bytestring_methods)
 
-char = Primitive('char', {})
+char_methods = {}
+char = Primitive('char', char_methods)
 
 string_methods = {}
 string = Primitive('string', string_methods)
@@ -210,7 +212,17 @@ bool_methods.update({
     'and': (([bool], bool), 'and')
 })
 
+byte_methods.update({
+    'to_bytestring': (([], bytestring), 'byte.to_bytestring'),
+    'to_uint': (([], uint), 'byte.to_uint'),
+})
+
+char_methods.update({
+    'to_string': (([], string), 'char.to_string')
+})
+
 bytestring_methods.update({
+    'drop': (([uint], bytestring), 'bytestring.drop'),
     'index': (([uint], byte), 'bytestring.index'),
     'slice': (([uint, uint], bytestring), 'bytestring.slice'),
     'length': (([], uint), 'bytestring.length'),

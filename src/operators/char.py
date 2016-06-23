@@ -11,3 +11,15 @@ class Eq(data.BuiltinOperator):
         return data.Bool(x.b == y.b)
 
 Eq().register()
+
+class ToString(data.BuiltinOperator):
+    def __init__(self):
+        self.name = 'char.to_string'
+
+    def call(self, arguments):
+        assert len(arguments) == 1
+        x = arguments[0]
+        assert isinstance(x, data.Char)
+        return data.String(x.b)
+
+ToString().register()
