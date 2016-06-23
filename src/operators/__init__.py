@@ -1,5 +1,9 @@
+import operators.uintops
+import operators.boolops
+import operators.list
+import operators.hashmap
+
 from data import *
-import builtin_operators
 
 def operation(operator, arguments):
     if operator in operators:

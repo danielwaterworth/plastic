@@ -1,4 +1,5 @@
 operators = {}
+sys_calls = {}
 
 class BuiltinOperator(object):
     def call(self, arguments):
@@ -6,6 +7,22 @@ class BuiltinOperator(object):
 
     def register(self):
         operators[self.name] = self
+
+class ExposeConstant(BuiltinOperator):
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+    def call(self, arguments):
+        assert len(arguments) == 0
+        return self.value
+
+class SysCall(object):
+    def call(self, arguments):
+        raise NotImplementedError()
+
+    def register(self):
+        sys_calls[self.name] = self
 
 class Data(object):
     pass

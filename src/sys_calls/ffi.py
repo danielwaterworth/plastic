@@ -1,6 +1,6 @@
 import data
 import rpython.rlib.clibffi as ffi
-from builtin_operators.list import DList
+from operators.list import DList
 from rpython.rtyper.lltypesystem import rffi, lltype
 
 class DLib(data.Data):
@@ -35,23 +35,19 @@ class DStructType(DType):
     def __del__(self):
         lltype.free(self.struct, flavor='raw')
 
-context = {}
-lib_methods = {}
-function_methods = {}
-
-class GetLibcName(data.BuiltinOperator):
+class GetLibcName(data.SysCall):
     def __init__(self):
-        self.name = 'vm.ffi.get_libc_name'
+        self.name = 'ffi.get_libc_name'
 
     def call(self, arguments):
         assert len(arguments) == 0
         return data.ByteString(ffi.get_libc_name())
 
-context['vm.ffi.get_libc_name'] = GetLibcName()
+GetLibcName().register()
 
-class GetLib(data.BuiltinOperator):
+class GetLib(data.SysCall):
     def __init__(self):
-        self.name = 'vm.ffi.get_lib'
+        self.name = 'ffi.get_lib'
 
     def call(self, arguments):
         assert len(arguments) == 1
@@ -59,11 +55,11 @@ class GetLib(data.BuiltinOperator):
         assert isinstance(name, data.ByteString)
         return DLib(ffi.CDLL(name.v))
 
-context['vm.ffi.get_lib'] = GetLib()
+GetLib().register()
 
-class GetPointer(data.BuiltinOperator):
+class GetPointer(data.SysCall):
     def __init__(self):
-        self.name = 'vm.ffi.get_pointer'
+        self.name = 'ffi.get_pointer'
 
     def call(self, arguments):
         lib, name, arg_types, ret_type = arguments
@@ -80,18 +76,16 @@ class GetPointer(data.BuiltinOperator):
         f = lib.lib.getpointer(name.v, args, ret_type.ty)
         return DForeignFunction(f, copied_types, ret_type)
 
-get_pointer = GetPointer()
-context['vm.ffi.get_pointer'] = get_pointer
-lib_methods['get_pointer'] = get_pointer
+GetPointer().register()
 
 for name in ffi.base_names:
     value = DType(getattr(ffi, 'ffi_type_%s' % name))
-    ffi_name = 'vm.ffi.%s' % name
-    #context[ffi_name] = bytecode.ExposeConstant(ffi_name, value)
+    ffi_name = 'ffi.%s' % name
+    data.ExposeConstant(ffi_name, value).register()
 
-class MakeStructType(data.BuiltinOperator):
+class MakeStructType(data.SysCall):
     def __init__(self):
-        self.name = 'vm.ffi.struct_type'
+        self.name = 'ffi.struct_type'
 
     def call(self, arguments):
         assert len(arguments) == 1
@@ -103,11 +97,11 @@ class MakeStructType(data.BuiltinOperator):
             ffi_types.append(ty.ty)
         return DStructType(ffi_types)
 
-context['vm.ffi.struct_type'] = MakeStructType()
+MakeStructType().register()
 
-class Call(data.BuiltinOperator):
+class Call(data.SysCall):
     def __init__(self):
-        self.name = 'vm.ffi.call'
+        self.name = 'ffi.call'
 
     def call(self, arguments):
         function, args = arguments
@@ -135,6 +129,4 @@ class Call(data.BuiltinOperator):
         else:
             raise TypeError()
 
-call = Call()
-context['vm.ffi.call'] = call
-function_methods['call'] = call
+Call().register()

@@ -1,6 +1,7 @@
 import bytecode
 import data
-import operations
+import operators
+import sys_calls
 
 class ActivationRecord(object):
     def __init__(self, function, arguments):
@@ -105,38 +106,10 @@ class Coroutine(data.Data):
                         assert isinstance(coroutine, Coroutine)
                         self.stack[-1].retire(data.Bool(coroutine.done))
                     else:
-                        self.stack[-1].retire(operations.operation(instr.operator, arguments))
+                        self.stack[-1].retire(operators.operation(instr.operator, arguments))
                 elif isinstance(instr, bytecode.SysCall):
                     arguments = self.stack[-1].resolve_variable_list(instr.arguments)
-                    if instr.function == 'print_num':
-                        assert len(arguments) == 1
-                        a = arguments[0]
-                        assert isinstance(a, data.UInt)
-                        print a.n
-                        self.stack[-1].retire(data.Void())
-                    elif instr.function == 'print_bool':
-                        assert len(arguments) == 1
-                        a = arguments[0]
-                        assert isinstance(a, data.Bool)
-                        if a.b:
-                            print 'True'
-                        else:
-                            print 'False'
-                        self.stack[-1].retire(data.Void())
-                    elif instr.function == 'print_char':
-                        assert len(arguments) == 1
-                        a = arguments[0]
-                        assert isinstance(a, data.Char)
-                        print a.b
-                        self.stack[-1].retire(data.Void())
-                    elif instr.function == 'print_string':
-                        assert len(arguments) == 1
-                        a = arguments[0]
-                        assert isinstance(a, data.String)
-                        print a.v
-                        self.stack[-1].retire(data.Void())
-                    else:
-                        raise NotImplementedError('sys_call not implemented: %s' % instr.function)
+                    self.stack[-1].retire(sys_calls.sys_call(instr.function, arguments))
                 elif isinstance(instr, bytecode.FunctionCall):
                     arguments = self.stack[-1].resolve_variable_list(instr.arguments)
                     self.stack.append(ActivationRecord(self.program.functions[instr.function], arguments))
