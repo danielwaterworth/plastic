@@ -6,7 +6,6 @@ import builtin_operators.ffi
 
 context = {}
 
-context.update(builtin_operators.hashmap.context)
 context.update(builtin_operators.ffi.context)
 
 for operator in context.itervalues():

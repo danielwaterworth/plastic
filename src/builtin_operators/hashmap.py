@@ -4,15 +4,9 @@ class DHashMap(data.Data):
     def __init__(self, h):
         self.h = h
 
-    def lookup(self, method):
-        return methods[method]
-
-context = {}
-methods = {}
-
 class Empty(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.hashmap.empty'
+        self.name = 'hashmap.empty'
 
     def call(self, arguments):
         assert len(arguments) == 0
@@ -22,7 +16,7 @@ Empty().register()
 
 class Set(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.hashmap.set'
+        self.name = 'hashmap.set'
 
     def call(self, arguments):
         map, key, value = arguments
@@ -33,13 +27,11 @@ class Set(data.BuiltinOperator):
         updated_map[key.v] = value
         return DHashMap(updated_map)
 
-hashmap_set = Set()
-context['vm.hashmap.set'] = hashmap_set
-methods['set'] = hashmap_set
+Set().register()
 
 class Get(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.hashmap.get'
+        self.name = 'hashmap.get'
 
     def call(self, arguments):
         map, key = arguments
@@ -47,13 +39,11 @@ class Get(data.BuiltinOperator):
         assert isinstance(key, data.String)
         return map.h[key.v]
 
-hashmap_get = Get()
-context['vm.hashmap.get'] = hashmap_get
-methods['get'] = hashmap_get
+Get().register()
 
 class Del(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.hashmap.del'
+        self.name = 'hashmap.del'
 
     def call(self, arguments):
         map, key = arguments
@@ -64,6 +54,4 @@ class Del(data.BuiltinOperator):
         del updated_map[key.v]
         return DHashMap(updated_map)
 
-hashmap_del = Del()
-context['vm.hashmap.del'] = hashmap_del
-methods['del'] = hashmap_del
+Del().register()
