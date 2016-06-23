@@ -458,7 +458,8 @@ def generate_service_methods(program_writer, service_decl):
                 function_name = "%s.%s#%s" % (name, interface.name, function.name)
                 generate_service_method(function_name, function)
 
-def generate_service_instantiations(program_writer, name, instantiations, service_decl):
+def generate_service_instantiations(program_writer, instantiations, service_decl):
+    name = service_decl.name
     for instantiation in instantiations:
         instantiation.dependencies = dict(zip(service_decl.dependency_names, instantiation.service_arguments))
 
@@ -575,7 +576,7 @@ def generate_entry(program_writer, entry_service, modules):
 
     for name, instantiations in grouped_services.iteritems():
         service_decl = service_decls[name]
-        generate_service_instantiations(program_writer, name, instantiations, service_decl)
+        generate_service_instantiations(program_writer, instantiations, service_decl)
 
     services_by_interface = collections.defaultdict(set)
     for name in grouped_services:
