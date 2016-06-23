@@ -8,7 +8,7 @@ class Socket(data.Data):
 
 class SocketSysCall(data.SysCall):
     def __init__(self):
-        self.name = 'socket.socket'
+        self.name = 'socket_socket'
 
     def call(self, arguments):
         family, type, proto = arguments
@@ -21,21 +21,21 @@ SocketSysCall().register()
 
 class Bind(data.SysCall):
     def __init__(self):
-        self.name = 'socket.bind'
+        self.name = 'socket_bind'
 
     def call(self, arguments):
         socket, address, port = arguments
         assert isinstance(socket, Socket)
         assert isinstance(address, data.String)
         assert isinstance(port, data.UInt)
-        socket.sock.bind(rsocket.INETAddress(address.v.encode('utf-8'), port.n))
+        socket.sock.bind(rsocket.INETAddress(address.v.encode('utf-8'), intmask(port.n)))
         return data.Void()
 
 Bind().register()
 
 class Listen(data.SysCall):
     def __init__(self):
-        self.name = 'socket.listen'
+        self.name = 'socket_listen'
 
     def call(self, arguments):
         socket, backlog = arguments
@@ -48,7 +48,7 @@ Listen().register()
 
 class Accept(data.SysCall):
     def __init__(self):
-        self.name = 'socket.accept'
+        self.name = 'socket_accept'
 
     def call(self, arguments):
         assert len(arguments) == 1
@@ -61,7 +61,7 @@ Accept().register()
 
 class Recv(data.SysCall):
     def __init__(self):
-        self.name = 'socket.recv'
+        self.name = 'socket_recv'
 
     def call(self, arguments):
         socket, n = arguments
@@ -73,7 +73,7 @@ Recv().register()
 
 class Send(data.SysCall):
     def __init__(self):
-        self.name = 'socket.send'
+        self.name = 'socket_send'
 
     def call(self, arguments):
         socket, dat = arguments
@@ -83,3 +83,16 @@ class Send(data.SysCall):
         return data.Void()
 
 Send().register()
+
+class Close(data.SysCall):
+    def __init__(self):
+        self.name = 'socket_close'
+
+    def call(self, arguments):
+        assert len(arguments) == 1
+        socket = arguments[0]
+        assert isinstance(socket, Socket)
+        socket.sock.close()
+        return data.Void()
+
+Close().register()

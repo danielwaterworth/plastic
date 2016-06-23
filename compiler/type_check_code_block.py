@@ -85,7 +85,15 @@ sys_call_signatures = {
     'print_uint': ([program_types.uint], program_types.void),
     'print_bool': ([program_types.bool], program_types.void),
     'print_char': ([program_types.char], program_types.void),
-    'print_string': ([program_types.string], program_types.void)
+    'print_string': ([program_types.string], program_types.void),
+
+    'socket_socket': ([program_types.uint, program_types.uint, program_types.uint], program_types.socket),
+    'socket_bind': ([program_types.socket, program_types.string, program_types.uint], program_types.void),
+    'socket_listen': ([program_types.socket, program_types.uint], program_types.void),
+    'socket_accept': ([program_types.socket], program_types.socket),
+    'socket_recv': ([program_types.socket, program_types.uint], program_types.bytestring),
+    'socket_send': ([program_types.socket, program_types.bytestring], program_types.void),
+    'socket_close': ([program_types.socket], program_types.void),
 }
 
 def merge_contexts(a, b):

@@ -43,6 +43,8 @@ string = Primitive('string', string_methods)
 
 uint = Primitive('uint', {})
 
+socket = Primitive('socket', {})
+
 class NamedType(Type):
     def __init__(self, module, name):
         self.module = module

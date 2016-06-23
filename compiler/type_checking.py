@@ -10,7 +10,8 @@ primitives = {
     'Byte': program_types.byte,
     'ByteString': program_types.bytestring,
     'Char': program_types.char,
-    'String': program_types.string
+    'String': program_types.string,
+    'Socket': program_types.socket
 }
 entry_point = program_types.Interface('EntryPoint', {'main': ([], program_types.bool)})
 builtin_interfaces = {'EntryPoint': entry_point}
