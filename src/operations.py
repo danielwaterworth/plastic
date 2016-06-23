@@ -4,22 +4,6 @@ import builtin_operators
 def operation(operator, arguments):
     if operator in operators:
         return operators[operator].call(arguments)
-
-    if operator == 'sub':
-        a, b = arguments
-        return sub(a, b)
-    elif operator == 'add':
-        a, b = arguments
-        return add(a, b)
-    elif operator == 'eq':
-        a, b = arguments
-        return eq(a, b)
-    elif operator == 'lt':
-        a, b = arguments
-        return lt(a, b)
-    elif operator == 'and':
-        a, b = arguments
-        return and_(a, b)
     elif operator == 'pack':
         return Packed(arguments)
     elif operator == 'index':
@@ -62,31 +46,6 @@ def operation(operator, arguments):
         return string_eq(x, y)
     else:
         raise NotImplementedError('operator not implemented: %s' % operator)
-
-def sub(a, b):
-    assert isinstance(a, UInt)
-    assert isinstance(b, UInt)
-    return UInt(a.n - b.n)
-
-def add(a, b):
-    assert isinstance(a, UInt)
-    assert isinstance(b, UInt)
-    return UInt(a.n + b.n)
-
-def lt(a, b):
-    assert isinstance(a, UInt)
-    assert isinstance(b, UInt)
-    return Bool(a.n < b.n)
-
-def and_(a, b):
-    assert isinstance(a, Bool)
-    assert isinstance(b, Bool)
-    return Bool(a.b and b.b)
-
-def eq(a, b):
-    assert isinstance(a, UInt)
-    assert isinstance(b, UInt)
-    return Bool(a.n == b.n)
 
 def bytestring_eq(a, b):
     assert isinstance(a, ByteString)

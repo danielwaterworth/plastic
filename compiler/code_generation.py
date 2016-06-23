@@ -77,16 +77,16 @@ class ServiceContext(GenerationContext):
         self.basic_block.store(offset, value)
 
 uint_operators = {
-    '<': 'lt',
-    '>': 'gt',
-    '<=': 'le',
-    '>=': 'ge',
-    '+': 'add',
-    '-': 'sub',
-    '*': 'mul',
-    '/': 'div',
-    '==': 'eq',
-    '!=': 'ne'
+    '<': 'uint.lt',
+    '>': 'uint.gt',
+    '<=': 'uint.le',
+    '>=': 'uint.ge',
+    '+': 'uint.add',
+    '-': 'uint.sub',
+    '*': 'uint.mul',
+    '/': 'uint.div',
+    '==': 'uint.eq',
+    '!=': 'uint.ne'
 }
 
 bytestring_operators = {
@@ -470,7 +470,7 @@ def generate_service_instantiations(program_writer, instantiations, service_decl
             block = 0
             for instantiation in instantiations:
                 service_id = basic_block.constant_uint(instantiation.service_id)
-                v = basic_block.operation('eq', [self_variable, service_id])
+                v = basic_block.operation('uint.eq', [self_variable, service_id])
                 basic_block.conditional(v, block + 1, block + 2)
                 basic_block = function_writer.basic_block()
                 result = instantiation.dependencies[dependency_name].interface_variable(basic_block)
@@ -489,7 +489,7 @@ def generate_service_instantiations(program_writer, instantiations, service_decl
             for instantiation in instantiations:
                 attr_offset = memory_offset + instantiation.memory_offset
                 service_id = basic_block.constant_uint(instantiation.service_id)
-                v = basic_block.operation('eq', [self_variable, service_id])
+                v = basic_block.operation('uint.eq', [self_variable, service_id])
                 basic_block.conditional(v, block + 1, block + 2)
                 basic_block = function_writer.basic_block()
                 result = basic_block.constant_uint(attr_offset)
@@ -513,7 +513,7 @@ def generate_interface(program_writer, interface, services):
             block = 0
             for service_name, service_type_id in services:
                 service_type = basic_block.constant_uint(service_type_id)
-                v = basic_block.operation('eq', [service_type, self_type])
+                v = basic_block.operation('uint.eq', [service_type, self_type])
                 basic_block.conditional(v, block + 1, block + 2)
                 basic_block = function_writer.basic_block()
                 result = basic_block.fun_call("%s.%s#%s" % (service_name, interface.name, name), [self_id] + variables[1:])

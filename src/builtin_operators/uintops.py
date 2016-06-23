@@ -1,10 +1,8 @@
 import data
 
-context = {}
-
 class IntAdd(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.intops.add'
+        self.name = 'uint.add'
 
     def call(self, arguments):
         a, b = arguments
@@ -14,11 +12,11 @@ class IntAdd(data.BuiltinOperator):
             raise TypeError()
         return data.UInt(a.n + b.n)
 
-context['vm.intops.add'] = IntAdd()
+IntAdd().register()
 
 class IntSub(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.intops.sub'
+        self.name = 'uint.sub'
 
     def call(self, arguments):
         a, b = arguments
@@ -28,93 +26,103 @@ class IntSub(data.BuiltinOperator):
             raise TypeError()
         return data.UInt(a.n - b.n)
 
-context['vm.intops.sub'] = IntSub()
+IntSub().register()
 
 class IntMul(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.intops.mul'
+        self.name = 'uint.mul'
 
     def call(self, arguments):
         a, b = arguments
         raise NotImplementedError()
 
-context['vm.intops.mul'] = IntMul()
+IntMul().register()
 
 class IntDiv(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.intops.div'
+        self.name = 'uint.div'
 
     def call(self, arguments):
         a, b = arguments
         raise NotImplementedError()
 
-context['vm.intops.div'] = IntDiv()
+IntDiv().register()
 
 class IntGt(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.intops.gt'
+        self.name = 'uint.gt'
 
     def call(self, arguments):
         a, b = arguments
         raise NotImplementedError()
 
-context['vm.intops.gt'] = IntGt()
+IntGt().register()
 
 class IntLt(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.intops.lt'
+        self.name = 'uint.lt'
 
     def call(self, arguments):
         a, b = arguments
-        assert isinstance(a, data.UInt)
-        assert isinstance(b, data.UInt)
+        if not isinstance(a, data.UInt):
+            raise TypeError()
+        if not isinstance(b, data.UInt):
+            raise TypeError()
         return data.Bool(a.n < b.n)
 
-context['vm.intops.lt'] = IntLt()
+IntLt().register()
 
 class IntGe(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.intops.ge'
+        self.name = 'uint.ge'
 
     def call(self, arguments):
         a, b = arguments
         raise NotImplementedError()
 
-context['vm.intops.ge'] = IntGe()
+IntGe().register()
 
 class IntLe(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.intops.le'
+        self.name = 'uint.le'
 
     def call(self, arguments):
         a, b = arguments
         raise NotImplementedError()
 
-context['vm.intops.le'] = IntLe()
+IntLe().register()
 
 class IntEq(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.intops.eq'
+        self.name = 'uint.eq'
 
     def call(self, arguments):
         a, b = arguments
-        raise NotImplementedError()
+        if not isinstance(a, data.UInt):
+            raise TypeError()
+        if not isinstance(b, data.UInt):
+            raise TypeError()
+        return data.Bool(a.n == b.n)
 
-context['vm.intops.eq'] = IntEq()
+IntEq().register()
 
 class IntNe(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.intops.ne'
+        self.name = 'uint.ne'
 
     def call(self, arguments):
         a, b = arguments
+        if not isinstance(a, data.UInt):
+            raise TypeError()
+        if not isinstance(b, data.UInt):
+            raise TypeError()
         raise NotImplementedError()
 
-context['vm.intops.ne'] = IntNe()
+IntNe().register()
 
 class ToString(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.intops.to_string'
+        self.name = 'uint.to_string'
 
     def call(self, arguments):
         assert len(arguments) == 1
@@ -123,4 +131,4 @@ class ToString(data.BuiltinOperator):
             raise TypeError()
         return data.String(str(x.n).decode('utf-8'))
 
-context['vm.intops.to_string'] = ToString()
+ToString().register()

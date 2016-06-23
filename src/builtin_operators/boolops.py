@@ -1,31 +1,37 @@
 import data
 
-context = {}
-
 class BoolAnd(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.boolops.and'
+        self.name = 'and'
 
     def call(self, arguments):
         a, b = arguments
-        raise NotImplementedError()
+        assert isinstance(a, data.Bool)
+        assert isinstance(b, data.Bool)
+        return data.Bool(a.b and b.b)
 
-context['vm.boolops.and'] = BoolAnd()
+BoolAnd().register()
 
 class BoolOr(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.boolops.or'
+        self.name = 'or'
 
     def call(self, arguments):
         a, b = arguments
-        raise NotImplementedError()
+        assert isinstance(a, data.Bool)
+        assert isinstance(b, data.Bool)
+        return data.Bool(a.b or b.b)
 
-context['vm.boolops.or'] = BoolOr()
+BoolOr().register()
 
 class BoolNot(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.boolops.not'
+        self.name = 'not'
 
     def call(self, arguments):
-        a, b = arguments
-        raise NotImplementedError()
+        assert len(arguments) == 1
+        arg = arguments[0]
+        assert isinstance(arg, data.Bool)
+        return data.Bool(not arg.b)
+
+BoolNot().register()
