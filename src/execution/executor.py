@@ -1,5 +1,6 @@
 import bytecode
 import data
+import operations
 
 class ActivationRecord(object):
     def __init__(self, function, arguments):
@@ -104,7 +105,7 @@ class Coroutine(data.Data):
                         assert isinstance(coroutine, Coroutine)
                         self.stack[-1].retire(data.Bool(coroutine.done))
                     else:
-                        self.stack[-1].retire(data.operation(instr.operator, arguments))
+                        self.stack[-1].retire(operations.operation(instr.operator, arguments))
                 elif isinstance(instr, bytecode.SysCall):
                     arguments = self.stack[-1].resolve_variable_list(instr.arguments)
                     if instr.function == 'print_num':
