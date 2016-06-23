@@ -10,7 +10,7 @@ class ServiceInstantiation(object):
     def interface_variable(self, basic_block):
         service_type = basic_block.constant_uint(self.service_type_id)
         service_id = basic_block.constant_uint(self.service_id)
-        return basic_block.operation('pack', [service_type, service_id])
+        return basic_block.operation('list.pack', [service_type, service_id])
 
     def service_variable(self, basic_block):
         return basic_block.constant_uint(self.service_id)

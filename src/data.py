@@ -55,7 +55,3 @@ class String(Data):
 
     def write_out(self, basic_block):
         return basic_block.constant_string(self.v)
-
-class Packed(Data):
-    def __init__(self, values):
-        self.values = values

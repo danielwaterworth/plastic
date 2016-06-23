@@ -4,13 +4,6 @@ import builtin_operators
 def operation(operator, arguments):
     if operator in operators:
         return operators[operator].call(arguments)
-    elif operator == 'pack':
-        return Packed(arguments)
-    elif operator == 'index':
-        a, b = arguments
-        assert isinstance(a, Packed)
-        assert isinstance(b, UInt)
-        return a.values[b.n]
     elif operator == 'bytestring_eq':
         a, b = arguments
         return bytestring_eq(a, b)

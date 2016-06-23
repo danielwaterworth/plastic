@@ -4,15 +4,18 @@ class DList(data.Data):
     def __init__(self, elements):
         self.elements = elements
 
-    def lookup(self, method):
-        return methods[method]
+class Pack(data.BuiltinOperator):
+    def __init__(self):
+        self.name = 'list.pack'
 
-context = {}
-methods = {}
+    def call(self, arguments):
+        return DList(arguments)
+
+Pack().register()
 
 class Append(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.list.append'
+        self.name = 'list.append'
 
     def call(self, arguments):
         list, element = arguments
@@ -20,13 +23,11 @@ class Append(data.BuiltinOperator):
             raise TypeError()
         return DList(list.elements + [element])
 
-list_append = Append()
-context['vm.list.append'] = list_append
-methods['append'] = list_append
+Append().register()
 
 class Extend(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.list.extend'
+        self.name = 'list.extend'
 
     def call(self, arguments):
         a, b = arguments
@@ -36,13 +37,11 @@ class Extend(data.BuiltinOperator):
             raise TypeError()
         return DList(a.elements + b.elements)
 
-list_extend = Extend()
-context['vm.list.extend'] = list_extend
-methods['extend'] = list_extend
+Extend().register()
 
 class Repeat(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.list.repeat'
+        self.name = 'list.repeat'
 
     def call(self, arguments):
         element, n = arguments
@@ -50,11 +49,11 @@ class Repeat(data.BuiltinOperator):
             raise TypeError()
         return DList([element] * n.n)
 
-context['vm.list.repeat'] = Repeat()
+Repeat().register()
 
 class Set(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.list.set'
+        self.name = 'list.set'
 
     def call(self, arguments):
         list, index, value = arguments
@@ -67,13 +66,11 @@ class Set(data.BuiltinOperator):
             raise IndexError()
         return DList(list.elements[:index_n] + [value] + list.elements[index_n+1:])
 
-list_set = Set()
-context['vm.list.set'] = list_set
-methods['set'] = list_set
+Set().register()
 
-class Get(data.BuiltinOperator):
+class Index(data.BuiltinOperator):
     def __init__(self):
-        self.name = 'vm.list.get'
+        self.name = 'list.index'
 
     def call(self, arguments):
         list, index = arguments
@@ -85,6 +82,4 @@ class Get(data.BuiltinOperator):
             raise IndexError()
         return list.elements[index.n]
 
-list_get = Get()
-context['vm.list.get'] = list_get
-methods['get'] = list_get
+Index().register()

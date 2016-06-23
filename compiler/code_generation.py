@@ -178,7 +178,7 @@ def generate_expression(context, expression):
         return context.basic_block.sys_call(expression.name, arguments)
     elif isinstance(expression, program.TupleConstructor):
         values = [generate_expression(context, value) for value in expression.values]
-        return context.basic_block.operation('pack', values)
+        return context.basic_block.operation('list.pack', values)
     else:
         raise NotImplementedError('unknown expression type: %s' % type(expression))
 
@@ -193,7 +193,7 @@ def generate_statement(context, statement):
         var = generate_expression(context, statement.expression)
         for name, i in zip(statement.names, itertools.count()):
             i_var = context.basic_block.constant_uint(i)
-            v = context.basic_block.operation('index', [var, i_var])
+            v = context.basic_block.operation('list.index', [var, i_var])
             context.add(name, v)
     elif isinstance(statement, program.Conditional):
         condition_variable = generate_expression(context, statement.expression)
@@ -280,7 +280,7 @@ def generate_statement(context, statement):
     elif isinstance(statement, program.Match):
         var = generate_expression(context, statement.expression)
         zero = context.basic_block.constant_uint(0)
-        name = context.basic_block.operation('index', [var, zero])
+        name = context.basic_block.operation('list.index', [var, zero])
 
         contexts = []
         gotos = []
@@ -297,7 +297,7 @@ def generate_statement(context, statement):
             index = 1
             for param in clause.parameters:
                 index_var = clause_context.basic_block.constant_uint(index)
-                param_var = clause_context.basic_block.operation('index', [var, index_var])
+                param_var = clause_context.basic_block.operation('list.index', [var, index_var])
                 clause_context.add(param, param_var)
                 index += 1
 
@@ -387,7 +387,7 @@ def generate_record(program_writer, record):
             generate_code_block(context, constructor.body)
 
             arguments = [context.lookup('@%s' % attr) for attr, _ in record.type.attrs]
-            result = context.basic_block.operation('pack', arguments)
+            result = context.basic_block.operation('list.pack', arguments)
             context.basic_block.ret(result)
 
     def generate_method(method):
@@ -403,7 +403,7 @@ def generate_record(program_writer, record):
             for attr, attr_type in record.type.attrs:
                 offset += 1
                 new_offset_var = basic_block.constant_uint(offset)
-                var = basic_block.operation('index', [variables[0], offset_var])
+                var = basic_block.operation('list.index', [variables[0], offset_var])
                 variable_dict['@%s' % attr] = var
                 offset_var = new_offset_var
 
@@ -423,7 +423,7 @@ def generate_enum(program_writer, enum):
         with program_writer.function(name, len(constructor.types)) as (function_writer, variables):
             with function_writer.basic_block() as basic_block:
                 name = basic_block.constant_bytestring(constructor.name)
-                result = basic_block.operation('pack', [name] + variables)
+                result = basic_block.operation('list.pack', [name] + variables)
                 basic_block.ret(result)
 
 def generate_service_methods(program_writer, service_decl):
@@ -507,8 +507,8 @@ def generate_interface(program_writer, interface, services):
             basic_block = function_writer.basic_block()
             zero = basic_block.constant_uint(0)
             one = basic_block.constant_uint(1)
-            self_type = basic_block.operation('index', [variables[0], zero])
-            self_id = basic_block.operation('index', [variables[0], one])
+            self_type = basic_block.operation('list.index', [variables[0], zero])
+            self_id = basic_block.operation('list.index', [variables[0], one])
 
             block = 0
             for service_name, service_type_id in services:
