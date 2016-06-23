@@ -115,7 +115,7 @@ class Call(data.SysCall):
                 assert isinstance(arg, DForeignPtr)
                 function.foreign_function.push_arg(arg.ptr)
             elif ty.ty == ffi.ffi_type_sint:
-                assert isinstance(arg, data.UInt)
+                assert isinstance(arg, data.Int)
                 function.foreign_function.push_arg(arg.n)
             else:
                 raise TypeError()
@@ -124,7 +124,6 @@ class Call(data.SysCall):
             return DForeignPtr(ptr)
         elif function.ret_type.ty == ffi.ffi_type_sint:
             n = function.foreign_function.call(rffi.LONG)
-            raise NotImplementedError()
             return data.Int(n)
         else:
             raise TypeError()
