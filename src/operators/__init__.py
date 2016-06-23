@@ -1,5 +1,6 @@
 import data
 
+import operators.int
 import operators.uint
 import operators.bool
 import operators.byte

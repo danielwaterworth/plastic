@@ -57,6 +57,7 @@ class Set(data.BuiltinOperator):
 
     def call(self, arguments):
         list, index, value = arguments
+        assert isinstance(index, data.UInt)
         index_n = index.n
         if not isinstance(list, DList):
             raise TypeError()

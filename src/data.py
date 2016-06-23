@@ -27,6 +27,13 @@ class SysCall(object):
 class Data(object):
     pass
 
+class Int(Data):
+    def __init__(self, n):
+        self.n = n
+
+    def write_out(self, basic_block):
+        return basic_block.constant_int(self.n)
+
 class UInt(Data):
     def __init__(self, n):
         self.n = n

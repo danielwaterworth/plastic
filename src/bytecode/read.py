@@ -1,5 +1,5 @@
 from rpython.rlib.rstruct.runpack import runpack
-from rpython.rlib.rarithmetic import r_ulonglong, r_int, intmask
+from rpython.rlib.rarithmetic import r_longlong, r_ulonglong, r_int, intmask
 
 from bytecode.format import *
 
@@ -50,6 +50,8 @@ def read_bytecode(fd, receiver):
                                     basic_block_receiver.constant_string(fd.read(length).decode('utf-8'))
                                 elif instruction_type == CONST_BOOL:
                                     basic_block_receiver.constant_bool(fd.read(1) != '\0')
+                                elif instruction_type == CONST_INT:
+                                    basic_block_receiver.constant_int(runpack('>q', fd.read(8)))
                                 elif instruction_type == CONST_UINT:
                                     basic_block_receiver.constant_uint(runpack('>Q', fd.read(8)))
                                 elif instruction_type == VOID:
