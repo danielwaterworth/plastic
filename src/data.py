@@ -75,6 +75,7 @@ class Char(Data):
 
 class ByteString(Data):
     def __init__(self, v):
+        assert v
         self.v = v
 
     def write_out(self, basic_block):

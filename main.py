@@ -5,8 +5,11 @@ import bytecode.read
 import bytecode.constructor
 import bytecode.printer
 import execution.executor as executor
+from rpython.rlib import rsocket
 
 def entry_point(argv):
+    rsocket.rsocket_startup()
+
     constructor = bytecode.constructor.BytecodeConstructor()
 
     with open(argv[1], 'r') as fd:
