@@ -7,9 +7,6 @@ class DLib(data.Data):
     def __init__(self, lib):
         self.lib = lib
 
-    def lookup(self, method):
-        return lib_methods[method]
-
 class DForeignPtr(data.Data):
     def __init__(self, ptr):
         self.ptr = ptr
@@ -19,9 +16,6 @@ class DForeignFunction(data.Data):
         self.foreign_function = foreign_function
         self.arg_types = arg_types
         self.ret_type = ret_type
- 
-    def lookup(self, method):
-        return function_methods[method]
 
 class DType(data.Data):
     def __init__(self, ty):

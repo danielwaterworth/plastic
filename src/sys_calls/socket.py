@@ -1,10 +1,32 @@
 import data
 from rpython.rlib import rsocket
-from rpython.rlib.rarithmetic import intmask
+from rpython.rlib.rarithmetic import intmask, r_ulonglong
+from rpython.rlib.rstruct.runpack import runpack
 
 class Socket(data.Data):
-    def __init__(self, sock):
+    def __init__(self, sock, fd=None):
         self.sock = sock
+        self.fd = fd
+
+    def persist(self, fd):
+        fd.write(self.type_id)
+        if self.sock:
+            n = self.sock.fd
+        else:
+            n = self.fd
+        assert n
+        fd.write(data.pack_int(n))
+
+    @classmethod
+    def load(cls, fd):
+        n = runpack('>q', fd.read(8))
+        return cls(None, n)
+
+    def __repr__(self):
+        if self.sock:
+            return '(socket %s)' % self.sock.fd
+        else:
+            return '(socket %s)' % self.fd
 
 class SocketSysCall(data.SysCall):
     def __init__(self):

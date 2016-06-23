@@ -41,13 +41,17 @@ class Reply(SysCallInterface):
 
 def read_trace(fd):
     trace = []
-    while True:
-        b = fd.read(8)
-        if not b:
-            return trace
-        n = runpack('>Q', b)
-        name = fd.read(n)
-        n = runpack('>Q', fd.read(8))
-        arguments = [data.load(fd) for i in xrange(n)]
-        return_value = data.load(fd)
-        trace.append((name, arguments, return_value))
+    try:
+        while True:
+            b = fd.read(8)
+            if not b:
+                break
+            n = runpack('>Q', b)
+            name = fd.read(n)
+            n = runpack('>Q', fd.read(8))
+            arguments = [data.load(fd) for i in xrange(n)]
+            return_value = data.load(fd)
+            trace.append((name, arguments, return_value))
+    except:
+        pass
+    return trace

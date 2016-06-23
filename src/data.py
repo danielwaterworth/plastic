@@ -1,4 +1,5 @@
 from rpython.rlib.rstruct.runpack import runpack
+from rpython.rlib.rarithmetic import intmask, r_ulonglong
 import hashlib
 
 operators = {}
@@ -11,6 +12,10 @@ def pack_uint(n):
         n = n >> 8
     output.reverse()
     return ''.join(output)
+
+def pack_int(n):
+    n = n & r_ulonglong(0xffffffffffffffffL)
+    return pack_uint(n)
 
 def pack_uint32(n):
     output = []
