@@ -258,10 +258,10 @@ class Service(Type):
         return "<Service %s>" % self.name
 
 bytestring_methods = {
-    'index': (([uint], byte), 'bytestring_index'),
-    'slice': (([uint, uint], bytestring), 'bytestring_slice'),
-    'length': (([], uint), 'bytestring_length'),
-    'decode_utf8': (([], string), 'decode_utf8')
+    'index': (([uint], byte), 'bytestring.index'),
+    'slice': (([uint, uint], bytestring), 'bytestring.slice'),
+    'length': (([], uint), 'bytestring.length'),
+    'decode_utf8': (([], string), 'bytestring.decode_utf8')
 }
 
 string_methods = {

@@ -90,7 +90,7 @@ uint_operators = {
 }
 
 bytestring_operators = {
-    '==': 'bytestring_eq'
+    '==': 'bytestring.eq'
 }
 
 string_operators = {
@@ -287,7 +287,7 @@ def generate_statement(context, statement):
 
         for clause in statement.clauses:
             clause_name = context.basic_block.constant_bytestring(clause.name)
-            v = context.basic_block.operation('bytestring_eq', [name, clause_name])
+            v = context.basic_block.operation('bytestring.eq', [name, clause_name])
             cond = context.basic_block.special_conditional(v, 0, 0)
 
             clause_block = context.function_writer.basic_block()
