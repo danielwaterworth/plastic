@@ -3,11 +3,11 @@ record Foo
     attr bar : UInt;
 
     constructor new(a : UInt)
-        attr foo := a;
-        attr bar := a;
+        @foo := a;
+        @bar := a;
     end
 
     define plah(a : UInt) -> Bool do
-        return a < attr bar;
+        return a < @bar;
     end
 end

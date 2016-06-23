@@ -3,8 +3,8 @@ record Foo
     attr bar : UInt;
 
     constructor new(foo : UInt, bar : UInt)
-        attr foo := foo;
-        attr bar := bar;
+        @foo := foo;
+        @bar := bar;
     end
 
     define bar(bar : UInt) -> Bar do
@@ -16,7 +16,7 @@ record Foo
     end
 
     define plah(a : UInt) -> Bool do
-        return a < attr bar;
+        return a < @bar;
     end
 end
 
@@ -25,16 +25,16 @@ record Bar
     attr bar : UInt;
 
     constructor new(foo : Foo, bar : UInt)
-        attr foo := foo;
-        attr bar := bar;
+        @foo := foo;
+        @bar := bar;
     end
 
     define foo() -> Foo do
-        return attr foo;
+        return @foo;
     end
 
     define plah() -> Bool do
-        return self.foo().plah(attr bar);
+        return self.foo().plah(@bar);
     end
 end
 

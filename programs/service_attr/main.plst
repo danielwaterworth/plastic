@@ -3,15 +3,15 @@ service Test()
     attr bar : Bool;
 
     constructor new()
-        attr foo := 4;
-        attr bar := true;
+        @foo := 4;
+        @bar := true;
     end
 
     implements EntryPoint
         define main() -> Bool do
-            attr foo := 500;
-            sys print_uint(attr foo);
-            sys print_bool(attr bar);
+            @foo := 500;
+            sys print_uint(@foo);
+            sys print_bool(@bar);
             return false;
         end
     end

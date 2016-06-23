@@ -20,7 +20,7 @@ service Test(printer : Printer)
 
     implements EntryPoint
         define main() -> Bool do
-            attr printer.print_uint(42);
+            @printer.print_uint(42);
             return false;
         end
     end

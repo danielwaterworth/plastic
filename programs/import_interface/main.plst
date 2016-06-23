@@ -17,7 +17,7 @@ service Test(f : foo.Foo)
 
     implements EntryPoint
         define main() -> Bool do
-            sys print_bool(attr f.foo(true));
+            sys print_bool(@f.foo(true));
             return true;
         end
     end

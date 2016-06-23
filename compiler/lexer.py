@@ -16,6 +16,7 @@ tokens = [
     "CLOSE_SQUARE",
     "UPPER_NAME",
     "LOWER_NAME",
+    "PROPERTY",
     "STRING",
     "PLUS",
     "MINUS",
@@ -85,6 +86,7 @@ def t_LOWER_NAME(t):
         t.type = keywords[t.value]
     return t
 
+t_PROPERTY = r'@[a-z][a-z0-9_]*'
 t_STRING = r'"(\\.|[^"])*"'
 t_PLUS = r'\+'
 t_MINUS = r'\-'

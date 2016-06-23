@@ -294,8 +294,8 @@ def p_assignment_statement(p):
     p[0] = program.Assignment(p[1], p[3])
 
 def p_attr_assignment(p):
-    '''statement : ATTR LOWER_NAME ASSIGNMENT expression SEMICOLON'''
-    p[0] = program.AttrStore(p[2], p[4])
+    '''statement : PROPERTY ASSIGNMENT expression SEMICOLON'''
+    p[0] = program.AttrStore(p[1][1:], p[3])
 
 def p_tuple_assignment(p):
     '''statement : non_empty_match_list COMMA LOWER_NAME ASSIGNMENT expression SEMICOLON'''
@@ -363,8 +363,8 @@ def p_expression_sys_call(p):
     p[0] = program.SysCall(p[2], p[3])
 
 def p_expression_attr(p):
-    '''expression : ATTR LOWER_NAME'''
-    p[0] = program.AttrLoad(p[2])
+    '''expression : PROPERTY'''
+    p[0] = program.AttrLoad(p[1][1:])
 
 def p_expression_yield(p):
     '''expression : YIELD expression'''
