@@ -324,6 +324,9 @@ def type_check_code_block(context, code_block):
 
             assert constructors == set(enum_type.constructors)
             context.variable_types = reduce(merge_contexts, after_contexts)
+        elif isinstance(statement, program.Debug):
+            expression = infer_expression_type(statement.expression)
+            assert expression == program_types.string
         elif isinstance(statement, program.Expression):
             infer_expression_type(statement)
         else:

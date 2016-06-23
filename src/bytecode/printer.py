@@ -57,6 +57,9 @@ class BasicBlockPrinter(object):
     def fun_call(self, name, arguments):
         return self.instruction("FUN_CALL", name, arguments)
 
+    def debug(self, value):
+        return self.instruction("DEBUG", value)
+
     def new_coroutine(self, name, arguments):
         return self.instruction("NEW_COROUTINE", name, arguments)
 

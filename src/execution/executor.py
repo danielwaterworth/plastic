@@ -115,6 +115,11 @@ class Coroutine(data.Data):
                 elif isinstance(instr, bytecode.NewCoroutine):
                     arguments = self.stack[-1].resolve_variable_list(instr.arguments)
                     return CoroutineNew(instr.function, arguments)
+                elif isinstance(instr, bytecode.Debug):
+                    value = self.stack[-1].resolve_variable(instr.value)
+                    assert isinstance(value, data.String)
+                    print value.v
+                    self.stack[-1].retire(data.Void())
                 elif isinstance(instr, bytecode.ConstantBool):
                     self.stack[-1].retire(data.Bool(instr.value))
                 elif isinstance(instr, bytecode.ConstantByte):

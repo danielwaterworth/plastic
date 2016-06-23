@@ -90,6 +90,9 @@ def read_bytecode(fd, receiver):
                                     for i in xrange(arguments_n):
                                         arguments.append(runpack('>Q', fd.read(8)))
                                     basic_block_receiver.new_coroutine(function_name, arguments)
+                                elif instruction_type == DEBUG:
+                                    value = runpack('>Q', fd.read(8))
+                                    basic_block_receiver.debug(value)
                                 elif instruction_type == LOAD:
                                     address = runpack('>Q', fd.read(8))
                                     basic_block_receiver.load(address)

@@ -30,9 +30,19 @@ class TraceProxy(SysCallInterface):
 
         return value
 
-class Replay(SysCallInterface):
+class EofFd(object):
     def __init__(self, fd):
         self.fd = fd
+
+    def read(self, n):
+        chunk = self.fd.read(n)
+        if len(chunk) < n:
+            raise EOFError()
+        return chunk
+
+class Replay(SysCallInterface):
+    def __init__(self, fd):
+        self.fd = EofFd(fd)
 
     def sys_call(self, name, arguments):
         n = intmask(runpack('>Q', self.fd.read(8)))
@@ -45,7 +55,7 @@ class Replay(SysCallInterface):
         for i in xrange(len(expected_arguments)):
             expected = expected_arguments[i]
             arg = arguments[i]
-            if expected != arg:
+            if not expected.eq(arg):
                 raise Exception('expected %s to equal %s' % (expected, arg))
         return return_value
 

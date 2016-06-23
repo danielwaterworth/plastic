@@ -27,7 +27,7 @@ class Socket(data.Data):
         else:
             return '(socket %s)' % self.fd
 
-    def __eq__(self, other):
+    def eq(self, other):
         return isinstance(other, Socket) and self.fd == other.fd
 
 class SocketSysCall(data.SysCall):

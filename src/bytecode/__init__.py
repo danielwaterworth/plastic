@@ -40,6 +40,10 @@ class NewCoroutine(Instruction):
         self.function = function
         self.arguments = arguments
 
+class Debug(Instruction):
+    def __init__(self, value):
+        self.value = value
+
 class ConstantBool(Instruction):
     def __init__(self, value):
         self.value = value

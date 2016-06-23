@@ -285,6 +285,10 @@ def p_non_empty_argument_list(p):
     p[1].append(p[3])
     p[0] = p[1]
 
+def p_debug(p):
+    '''statement : DEBUG OPEN_PARENS expression CLOSE_PARENS SEMICOLON'''
+    p[0] = program.Debug(p[3])
+
 def p_function_call_statement(p):
     '''statement : expression SEMICOLON'''
     p[0] = p[1]

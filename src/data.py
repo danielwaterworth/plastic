@@ -54,9 +54,6 @@ class Data(object):
     def persist(self, fd):
         raise NotImplementedError()
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
 def load(fd):
     id = fd.read(8)
     return type_by_id[id].load(fd)
@@ -91,7 +88,7 @@ class UInt(Data):
     def __repr__(self):
         return repr(self.n)
 
-    def __eq__(self, other):
+    def eq(self, other):
         return isinstance(other, UInt) and self.n == other.n
 
 class Double(Data):
@@ -191,7 +188,7 @@ class ByteString(Data):
     def __repr__(self):
         return repr(self.v)
 
-    def __eq__(self, other):
+    def eq(self, other):
         return isinstance(other, ByteString) and self.v == other.v
 
 class String(Data):
@@ -215,5 +212,5 @@ class String(Data):
     def __repr__(self):
         return repr(self.v)
 
-    def __eq__(self, other):
+    def eq(self, other):
         return isinstance(other, String) and self.v == other.v

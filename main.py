@@ -16,8 +16,6 @@ def entry_point(argv):
 
     constructor = bytecode.constructor.BytecodeConstructor()
 
-    print argv
-
     fd = None
     mode = argv[1]
     if mode == 'exec':

@@ -128,6 +128,12 @@ class BasicBlockWriter(object):
             self.block_writer.write(struct.pack('>Q', arg))
         return self.function.create_variable()
 
+    def debug(self, value):
+        assert not self.terminated
+        self.block_writer.write(struct.pack('>B', DEBUG))
+        self.block_writer.write(struct.pack('>Q', value))
+        return self.function.create_variable()
+
     def load(self, address):
         assert not self.terminated
         self.block_writer.write(struct.pack('>B', LOAD))

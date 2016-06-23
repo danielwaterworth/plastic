@@ -35,6 +35,7 @@ keywords = [
     'attr',
     'constructor',
     'coroutine',
+    'debug',
     'define',
     'do',
     'elsif',

@@ -160,6 +160,10 @@ class CodeBlock(object):
 class Statement(object):
     pass
 
+class Debug(Statement):
+    def __init__(self, expression):
+        self.expression = expression
+
 class Assignment(Statement):
     def __init__(self, name, expression):
         self.name = name

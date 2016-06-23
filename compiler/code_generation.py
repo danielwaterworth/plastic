@@ -326,6 +326,9 @@ def generate_statement(context, statement):
                 variables[variable_name] = context.basic_block.phi(phi_inputs)
 
         context.variables = variables
+    elif isinstance(statement, program.Debug):
+        value = generate_expression(context, statement.expression)
+        context.basic_block.debug(value)
     elif isinstance(statement, program.Expression):
         generate_expression(context, statement)
     else:

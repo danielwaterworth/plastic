@@ -70,6 +70,10 @@ class BasicBlockConstructor(object):
         self.instructions.append(bytecode.FunctionCall(function, arguments))
         return self.function.create_variable()
 
+    def debug(self, line):
+        self.instructions.append(bytecode.Debug(line))
+        return self.function.create_variable()
+
     def sys_call(self, function, arguments):
         self.instructions.append(bytecode.SysCall(function, arguments))
         return self.function.create_variable()
