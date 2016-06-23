@@ -8,93 +8,40 @@ class Type(object):
     def is_subtype_of(self, other):
         return self == other
 
-class Void(Type):
-    def match(self, _, other):
-        assert isinstance(other, Void)
+class Primitive(Type):
+    def __init__(self, name, methods):
+        self.name = name
+        self.methods = methods
 
-    def template(self, _):
-        return self
-
-void = Void()
-
-class Bool(Type):
     def method_signature(self, name):
-        return bool_methods[name][0]
+        return self.methods[name][0]
 
     def method(self, basic_block, object_variable, name, arguments):
-        operator = bool_methods[name][1]
+        operator = self.methods[name][1]
         return basic_block.operation(operator, [object_variable] + arguments)
 
     def match(self, _, other):
-        assert isinstance(other, Bool)
+        assert isinstance(other, Primitive) and self.name == other.name
 
     def template(self, _):
         return self
 
-bool = Bool()
+void = Primitive('void', {})
 
-bool_methods = {
-    'and': (([bool], bool), 'and')
-}
+bool_methods = {}
+bool = Primitive('bool', bool_methods)
 
-class Byte(Type):
-    def match(self, _, other):
-        assert isinstance(other, Byte)
+byte = Primitive('byte', {})
 
-    def template(self, _):
-        return self
+bytestring_methods = {}
+bytestring = Primitive('bytestring', bytestring_methods)
 
-byte = Byte()
+char = Primitive('char', {})
 
-class ByteString(Type):
-    def method_signature(self, name):
-        return bytestring_methods[name][0]
+string_methods = {}
+string = Primitive('string', string_methods)
 
-    def method(self, basic_block, object_variable, name, arguments):
-        operator = bytestring_methods[name][1]
-        return basic_block.operation(operator, [object_variable] + arguments)
-
-    def match(self, _, other):
-        assert isinstance(other, ByteString)
-
-    def template(self, _):
-        return self
-
-bytestring = ByteString()
-
-class Char(Type):
-    def match(self, _, other):
-        assert isinstance(other, Char)
-
-    def template(self, _):
-        return self
-
-char = Char()
-
-class String(Type):
-    def method_signature(self, name):
-        return string_methods[name][0]
-
-    def method(self, basic_block, object_variable, name, arguments):
-        operator = string_methods[name][1]
-        return basic_block.operation(operator, [object_variable] + arguments)
-
-    def match(self, _, other):
-        assert isinstance(other, String)
-
-    def template(self, _):
-        return self
-
-string = String()
-
-class UInt(Type):
-    def match(self, _, other):
-        assert isinstance(other, UInt)
-
-    def template(self, _):
-        return self
-
-uint = UInt()
+uint = Primitive('uint', {})
 
 class NamedType(Type):
     def __init__(self, module, name):
@@ -257,15 +204,19 @@ class Service(Type):
     def __repr__(self):
         return "<Service %s>" % self.name
 
-bytestring_methods = {
+bool_methods.update({
+    'and': (([bool], bool), 'and')
+})
+
+bytestring_methods.update({
     'index': (([uint], byte), 'bytestring.index'),
     'slice': (([uint, uint], bytestring), 'bytestring.slice'),
     'length': (([], uint), 'bytestring.length'),
     'decode_utf8': (([], string), 'bytestring.decode_utf8')
-}
+})
 
-string_methods = {
+string_methods.update({
     'head': (([], char), 'string.head'),
     'drop': (([uint], string), 'string.drop'),
     'encode_utf8': (([], bytestring), 'string.encode_utf8')
-}
+})
