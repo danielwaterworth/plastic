@@ -68,6 +68,10 @@ class ConstantUInt(Instruction):
     def __init__(self, value):
         self.value = value
 
+class ConstantDouble(Instruction):
+    def __init__(self, value):
+        self.value = value
+
 class Void(Instruction):
     pass
 

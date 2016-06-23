@@ -42,6 +42,9 @@ class BasicBlockPrinter(object):
     def constant_int(self, value):
         return self.instruction("CONST_INT", value)
 
+    def constant_double(self, value):
+        return self.instruction("CONST_DOUBLE", value)
+
     def void(self):
         return self.instruction("VOID")
 

@@ -41,6 +41,13 @@ class UInt(Data):
     def write_out(self, basic_block):
         return basic_block.constant_uint(self.n)
 
+class Double(Data):
+    def __init__(self, d):
+        self.d = d
+
+    def write_out(self, basic_block):
+        return basic_block.constant_double(self.d)
+
 class Bool(Data):
     def __init__(self, b):
         self.b = b

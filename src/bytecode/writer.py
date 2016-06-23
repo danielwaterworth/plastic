@@ -77,6 +77,12 @@ class BasicBlockWriter(object):
         self.block_writer.write(struct.pack('>Q', value))
         return self.function.create_variable()
 
+    def constant_double(self, value):
+        assert not self.terminated
+        self.block_writer.write(struct.pack('>B', CONST_DOUBLE))
+        self.block_writer.write(struct.pack('>d', value))
+        return self.function.create_variable()
+
     def void(self):
         assert not self.terminated
         self.block_writer.write(struct.pack('>B', VOID))

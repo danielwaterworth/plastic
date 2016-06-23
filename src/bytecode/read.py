@@ -54,6 +54,8 @@ def read_bytecode(fd, receiver):
                                     basic_block_receiver.constant_int(runpack('>q', fd.read(8)))
                                 elif instruction_type == CONST_UINT:
                                     basic_block_receiver.constant_uint(runpack('>Q', fd.read(8)))
+                                elif instruction_type == CONST_DOUBLE:
+                                    basic_block_receiver.constant_double(runpack('>d', fd.read(8)))
                                 elif instruction_type == VOID:
                                     basic_block_receiver.void()
                                 elif instruction_type == OPERATION:

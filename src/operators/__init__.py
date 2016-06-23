@@ -2,6 +2,7 @@ import data
 
 import operators.int
 import operators.uint
+import operators.double
 import operators.bool
 import operators.byte
 import operators.char

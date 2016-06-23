@@ -130,6 +130,8 @@ class Coroutine(data.Data):
                     self.stack[-1].retire(data.Int(instr.value))
                 elif isinstance(instr, bytecode.ConstantUInt):
                     self.stack[-1].retire(data.UInt(instr.value))
+                elif isinstance(instr, bytecode.ConstantDouble):
+                    self.stack[-1].retire(data.Double(instr.value))
                 elif isinstance(instr, bytecode.Void):
                     self.stack[-1].retire(data.Void())
                 elif isinstance(instr, bytecode.Load):
