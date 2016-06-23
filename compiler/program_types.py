@@ -265,7 +265,7 @@ bytestring_methods = {
 }
 
 string_methods = {
-    'head': (([], char), 'string_head'),
-    'drop': (([uint], string), 'string_drop'),
-    'encode_utf8': (([], bytestring), 'encode_utf8')
+    'head': (([], char), 'string.head'),
+    'drop': (([uint], string), 'string.drop'),
+    'encode_utf8': (([], bytestring), 'string.encode_utf8')
 }

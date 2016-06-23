@@ -1,5 +1,6 @@
-import operators.uintops
-import operators.boolops
+import operators.uint
+import operators.bool
+import operators.string
 import operators.list
 import operators.hashmap
 
@@ -29,18 +30,6 @@ def operation(operator, arguments):
     elif operator == 'char_eq':
         a, b = arguments
         return char_eq(a, b)
-    elif operator == 'encode_utf8':
-        assert len(arguments) == 1
-        return encode_utf8(arguments[0])
-    elif operator == 'string_head':
-        assert len(arguments) == 1
-        return string_head(arguments[0])
-    elif operator == 'string_drop':
-        x, y = arguments
-        return string_drop(x, y)
-    elif operator == 'string_eq':
-        x, y = arguments
-        return string_eq(x, y)
     else:
         raise NotImplementedError('operator not implemented: %s' % operator)
 
@@ -78,23 +67,3 @@ def char_eq(a, b):
     assert isinstance(a, Char)
     assert isinstance(b, Char)
     return Bool(a.b == b.b)
-
-def encode_utf8(x):
-    assert isinstance(x, String)
-    return ByteString(x.v.encode('utf-8'))
-
-def string_head(x):
-    assert isinstance(x, String)
-    assert len(x.v) > 0
-    return Char(x.v[0])
-
-def string_drop(x, n):
-    assert isinstance(x, String)
-    assert isinstance(n, UInt)
-    assert len(x.v) >= n.n
-    return String(x.v[n.n:])
-
-def string_eq(x, y):
-    assert isinstance(x, String)
-    assert isinstance(y, String)
-    return Bool(x.v == y.v)

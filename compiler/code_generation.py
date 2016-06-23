@@ -94,7 +94,7 @@ bytestring_operators = {
 }
 
 string_operators = {
-    '==': 'string_eq'
+    '==': 'string.eq'
 }
 
 bool_operators = {}
