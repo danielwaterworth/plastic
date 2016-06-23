@@ -100,11 +100,11 @@ string_operators = {
 bool_operators = {}
 
 byte_operators = {
-    '==': 'byte_eq'
+    '==': 'byte.eq'
 }
 
 char_operators = {
-    '==': 'char_eq'
+    '==': 'char.eq'
 }
 
 def operator_name(operator, lhs_type):
