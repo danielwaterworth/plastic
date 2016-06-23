@@ -16,15 +16,23 @@ def entry_point(argv):
 
     constructor = bytecode.constructor.BytecodeConstructor()
 
-    with open(argv[1], 'r') as fd:
-        bytecode.read.read_bytecode(fd, constructor)
-
-    sys_caller = sys_calls.Perform()
+    print argv
 
     fd = None
-    if len(argv) > 2:
-        fd = open(argv[2], 'w')
-        sys_caller = sys_calls.TraceProxy(sys_caller, fd)
+    mode = argv[1]
+    if mode == 'exec':
+        sys_caller = sys_calls.Perform()
+    elif mode == 'trace':
+        fd = open(argv[3], 'w')
+        sys_caller = sys_calls.TraceProxy(sys_calls.Perform(), fd)
+    elif mode == 'replay':
+        fd = open(argv[3], 'r')
+        sys_caller = sys_calls.Replay(fd)
+    else:
+        raise Exception('unknown mode')
+
+    with open(argv[2], 'r') as fd:
+        bytecode.read.read_bytecode(fd, constructor)
 
     ex = executor.Executor(sys_caller, constructor.get_program())
     ex.run()

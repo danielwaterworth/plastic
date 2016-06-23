@@ -54,6 +54,9 @@ class Data(object):
     def persist(self, fd):
         raise NotImplementedError()
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
 def load(fd):
     id = fd.read(8)
     return type_by_id[id].load(fd)
@@ -77,16 +80,19 @@ class UInt(Data):
         fd.write(self.type_id)
         fd.write(pack_uint(self.n))
 
-    @classmethod
-    def load(cls, fd):
+    @staticmethod
+    def load(fd):
         n = runpack('>Q', fd.read(8))
-        return cls(n)
+        return UInt(n)
 
     def write_out(self, basic_block):
         return basic_block.constant_uint(self.n)
 
     def __repr__(self):
         return repr(self.n)
+
+    def __eq__(self, other):
+        return isinstance(other, UInt) and self.n == other.n
 
 class Double(Data):
     def __init__(self, d):
@@ -103,10 +109,10 @@ class Bool(Data):
         fd.write(self.type_id)
         fd.write('\1' if self.b else '\0')
 
-    @classmethod
-    def load(cls, fd):
+    @staticmethod
+    def load(fd):
         n = runpack('>Q', fd.read(8))
-        return cls(fd.read(1) != '\0')
+        return Bool(fd.read(1) != '\0')
 
     def write_out(self, basic_block):
         return basic_block.constant_bool(self.b)
@@ -121,9 +127,9 @@ class Void(Data):
     def persist(self, fd):
         fd.write(self.type_id)
 
-    @classmethod
-    def load(cls, fd):
-        return cls()
+    @staticmethod
+    def load(fd):
+        return Void()
 
     def __repr__(self):
         return 'void'
@@ -136,9 +142,9 @@ class Byte(Data):
         fd.write(self.type_id)
         fd.write(self.b)
 
-    @classmethod
-    def load(cls, fd):
-        return cls(fd.read(1))
+    @staticmethod
+    def load(fd):
+        return Byte(fd.read(1))
 
     def write_out(self, basic_block):
         return basic_block.constant_byte(self.b)
@@ -154,9 +160,9 @@ class Char(Data):
         fd.write(self.type_id)
         fd.write(pack_uint32(ord(self.b)))
 
-    @classmethod
-    def load(cls, fd):
-        return cls(unichr(runpack('>I', fd.read(4))))
+    @staticmethod
+    def load(fd):
+        return Char(unichr(runpack('>I', fd.read(4))))
 
     def write_out(self, basic_block):
         return basic_block.constant_char(self.b)
@@ -174,16 +180,19 @@ class ByteString(Data):
         fd.write(pack_uint(len(self.v)))
         fd.write(self.v)
 
-    @classmethod
-    def load(cls, fd):
-        n = runpack('>Q', fd.read(8))
-        return cls(fd.read(n))
+    @staticmethod
+    def load(fd):
+        n = intmask(runpack('>Q', fd.read(8)))
+        return ByteString(fd.read(n))
 
     def write_out(self, basic_block):
         return basic_block.constant_bytestring(self.v)
 
     def __repr__(self):
         return repr(self.v)
+
+    def __eq__(self, other):
+        return isinstance(other, ByteString) and self.v == other.v
 
 class String(Data):
     def __init__(self, v):
@@ -198,10 +207,13 @@ class String(Data):
         fd.write(pack_uint(len(v)))
         fd.write(v)
 
-    @classmethod
-    def load(cls, fd):
-        n = runpack('>Q', fd.read(8))
-        return cls(fd.read(n).decode('utf-8'))
+    @staticmethod
+    def load(fd):
+        n = intmask(runpack('>Q', fd.read(8)))
+        return String(fd.read(n).decode('utf-8'))
 
     def __repr__(self):
         return repr(self.v)
+
+    def __eq__(self, other):
+        return isinstance(other, String) and self.v == other.v

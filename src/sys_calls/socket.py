@@ -4,7 +4,7 @@ from rpython.rlib.rarithmetic import intmask, r_ulonglong
 from rpython.rlib.rstruct.runpack import runpack
 
 class Socket(data.Data):
-    def __init__(self, sock, fd=None):
+    def __init__(self, sock, fd=0):
         self.sock = sock
         self.fd = fd
 
@@ -14,19 +14,21 @@ class Socket(data.Data):
             n = self.sock.fd
         else:
             n = self.fd
-        assert n
         fd.write(data.pack_int(n))
 
-    @classmethod
-    def load(cls, fd):
+    @staticmethod
+    def load(fd):
         n = runpack('>q', fd.read(8))
-        return cls(None, n)
+        return Socket(None, n)
 
     def __repr__(self):
         if self.sock:
             return '(socket %s)' % self.sock.fd
         else:
             return '(socket %s)' % self.fd
+
+    def __eq__(self, other):
+        return isinstance(other, Socket) and self.fd == other.fd
 
 class SocketSysCall(data.SysCall):
     def __init__(self):

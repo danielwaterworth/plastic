@@ -3,6 +3,7 @@ import sys_calls.ffi
 import sys_calls.stdout
 import sys_calls.socket
 from rpython.rlib.rstruct.runpack import runpack
+from rpython.rlib.rarithmetic import r_longlong, r_ulonglong, r_int, intmask
 
 class SysCallInterface(object):
     def sys_call(self, name, arguments):
@@ -29,14 +30,23 @@ class TraceProxy(SysCallInterface):
 
         return value
 
-class Reply(SysCallInterface):
-    def __init__(self, trace):
-        self.trace = trace
+class Replay(SysCallInterface):
+    def __init__(self, fd):
+        self.fd = fd
 
     def sys_call(self, name, arguments):
-        expected_name, expected_arguments, return_value = self.trace.pop()
+        n = intmask(runpack('>Q', self.fd.read(8)))
+        expected_name = self.fd.read(n)
+        n = intmask(runpack('>Q', self.fd.read(8)))
+        expected_arguments = [data.load(self.fd) for i in xrange(n)]
+        return_value = data.load(self.fd)
         assert expected_name == name
-        assert expected_arguments == arguments
+        assert len(expected_arguments) == len(arguments)
+        for i in xrange(len(expected_arguments)):
+            expected = expected_arguments[i]
+            arg = arguments[i]
+            if expected != arg:
+                raise Exception('expected %s to equal %s' % (expected, arg))
         return return_value
 
 def read_trace(fd):
