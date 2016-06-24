@@ -254,7 +254,8 @@ def generate_statement(context, statement):
         current_index = context.basic_block.index
         entry_goto = context.basic_block.special_goto(0)
         context.basic_block = context.function_writer.basic_block()
-        entry_goto.block_index = context.basic_block.index
+        first_body_block = context.basic_block.index
+        entry_goto.block_index = first_body_block
 
         variables = {}
         phis = {}
@@ -274,7 +275,7 @@ def generate_statement(context, statement):
             phi.inputs[last_body_index] = context.lookup(name)
 
         condition_variable = generate_expression(context, statement.expression)
-        body_conditional = context.basic_block.special_conditional(condition_variable, last_body_index, 0)
+        body_conditional = context.basic_block.special_conditional(condition_variable, first_body_block, 0)
         context.basic_block = context.function_writer.basic_block()
         body_conditional.false_block = context.basic_block.index
     elif isinstance(statement, program.Match):
