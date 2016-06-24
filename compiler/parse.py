@@ -340,7 +340,7 @@ def p_expression_type_name(p):
 
 def p_expression_char(p):
     '''expression : CHAR'''
-    p[0] = program.CharLiteral(unicode(p[1][1]))
+    p[0] = program.CharLiteral(unicode(p[1]))
 
 def p_expression_number(p):
     '''expression : NUMBER'''

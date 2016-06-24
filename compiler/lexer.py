@@ -66,7 +66,38 @@ keywords = [
 keywords = {keyword: keyword.upper() for keyword in keywords}
 tokens += keywords.values()
 
-t_CHAR = r"'.'"
+def t_CHAR(t):
+    r"'([^\\']|(\\(\\|a|b|f|n|r|t|v|'|(u[0-9a-f]{4})|(U[0-9a-f]{8}))))'"
+    value = t.value
+    if value[1] == '\\':
+        if value[2] == 'a':
+            t.value = '\a'
+        elif value[2] == 'b':
+            t.value = '\b'
+        elif value[2] == 'f':
+            t.value = '\f'
+        elif value[2] == 'n':
+            t.value = '\n'
+        elif value[2] == 'r':
+            t.value = '\r'
+        elif value[2] == 't':
+            t.value = '\t'
+        elif value[2] == 'v':
+            t.value = '\v'
+        elif value[2] == '\'':
+            t.value = '\''
+        elif value[2] == '\\':
+            t.value = '\\'
+        elif value[2] == 'u':
+            t.value = unichr(int(value[3:7], 16))
+        elif value[2] == 'U':
+            t.value = unichr(int(value[3:11], 16))
+        else:
+            raise Exception()
+    else:
+        t.value = value[1]
+    return t
+
 t_NUMBER = r'\d+'
 t_COLON = r':'
 t_SEMICOLON = r';'
