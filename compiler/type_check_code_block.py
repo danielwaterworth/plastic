@@ -249,7 +249,7 @@ def type_check_code_block(context, code_block):
             expression.type = return_type
         elif isinstance(expression, program.TupleConstructor):
             value_types = [infer_expression_type(value) for value in expression.values]
-            expression.type = program_types.Tuple(value_types)
+            expression.type = program_types.Instantiation(program_types.tuple, value_types)
         else:
             raise NotImplementedError('unknown expression type: %s' % type(expression))
         return expression.type
@@ -267,7 +267,8 @@ def type_check_code_block(context, code_block):
                 raise TypeError('expected %s to equal %s' % (actual_type, expected_type))
         elif isinstance(statement, program.TupleDestructure):
             expression_type = infer_expression_type(statement.expression)
-            assert isinstance(expression_type, program_types.Tuple)
+            assert isinstance(expression_type, program_types.Instantiation)
+            assert expression_type.constructor == program_types.tuple
             assert len(statement.names) == len(expression_type.types)
             for name, t in zip(statement.names, expression_type.types):
                 context.add(name, t)

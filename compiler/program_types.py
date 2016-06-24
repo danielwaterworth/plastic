@@ -81,6 +81,40 @@ class Variable(Type):
     def template(self, quantified):
         return quantified[self.name]
 
+class Instantiation(Type):
+    def __init__(self, constructor, types):
+        self.constructor = constructor
+        self.types = types
+
+    def resolve_type(self, modules, types):
+        self.types = [t.resolve_type(modules, types) for t in self.types]
+        return self
+
+    def __eq__(self, other):
+        return isinstance(other, Instantiation) and self.constructor == other.constructor and self.types == other.types
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def match(self, quantified, other):
+        assert isinstance(other, Instantiation)
+        assert self.constructor == other.constructor
+        assert len(self.types) == len(other.types)
+        for a, b in zip(self.types, other.types):
+            a.match(quantified, b)
+
+    def template(self, quantified):
+        return Instantiation(self.constructor, [t.template(quantified) for t in self.types])
+
+    def __repr__(self):
+        return '<%s (%s)>' % (self.constructor.name, ', '.join([repr(t) for t in self.types]))
+
+class TypeConstructor(object):
+    pass
+
+tuple = TypeConstructor()
+tuple.name = 'Tuple'
+
 class Coroutine(Type):
     def __init__(self, receive_type, yield_type):
         self.receive_type = receive_type
@@ -91,32 +125,6 @@ class Coroutine(Type):
 
     def __ne__(self, other):
         return not self.__eq__(other)
-
-class Tuple(Type):
-    def __init__(self, types):
-        self.types = types
-
-    def resolve_type(self, modules, types):
-        self.types = [t.resolve_type(modules, types) for t in self.types]
-        return self
-
-    def __eq__(self, other):
-        return isinstance(other, Tuple) and self.types == other.types
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def match(self, quantified, other):
-        assert isinstance(other, Tuple)
-        assert len(self.types) == len(other.types)
-        for a, b in zip(self.types, other.types):
-            a.match(quantified, b)
-
-    def template(self, quantified):
-        return Tuple([t.template(quantified) for t in self.types])
-
-    def __repr__(self):
-        return '<Tuple (%s)>' % ', '.join([repr(t) for t in self.types])
 
 class Record(Type):
     def __init__(self, name, attrs, constructor_signatures, methods):

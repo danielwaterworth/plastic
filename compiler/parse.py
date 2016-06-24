@@ -220,7 +220,7 @@ def p_named_type(p):
 
 def p_type_tuple(p):
     '''type : OPEN_PARENS type_list CLOSE_PARENS'''
-    p[0] = program_types.Tuple(p[2])
+    p[0] = program_types.Instantiation(program_types.tuple, p[2])
 
 def p_type_named(p):
     '''named_type : UPPER_NAME'''
