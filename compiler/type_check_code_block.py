@@ -163,17 +163,23 @@ def type_check_code_block(context, code_block):
             expression.type = context.receive_type
         elif isinstance(expression, program.Run):
             coroutine = infer_expression_type(expression.coroutine)
-            assert isinstance(coroutine, program_types.Coroutine)
-            expression.type = coroutine.yield_type
+            assert isinstance(coroutine, program_types.Instantiation)
+            assert coroutine.constructor == program_types.coroutine
+            assert len(coroutine.types) == 2
+            expression.type = coroutine.types[1]
         elif isinstance(expression, program.Resume):
             coroutine = infer_expression_type(expression.coroutine)
             value = infer_expression_type(expression.value)
-            assert isinstance(coroutine, program_types.Coroutine)
-            assert value == coroutine.receive_type
-            expression.type = coroutine.yield_type
+            assert isinstance(coroutine, program_types.Instantiation)
+            assert coroutine.constructor == program_types.coroutine
+            assert len(coroutine.types) == 2
+            assert value == coroutine.types[0]
+            expression.type = coroutine.types[1]
         elif isinstance(expression, program.IsDone):
             coroutine = infer_expression_type(expression.coroutine)
-            assert isinstance(coroutine, program_types.Coroutine)
+            assert isinstance(coroutine, program_types.Instantiation)
+            assert coroutine.constructor == program_types.coroutine
+            assert len(coroutine.types) == 2
             expression.type = program_types.bool
         elif isinstance(expression, program.BinOp):
             rhs_type = infer_expression_type(expression.rhs)
@@ -219,7 +225,7 @@ def type_check_code_block(context, code_block):
                 elif isinstance(signature, CoroutineSignature):
                     assert signature.parameter_types == argument_types
                     expression.call.coroutine_call = True
-                    expression.type = program_types.Coroutine(signature.receive_type, signature.yield_type)
+                    expression.type = program_types.coroutine_type(signature.receive_type, signature.yield_type)
                 else:
                     raise NotImplementedError('not implemented signature type: %s' % type(signature))
             elif isinstance(expression.call, MethodCall):

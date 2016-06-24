@@ -115,16 +115,14 @@ class TypeConstructor(object):
 tuple = TypeConstructor()
 tuple.name = 'Tuple'
 
-class Coroutine(Type):
-    def __init__(self, receive_type, yield_type):
-        self.receive_type = receive_type
-        self.yield_type = yield_type
+def tuple_type(*arguments):
+    return Instantiation(tuple, arguments)
 
-    def __eq__(self, other):
-        return isinstance(other, Coroutine) and self.receive_type == other.receive_type and self.yield_type == other.yield_type
+coroutine = TypeConstructor()
+coroutine.name = 'Coroutine'
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
+def coroutine_type(receive_type, yield_type):
+    return Instantiation(coroutine, [receive_type, yield_type])
 
 class Record(Type):
     def __init__(self, name, attrs, constructor_signatures, methods):
