@@ -97,7 +97,10 @@ string_operators = {
     '==': 'string.eq'
 }
 
-bool_operators = {}
+bool_operators = {
+    'and': 'and',
+    'or': 'or'
+}
 
 byte_operators = {
     '==': 'byte.eq'

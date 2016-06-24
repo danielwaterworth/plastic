@@ -108,6 +108,7 @@ def merge_contexts(a, b):
 
 comparison_operators = ['<', '>', '<=', '>=']
 arithmetic_operators = ['+', '-', '*', '/']
+logical_operators = ['and', 'or']
 equality_types = [
     program_types.uint,
     program_types.bool,
@@ -118,7 +119,11 @@ equality_types = [
 ]
 
 def operator_type(operator, rhs_type, lhs_type):
-    if operator in comparison_operators:
+    if operator in logical_operators:
+        assert rhs_type == program_types.bool
+        assert rhs_type == program_types.bool
+        return program_types.bool
+    elif operator in comparison_operators:
         assert rhs_type == program_types.uint
         assert lhs_type == program_types.uint
         return program_types.bool

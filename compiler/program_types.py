@@ -43,7 +43,8 @@ char = Primitive('char', char_methods)
 string_methods = {}
 string = Primitive('string', string_methods)
 
-uint = Primitive('uint', {})
+uint_methods = {}
+uint = Primitive('uint', uint_methods)
 
 socket = Primitive('socket', {})
 
@@ -212,6 +213,10 @@ bool_methods.update({
     'and': (([bool], bool), 'and')
 })
 
+uint_methods.update({
+    'to_string': (([], string), 'uint.to_string')
+})
+
 byte_methods.update({
     'to_bytestring': (([], bytestring), 'byte.to_bytestring'),
     'to_uint': (([], uint), 'byte.to_uint'),
@@ -223,6 +228,7 @@ char_methods.update({
 
 bytestring_methods.update({
     'drop': (([uint], bytestring), 'bytestring.drop'),
+    'take': (([uint], bytestring), 'bytestring.take'),
     'index': (([uint], byte), 'bytestring.index'),
     'slice': (([uint, uint], bytestring), 'bytestring.slice'),
     'length': (([], uint), 'bytestring.length'),

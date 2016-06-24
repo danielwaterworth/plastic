@@ -26,6 +26,19 @@ class Drop(data.BuiltinOperator):
 
 Drop().register()
 
+class Take(data.BuiltinOperator):
+    def __init__(self):
+        self.name = 'bytestring.take'
+
+    def call(self, arguments):
+        x, n = arguments
+        assert isinstance(x, data.ByteString)
+        assert isinstance(n, data.UInt)
+        assert len(x.v) >= n.n
+        return data.ByteString(x.v[:n.n])
+
+Take().register()
+
 class Eq(data.BuiltinOperator):
     def __init__(self):
         self.name = 'bytestring.eq'

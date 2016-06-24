@@ -33,6 +33,7 @@ tokens = [
 ]
 keywords = [
     'attr',
+    'and',
     'constructor',
     'coroutine',
     'debug',
@@ -50,6 +51,7 @@ keywords = [
     'interface',
     'is_done',
     'match',
+    'or',
     'private',
     'record',
     'resume',

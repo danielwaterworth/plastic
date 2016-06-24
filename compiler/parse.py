@@ -397,6 +397,7 @@ def p_bracketed_expr(p):
 
 precedence = (
     ('right', 'YIELD'),
+    ('left', 'AND', 'OR'),
     ('nonassoc', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE'),
     ('left', 'PLUS', 'MINUS'),
     ('left', 'MUL', 'DIV'),
@@ -414,7 +415,9 @@ def p_expression_binop(p):
                   | expression GT expression
                   | expression GE expression
                   | expression EQ expression
-                  | expression NE expression'''
+                  | expression NE expression
+                  | expression OR expression
+                  | expression AND expression'''
     p[0] = program.BinOp(p[1], p[3], p[2])
 
 def p_call(p):
