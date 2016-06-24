@@ -92,21 +92,6 @@ class Coroutine(Type):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-class Array(Type):
-    def __init__(self, ty, count):
-        self.ty = ty
-        self.count = count
-
-    def resolve_type(self, modules, types):
-        self.ty = self.ty.resolve_type(modules, types)
-        return self
-
-    def __eq__(self, other):
-        return isinstance(other, Array) and self.ty == other.ty and self.count == other.count
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
 class Tuple(Type):
     def __init__(self, types):
         self.types = types

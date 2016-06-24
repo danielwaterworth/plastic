@@ -218,10 +218,6 @@ def p_named_type(p):
     '''type : named_type'''
     p[0] = p[1]
 
-def p_type_array(p):
-    '''type : type OPEN_SQUARE NUMBER CLOSE_SQUARE'''
-    p[0] = program_types.Array(p[1], int(p[3]))
-
 def p_type_tuple(p):
     '''type : OPEN_PARENS type_list CLOSE_PARENS'''
     p[0] = program_types.Tuple(p[2])
