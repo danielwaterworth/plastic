@@ -209,10 +209,6 @@ class Service(Type):
     def __repr__(self):
         return "<Service %s>" % self.name
 
-bool_methods.update({
-    'and': (([bool], bool), 'and')
-})
-
 uint_methods.update({
     'to_string': (([], string), 'uint.to_string')
 })

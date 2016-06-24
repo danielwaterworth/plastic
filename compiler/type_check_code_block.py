@@ -312,7 +312,6 @@ def type_check_code_block(context, code_block):
 
             constructors = set()
             for clause in statement.clauses:
-                assert not clause.block.terminator
                 assert not clause.name in constructors
                 arg_types = enum_type.constructors[clause.name]
                 constructors.add(clause.name)
@@ -324,11 +323,18 @@ def type_check_code_block(context, code_block):
                 for clause_statement in clause.block.statements:
                     type_check_statement(clause_statement)
 
-                after_contexts.append(context.variable_types)
+                if clause.block.terminator:
+                    type_check_terminator(clause.block.terminator)
+                else:
+                    after_contexts.append(context.variable_types)
+
                 context.variable_types = dict(before_context)
 
             assert constructors == set(enum_type.constructors)
-            context.variable_types = reduce(merge_contexts, after_contexts)
+            if after_contexts:
+                context.variable_types = reduce(merge_contexts, after_contexts)
+            else:
+                context.variable_types = {}
         elif isinstance(statement, program.Debug):
             expression = infer_expression_type(statement.expression)
             assert expression == program_types.string

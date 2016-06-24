@@ -43,7 +43,7 @@ define foo(foo : Foo) -> Foo do
 end
 
 define main() -> Bool do
-    sys print_bool(foo(Foo.new(1, 2)).bar(3).plah().and(true));
+    sys print_bool(foo(Foo.new(1, 2)).bar(3).plah());
     return false;
 end
 

@@ -308,8 +308,11 @@ def generate_statement(context, statement):
             for clause_statement in clause.block.statements:
                 generate_statement(clause_context, clause_statement)
 
-            gotos.append(clause_context.basic_block.special_goto(0))
-            contexts.append(clause_context)
+            if clause.block.terminator:
+                generate_terminator(clause_context, clause.block.terminator)
+            else:
+                gotos.append(clause_context.basic_block.special_goto(0))
+                contexts.append(clause_context)
 
             context.basic_block = context.function_writer.basic_block()
             cond.false_block = context.basic_block.index
@@ -319,17 +322,20 @@ def generate_statement(context, statement):
         for goto in gotos:
             goto.block_index = context.basic_block.index
 
-        variable_names = reduce(lambda a, b: a & b, [set(ctx.variables.keys()) for ctx in contexts])
-        variables = {}
-        for variable_name in variable_names:
-            vars = [ctx.lookup(variable_name) for ctx in contexts]
-            if all([v == vars[0] for v in vars]):
-                variables[variable_name] = vars[0]
-            else:
-                phi_inputs = [(ctx.basic_block.index, ctx.lookup(variable_name)) for ctx in contexts]
-                variables[variable_name] = context.basic_block.phi(phi_inputs)
+        if contexts:
+            variable_names = reduce(lambda a, b: a & b, [set(ctx.variables.keys()) for ctx in contexts])
+            variables = {}
+            for variable_name in variable_names:
+                vars = [ctx.lookup(variable_name) for ctx in contexts]
+                if all([v == vars[0] for v in vars]):
+                    variables[variable_name] = vars[0]
+                else:
+                    phi_inputs = [(ctx.basic_block.index, ctx.lookup(variable_name)) for ctx in contexts]
+                    variables[variable_name] = context.basic_block.phi(phi_inputs)
 
-        context.variables = variables
+            context.variables = variables
+        else:
+            context.variables = {}
     elif isinstance(statement, program.Debug):
         value = generate_expression(context, statement.expression)
         context.basic_block.debug(value)

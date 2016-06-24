@@ -6,13 +6,12 @@ end
 define baz(test : Test) -> Bool do
     match (test)
         foo(x) do
-            a := x;
+            return x;
         end
         bar do
-            a := true;
+            return true;
         end
     end
-    return a;
 end
 
 service Test()

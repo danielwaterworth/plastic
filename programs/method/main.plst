@@ -1,20 +1,11 @@
-define main() -> Bool do
-    if (true.and(true).and(true))
-        sys print_uint(1);
-    else
-        sys print_uint(2);
-    end
-
-    return false;
-end
-
 service Test()
     constructor new()
     end
 
     implements EntryPoint
         define main() -> Bool do
-            return main();
+            sys print_string(1.to_string());
+            return false;
         end
     end
 end
