@@ -9,6 +9,7 @@ import evaluation
 import code_generation
 import bytecode.serialize
 import bytecode.constructor
+import bytecode.optimizer
 import bytecode.writer
 import load_imports
 
@@ -20,7 +21,8 @@ for module_name, module in modules:
 
 modules = dict(modules)
 constructor = bytecode.constructor.BytecodeConstructor()
-with constructor as writer:
+optimizer = bytecode.optimizer.BytecodeOptimizer(constructor)
+with optimizer as writer:
     for module in modules.itervalues():
         code_generation.generate_module(writer, module)
 

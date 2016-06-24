@@ -169,7 +169,7 @@ class Char(Data):
 
 class ByteString(Data):
     def __init__(self, v):
-        assert v
+        assert not v is None
         self.v = v
 
     def persist(self, fd):

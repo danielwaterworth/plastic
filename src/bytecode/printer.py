@@ -1,14 +1,15 @@
 class BasicBlockPrinter(object):
-    def __init__(self, function):
+    def __init__(self, function, i):
+        self.i = i
         self.function = function
 
     def __enter__(self):
-        print "  BASIC BLOCK START"
+        print "  BASIC BLOCK START %d" % self.i
         return self
 
     def __exit__(self, type, value, traceback):
         if not value:
-            print "  BASIC BLOCK END"
+            print "  BASIC BLOCK END %d" % self.i
 
     def instruction(self, t, *args):
         var = self.function.create_variable()
@@ -104,6 +105,7 @@ class FunctionPrinter(object):
         self.name = name
         self.num_arguments = num_arguments
         self.next_variable = num_arguments
+        self.num_basic_blocks = 0
 
     def create_variable(self):
         i = self.next_variable
@@ -119,7 +121,9 @@ class FunctionPrinter(object):
             print "FUNCTION END"
 
     def basic_block(self):
-        return BasicBlockPrinter(self)
+        i = self.num_basic_blocks
+        self.num_basic_blocks += 1
+        return BasicBlockPrinter(self, i)
 
 class ProgramPrinter(object):
     def function(self, name, num_arguments):
