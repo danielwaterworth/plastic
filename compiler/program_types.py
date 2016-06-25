@@ -109,6 +109,12 @@ class Instantiation(Type):
     def __repr__(self):
         return '<%s (%s)>' % (self.constructor.name, ', '.join([repr(t) for t in self.types]))
 
+    def method_signature(self, name):
+        return self.constructor.constructor_method_signature(self.types, name)
+
+    def method(self, basic_block, object_variable, name, arguments):
+        return self.constructor.method(basic_block, object_variable, name, arguments)
+
 class TypeConstructor(object):
     pass
 
@@ -124,36 +130,24 @@ coroutine.name = 'Coroutine'
 def coroutine_type(receive_type, yield_type):
     return Instantiation(coroutine, [receive_type, yield_type])
 
-class Record(Type):
+class Enum(TypeConstructor):
+    def __init__(self, name, constructors):
+        self.name = name
+        self.constructors = constructors
+
+class Record(TypeConstructor):
     def __init__(self, name, attrs, constructor_signatures, methods):
         self.name = name
         self.attrs = attrs
         self.constructor_signatures = constructor_signatures
         self.methods = methods
 
-    def method_signature(self, name):
+    def constructor_method_signature(self, types, name):
         return self.methods[name]
 
     def method(self, basic_block, object_variable, name, arguments):
         self.methods[name]
         return basic_block.fun_call('%s#%s' % (self.name, name), [object_variable] + arguments)
-
-    def match(self, _, other):
-        assert self == other
-
-    def template(self, _):
-        return self
-
-class Enum(Type):
-    def __init__(self, name, constructors):
-        self.name = name
-        self.constructors = constructors
-
-    def match(self, _, other):
-        assert self == other
-
-    def template(self, _):
-        return self
 
 class Interface(Type):
     def __init__(self, name, methods):

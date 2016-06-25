@@ -235,7 +235,9 @@ def type_check_code_block(context, code_block):
                 expression.type = return_type
             elif isinstance(expression.call, RecordConstructorCall):
                 record_type = expression.call.module.types[expression.call.record]
-                expected_arg_types = record_type.constructor_signatures[function]
+                assert isinstance(record_type, program_types.Instantiation)
+                assert isinstance(record_type.constructor, program_types.Record)
+                expected_arg_types = record_type.constructor.constructor_signatures[function]
                 assert expected_arg_types == argument_types
                 expression.type = record_type
             elif isinstance(expression.call, ServiceConstructorCall):
@@ -311,17 +313,19 @@ def type_check_code_block(context, code_block):
             assert infer_expression_type(statement.expression) == program_types.bool
         elif isinstance(statement, program.Match):
             enum_type = infer_expression_type(statement.expression)
-            assert isinstance(enum_type, program_types.Enum)
+            assert isinstance(enum_type, program_types.Instantiation)
+            assert isinstance(enum_type.constructor, program_types.Enum)
+            constructors = enum_type.constructor.constructors
 
             before_context = context.copy_types()
 
             after_contexts = []
 
-            constructors = set()
+            generated_constructors = set()
             for clause in statement.clauses:
-                assert not clause.name in constructors
-                arg_types = enum_type.constructors[clause.name]
-                constructors.add(clause.name)
+                assert not clause.name in generated_constructors
+                arg_types = constructors[clause.name]
+                generated_constructors.add(clause.name)
                 assert len(arg_types) == len(clause.parameters)
 
                 for name, t in zip(clause.parameters, arg_types):
@@ -337,7 +341,7 @@ def type_check_code_block(context, code_block):
 
                 context.variable_types = dict(before_context)
 
-            assert constructors == set(enum_type.constructors)
+            assert generated_constructors == set(constructors)
             if after_contexts:
                 context.variable_types = reduce(merge_contexts, after_contexts)
             else:

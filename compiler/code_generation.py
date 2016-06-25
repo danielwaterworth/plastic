@@ -399,7 +399,7 @@ def generate_record(program_writer, record):
 
             generate_code_block(context, constructor.body)
 
-            arguments = [context.lookup('@%s' % attr) for attr, _ in record.type.attrs]
+            arguments = [context.lookup('@%s' % attr) for attr, _ in record.type_constructor.attrs]
             result = context.basic_block.operation('list.pack', arguments)
             context.basic_block.ret(result)
 
@@ -413,7 +413,7 @@ def generate_record(program_writer, record):
             variable_dict = dict(zip(parameter_names, variables))
             offset = 0
             offset_var = basic_block.constant_uint(offset)
-            for attr, attr_type in record.type.attrs:
+            for attr, attr_type in record.type_constructor.attrs:
                 offset += 1
                 new_offset_var = basic_block.constant_uint(offset)
                 var = basic_block.operation('list.index', [variables[0], offset_var])

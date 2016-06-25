@@ -116,12 +116,14 @@ def type_check_module(module_interfaces, module_name, module_decl):
                 decl.type = decl.type.resolve_type(module_interfaces, types)
                 attrs.append((decl.name, decl.type))
 
-        record.type = program_types.Record(record.name, attrs, {}, {})
+        record.type_constructor = program_types.Record(record.name, attrs, {}, {})
+        record.type = program_types.Instantiation(record.type_constructor, [])
         assert not record.name in types
         module.types[record.name] = record.type
 
     for enum in enum_decls:
-        enum.type = program_types.Enum(enum.name, {})
+        enum.type_constructor = program_types.Enum(enum.name, {})
+        enum.type = program_types.Instantiation(enum.type_constructor, [])
         module.types[enum.name] = enum.type
 
     for enum in enum_decls:
@@ -131,8 +133,8 @@ def type_check_module(module_interfaces, module_name, module_decl):
 
         for constructor in enum.constructors:
             constructor.resolve_types(module_interfaces, types)
-            assert not constructor.name in enum.type.constructors
-            enum.type.constructors[constructor.name] = constructor.types
+            assert not constructor.name in enum.type_constructor.constructors
+            enum.type_constructor.constructors[constructor.name] = constructor.types
             signature = type_check_code_block.FunctionSignature(constructor.types, enum.type)
             module.signatures[constructor.name] = signature
 
@@ -141,8 +143,8 @@ def type_check_module(module_interfaces, module_name, module_decl):
         types.update(primitives)
         types.update(module.types)
 
-        constructor_signatures = record.type.constructor_signatures
-        methods = record.type.methods
+        constructor_signatures = record.type_constructor.constructor_signatures
+        methods = record.type_constructor.methods
 
         for decl in record.decls:
             if isinstance(decl, program.Constructor):
@@ -155,9 +157,9 @@ def type_check_module(module_interfaces, module_name, module_decl):
     for record in record_decls:
         for decl in record.decls:
             if isinstance(decl, program.Constructor):
-                type_check_constructor(dict(record.type.attrs), decl)
+                type_check_constructor(dict(record.type_constructor.attrs), decl)
             elif isinstance(decl, program.Function):
-                type_check_method(record.type, dict(record.type.attrs), decl)
+                type_check_method(record.type, dict(record.type_constructor.attrs), decl)
 
     for interface in interface_decls:
         types = {}
