@@ -166,7 +166,14 @@ class Interface(Type):
 # Type used for self in a service context
 class PrivateService(Type):
     def __init__(self, name, private_methods):
+        self.name = name
         self.private_methods = private_methods
+
+    def method_signature(self, name):
+        return self.private_methods[name]
+
+    def method(self, basic_block, object_variable, name, arguments):
+        return basic_block.fun_call("%s#%s" % (self.name, name), [object_variable] + arguments)
 
 class Service(Type):
     def __init__(self, name, dependencies, attrs, constructor_signatures, interfaces):

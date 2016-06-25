@@ -4,8 +4,15 @@ service Test()
 
     implements EntryPoint
         define main() -> Bool do
-            sys print_uint(42);
+            self.foo();
             return false;
+        end
+    end
+
+    private
+        define foo() -> Void do
+            sys print_string("Hello, world!");
+            return void;
         end
     end
 end
