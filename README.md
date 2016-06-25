@@ -42,7 +42,7 @@ hello.plst:
 ```ruby
 import printer
 
-service Test(p : printer.Printer)
+service Hello(p : printer.Printer)
     constructor new()
     end
 
@@ -56,7 +56,7 @@ end
 
 entry
     p := printer.SysPrinter().new();
-    return Test(p).new();
+    return Hello(p).new();
 end
 ```
 
