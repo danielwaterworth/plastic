@@ -18,6 +18,10 @@ To get started, you'll need to checkout pypy:
 
     hg clone https://bitbucket.org/pypy/pypy
 
+You'll also need to install the dependencies:
+
+    pip install -r requirements.txt
+
 And (in this project) copy the config file:
 
     cp config_example.sh config.sh
