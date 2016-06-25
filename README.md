@@ -50,3 +50,21 @@ Then:
 
     ./compile hello.plst hello.bc
     ./main-c exec hello.bc
+
+## Extras
+
+You can view the bytecode produced with:
+
+    ./print_bc hello.bc
+
+You can build a trace of all of the system calls with:
+
+    ./main-c trace hello.bc hello.trace
+
+And you can re-run the program by replaying the system calls with:
+
+    ./main-c replay hello.bc hello.trace
+
+This isn't useful unless you use the `debug` function that takes a string. You
+can rerun a program with a trace using different bytecode. This allows you to
+add debug calls to a program's execution after the fact.
