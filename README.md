@@ -7,7 +7,7 @@ style where everything happened through service objects and the domain objects
 became values. This was much better.
 
 Around the same time, I noticed that, when I was writing Haskell, it became
-much easy to manage complexity by explicitly delineating layers using
+much easier to manage complexity by explicitly delineating layers using
 operational and I realized that the way to write good Haskell and good
 ruby were very similar.
 
