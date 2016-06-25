@@ -1,14 +1,18 @@
 import parse
 import os.path
 
-def load_imports(filename):
+def load_imports(lib_dir, filename):
     dir, name = filename.rsplit('/', 1)
     assert name.endswith('.plst')
     name = name[:-5]
 
     def load_module(module_name):
-        with open(os.path.join(dir, module_name) + '.plst', 'r') as fd:
-            source = fd.read()
+        try:
+            with open(os.path.join(lib_dir, module_name) + '.plst', 'r') as fd:
+                source = fd.read()
+        except IOError:
+            with open(os.path.join(dir, module_name) + '.plst', 'r') as fd:
+                source = fd.read()
         return parse.parser.parse(source)
 
     modules = {}

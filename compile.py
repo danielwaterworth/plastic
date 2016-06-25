@@ -13,7 +13,9 @@ import bytecode.optimizer
 import bytecode.writer
 import load_imports
 
-entry_module, modules = load_imports.load_imports(sys.argv[1])
+lib_dir = os.path.join(os.path.dirname(__file__), 'lib')
+
+entry_module, modules = load_imports.load_imports(lib_dir, sys.argv[1])
 
 module_interfaces = {}
 for module_name, module in modules:

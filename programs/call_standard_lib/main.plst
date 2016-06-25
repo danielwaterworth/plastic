@@ -1,0 +1,18 @@
+import printer
+
+service Test(p : printer.Printer)
+    constructor new()
+    end
+
+    implements EntryPoint
+        define main() -> Bool do
+            @p.print("hello, world");
+            return true;
+        end
+    end
+end
+
+entry
+    p := printer.SysPrinter().new();
+    return Test(p).new();
+end

@@ -1,0 +1,15 @@
+interface Printer
+    print(String) -> Void;
+end
+
+service SysPrinter()
+    constructor new()
+    end
+
+    implements Printer
+        define print(s : String) -> Void do
+            sys print_string(s);
+            return void;
+        end
+    end
+end

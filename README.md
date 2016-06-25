@@ -34,19 +34,23 @@ with `./build.sh`. You can compile things with `./compile [input] [output]`.
 hello.plst:
 
 ```ruby
-service Test()
+import printer
+
+service Test(p : printer.Printer)
+    constructor new()
+    end
+
     implements EntryPoint
         define main() -> Bool do
-            # This is a system call. Eventually there's be a standard
-            # library so that you don't need to do this directly.
-            sys print_string("Hello, world");
+            @p.print("hello, world");
             return true;
         end
     end
 end
 
 entry
-    return Test().new();
+    p := printer.SysPrinter().new();
+    return Test(p).new();
 end
 ```
 
