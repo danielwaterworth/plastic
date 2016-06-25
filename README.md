@@ -1,12 +1,18 @@
-# Plastic
+# Rationale
 
-There is a reason that the most difficult problem in computer science is naming
-things. The goal of programming language design is to make the work of a
-programmer less technical and more philosophical.
+I was working on a ruby project where the domain objects all did their own work
+and stored their own data. As the project grew over time it became increasingly
+difficult to manage. Eventually, we refactored it into a dependency injected
+style where everything happened through service objects and the domain objects
+became values. This was much better.
 
-Plastic is an open source programming language that magically solves all of
-your problems. It strives not to suck; which it accomplishes to varying
-degrees. No unicorns were injured in its creation or ongoing development.
+Around the same time, I noticed that, when I was writing Haskell, it became
+much easy to manage complexity by explicitly delineating layers using
+operational and I realized that the way to write good Haskell and good
+ruby were very similar.
+
+So, plastic is an attempt to pull these experiences into a language that
+encourages maintainable code.
 
 # Practicals
 
