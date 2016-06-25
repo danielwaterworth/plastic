@@ -76,3 +76,25 @@ And you can re-run the program by replaying the system calls with:
 This isn't useful unless you use the `debug` function that takes a string. You
 can rerun a program with a trace using different bytecode. This allows you to
 add debug calls to a program's execution after the fact.
+
+## Adding system calls to the VM
+
+Take a look at `src/sys_calls/stdout.py` for an example:
+
+```python
+@sys_call('print_string')
+def call(self, arguments):
+    assert len(arguments) == 1
+    a = arguments[0]
+    assert isinstance(a, data.String)
+    print a.v
+    return data.Void()
+```
+
+The `sys_call` decorator comes from the `data` module. The `self` parameter can
+be ignored. Arguments is a list of `data.Data` and the return type should be a
+`data.Data` too. As this is running in the VM, the function should be valid
+rpython.
+
+You can expose sys calls to the compiler in `compiler/type_check_code_block.py`
+by adding the signature of your syscall to `sys_call_signatures`.
