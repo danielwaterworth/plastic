@@ -8,10 +8,6 @@ Plastic is an open source programming language that magically solves all of
 your problems. It strives not to suck; which it accomplishes to varying
 degrees. No unicorns were injured in its creation or ongoing development.
 
-I realise this description of plastic is of almost no use to you. I will write
-something better eventually. In the meantime, you can take a look at the
-plastic programs in `programs/`.
-
 # Practicals
 
 There are two parts to this project. A bytecode interpreter that uses the pypy
@@ -28,3 +24,29 @@ And (in this project) copy the config file:
 
 And edit it to point to your pypy checkout. Then you can build the interpreter
 with `./build.sh`. You can compile things with `./compile [input] [output]`.
+
+# Hello, world
+
+hello.plst:
+
+```ruby
+service Test()
+    implements EntryPoint
+        define main() -> Bool do
+            # This is a system call. Eventually there's be a standard
+            # library so that you don't need to do this directly.
+            sys print_string("Hello, world");
+            return true;
+        end
+    end
+end
+
+entry
+    return Test().new();
+end
+```
+
+Then:
+
+    ./compile hello.plst hello.bc
+    ./main-c exec hello.bc
