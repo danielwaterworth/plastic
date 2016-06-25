@@ -11,23 +11,34 @@ import data
 
 data.register_all()
 
+def print_usage(prog):
+    print "usage:"
+    print "  %s exec BYTECODE" % prog
+    print "  %s trace BYTECODE TRACE" % prog
+    print "  %s replay BYTECODE TRACE" % prog
+
 def entry_point(argv):
     rsocket.rsocket_startup()
 
     constructor = bytecode.constructor.BytecodeConstructor()
 
     fd = None
+    if len(argv) < 3:
+        print_usage(argv[0])
+        return 1
+
     mode = argv[1]
     if mode == 'exec':
         sys_caller = sys_calls.Perform()
-    elif mode == 'trace':
+    elif mode == 'trace' and len(argv) == 4:
         fd = open(argv[3], 'w')
         sys_caller = sys_calls.TraceProxy(sys_calls.Perform(), fd)
-    elif mode == 'replay':
+    elif mode == 'replay' and len(argv) == 4:
         fd = open(argv[3], 'r')
         sys_caller = sys_calls.Replay(fd)
     else:
-        raise Exception('unknown mode')
+        print_usage(argv[0])
+        return 1
 
     with open(argv[2], 'r') as fd:
         bytecode.read.read_bytecode(fd, constructor)
