@@ -42,6 +42,26 @@ class SysCall(object):
     def register(self):
         sys_calls[self.name] = self
 
+def sys_call(name):
+    def decorator(f):
+        class DecoratedSysCall(SysCall):
+            def __init__(self):
+                self.name = name
+
+            call = f
+        DecoratedSysCall().register()
+    return decorator
+
+def operator(name):
+    def decorator(f):
+        class DecoratedOperator(BuiltinOperator):
+            def __init__(self):
+                self.name = name
+
+            call = f
+        DecoratedOperator().register()
+    return decorator
+
 type_by_id = {}
 class Data(object):
     @classmethod

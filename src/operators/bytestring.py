@@ -1,102 +1,63 @@
 import data
+from data import operator
 
-class Head(data.BuiltinOperator):
-    def __init__(self):
-        self.name = 'bytestring.head'
+@operator('bytestring.head')
+def call(self, arguments):
+    assert len(arguments) == 1
+    x = arguments[0]
+    assert isinstance(x, data.ByteString)
+    assert len(x.v) > 0
+    return data.Byte(x.v[0])
 
-    def call(self, arguments):
-        assert len(arguments) == 1
-        x = arguments[0]
-        assert isinstance(x, data.ByteString)
-        assert len(x.v) > 0
-        return data.Byte(x.v[0])
+@operator('bytestring.drop')
+def call(self, arguments):
+    x, n = arguments
+    assert isinstance(x, data.ByteString)
+    assert isinstance(n, data.UInt)
+    assert len(x.v) >= n.n
+    return data.ByteString(x.v[n.n:])
 
-Head().register()
+@operator('bytestring.take')
+def call(self, arguments):
+    x, n = arguments
+    assert isinstance(x, data.ByteString)
+    assert isinstance(n, data.UInt)
+    assert len(x.v) >= n.n
+    return data.ByteString(x.v[:n.n])
 
-class Drop(data.BuiltinOperator):
-    def __init__(self):
-        self.name = 'bytestring.drop'
+@operator('bytestring.eq')
+def call(self, arguments):
+    x, y = arguments
+    assert isinstance(x, data.ByteString)
+    assert isinstance(y, data.ByteString)
+    return data.Bool(x.v == y.v)
 
-    def call(self, arguments):
-        x, n = arguments
-        assert isinstance(x, data.ByteString)
-        assert isinstance(n, data.UInt)
-        assert len(x.v) >= n.n
-        return data.ByteString(x.v[n.n:])
+@operator('bytestring.decode_utf8')
+def call(self, arguments):
+    assert len(arguments) == 1
+    x = arguments[0]
+    assert isinstance(x, data.ByteString)
+    return data.String(x.v.decode('utf-8'))
 
-Drop().register()
+@operator('bytestring.index')
+def call(self, arguments):
+    string, index = arguments
+    assert isinstance(string, data.ByteString)
+    assert isinstance(index, data.UInt)
+    assert len(string.v) > index.n
+    return data.Byte(string.v[index.n])
 
-class Take(data.BuiltinOperator):
-    def __init__(self):
-        self.name = 'bytestring.take'
+@operator('bytestring.slice')
+def call(self, arguments):
+    string, start, stop = arguments
+    assert isinstance(string, data.ByteString)
+    assert isinstance(start, data.UInt)
+    assert isinstance(stop, data.UInt)
+    return data.ByteString(string.v[start.n:stop.n])
 
-    def call(self, arguments):
-        x, n = arguments
-        assert isinstance(x, data.ByteString)
-        assert isinstance(n, data.UInt)
-        assert len(x.v) >= n.n
-        return data.ByteString(x.v[:n.n])
-
-Take().register()
-
-class Eq(data.BuiltinOperator):
-    def __init__(self):
-        self.name = 'bytestring.eq'
-
-    def call(self, arguments):
-        x, y = arguments
-        assert isinstance(x, data.ByteString)
-        assert isinstance(y, data.ByteString)
-        return data.Bool(x.v == y.v)
-
-Eq().register()
-
-class DecodeUtf8(data.BuiltinOperator):
-    def __init__(self):
-        self.name = 'bytestring.decode_utf8'
-
-    def call(self, arguments):
-        assert len(arguments) == 1
-        x = arguments[0]
-        assert isinstance(x, data.ByteString)
-        return data.String(x.v.decode('utf-8'))
-
-DecodeUtf8().register()
-
-class Index(data.BuiltinOperator):
-    def __init__(self):
-        self.name = 'bytestring.index'
-
-    def call(self, arguments):
-        string, index = arguments
-        assert isinstance(string, data.ByteString)
-        assert isinstance(index, data.UInt)
-        assert len(string.v) > index.n
-        return data.Byte(string.v[index.n])
-
-Index().register()
-
-class Slice(data.BuiltinOperator):
-    def __init__(self):
-        self.name = 'bytestring.slice'
-
-    def call(self, arguments):
-        string, start, stop = arguments
-        assert isinstance(string, data.ByteString)
-        assert isinstance(start, data.UInt)
-        assert isinstance(stop, data.UInt)
-        return data.ByteString(string.v[start.n:stop.n])
-
-Slice().register()
-
-class Length(data.BuiltinOperator):
-    def __init__(self):
-        self.name = 'bytestring.length'
-
-    def call(self, arguments):
-        assert len(arguments) == 1
-        x = arguments[0]
-        assert isinstance(x, data.ByteString)
-        return data.UInt(len(x.v))
-
-Length().register()
+@operator('bytestring.length')
+def call(self, arguments):
+    assert len(arguments) == 1
+    x = arguments[0]
+    assert isinstance(x, data.ByteString)
+    return data.UInt(len(x.v))
