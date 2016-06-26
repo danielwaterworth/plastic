@@ -26,6 +26,9 @@ class Primitive(Type):
     def template(self, _):
         return self
 
+    def __repr__(self):
+        return self.name
+
 void = Primitive('void', {})
 
 bool_methods = {}
@@ -107,7 +110,10 @@ class Instantiation(Type):
         return Instantiation(self.constructor, [t.template(quantified) for t in self.types])
 
     def __repr__(self):
-        return '<%s (%s)>' % (self.constructor.name, ', '.join([repr(t) for t in self.types]))
+        if self.constructor.name == 'Tuple':
+            return '(%s)' % ', '.join([repr(t) for t in self.types])
+        else:
+            return '<%s (%s)>' % (self.constructor.name, ', '.join([repr(t) for t in self.types]))
 
     def method_signature(self, name):
         return self.constructor.constructor_method_signature(self.types, name)
