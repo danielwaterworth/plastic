@@ -5,17 +5,16 @@ from rpython.rlib.rarithmetic import intmask, r_ulonglong
 from rpython.rlib.rstruct.runpack import runpack
 
 class Socket(data.Data):
-    def __init__(self, sock, fd=0):
+    def __init__(self, sock, fd=-1):
         self.sock = sock
-        self.fd = fd
+        if self.sock:
+            self.fd = self.sock.fd
+        else:
+            self.fd = fd
 
     def persist(self, fd):
         fd.write(self.type_id)
-        if self.sock:
-            n = self.sock.fd
-        else:
-            n = self.fd
-        fd.write(data.pack_int(n))
+        fd.write(data.pack_int(self.fd))
 
     @staticmethod
     def load(fd):
@@ -23,10 +22,7 @@ class Socket(data.Data):
         return Socket(None, n)
 
     def __repr__(self):
-        if self.sock:
-            return '(socket %s)' % self.sock.fd
-        else:
-            return '(socket %s)' % self.fd
+        return '(socket %s)' % self.fd
 
     def eq(self, other):
         return isinstance(other, Socket) and self.fd == other.fd
