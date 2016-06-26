@@ -231,6 +231,8 @@ bytestring_methods.update({
 
 string_methods.update({
     'head': (([], char), 'string.head'),
+    'tail': (([], string), 'string.tail'),
     'drop': (([uint], string), 'string.drop'),
+    'take': (([uint], string), 'string.take'),
     'encode_utf8': (([], bytestring), 'string.encode_utf8')
 })

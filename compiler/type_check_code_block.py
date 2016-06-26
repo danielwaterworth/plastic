@@ -107,7 +107,7 @@ def merge_contexts(a, b):
     return types
 
 comparison_operators = ['<', '>', '<=', '>=']
-arithmetic_operators = ['+', '-', '*', '/']
+arithmetic_operators = ['-', '*', '/']
 logical_operators = ['and', 'or']
 equality_types = [
     program_types.uint,
@@ -132,7 +132,13 @@ def operator_type(operator, rhs_type, lhs_type):
         if not lhs_type in equality_types:
             raise Exception("%s doesn't have equality" % type(lhs_type))
         return program_types.bool
+    elif operator == '+':
+        assert lhs_type == rhs_type
+        assert lhs_type in [program_types.uint, program_types.string]
+        return lhs_type
     elif operator in arithmetic_operators:
+        assert lhs_type == program_types.uint
+        assert rhs_type == program_types.uint
         return program_types.uint
     else:
         raise NotImplementedError('unknown operator: %s' % operator)
