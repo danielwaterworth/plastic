@@ -31,7 +31,16 @@ define skip_whitespace(s : String) -> String do
 end
 
 define parse_string_tail(s : String) -> (String, String) do
-    throw void;
+    dat := s;
+    i := 0;
+    do
+        i := i + 1;
+        dat := dat.tail();
+        b := dat.head();
+        if (b == '"')
+            return (s.take(i), dat.tail());
+        end
+    while (true)
 end
 
 define parse_object_tail(s : String) -> (JObject, String) do
@@ -128,36 +137,57 @@ define generate_array(json : JArray) -> String do
     throw void;
 end
 
+define generate_object_tail(json : JObject) -> String do
+    match (json)
+        j_empty_object do
+            return "}";
+        end
+        j_cons_object(key, value, elements) do
+            return ", " + generate_string(key) + ": " + generate(value) + generate_object_tail(elements);
+        end
+    end
+end
+
+define generate_object_tail_initial(json : JObject) -> String do
+    match (json)
+        j_empty_object do
+            return "}";
+        end
+        j_cons_object(key, value, elements) do
+            return generate_string(key) + ": " + generate(value) + generate_object_tail(elements);
+        end
+    end
+end
+
 define generate_object(json : JObject) -> String do
-    throw void;
+    return "{" + generate_object_tail_initial(json);
 end
 
 define generate_string(json : String) -> String do
-    throw void;
+    return "\"" + json + "\"";
 end
 
 define generate(json : JSON) -> String do
     match (json)
         j_null do
-            result := "null";
+            return "null";
         end
         j_true do
-            result := "true";
+            return "true";
         end
         j_false do
-            result := "false";
+            return "false";
         end
         j_array(elements) do
-            result := generate_array(elements);
+            return generate_array(elements);
         end
         j_object(object) do
-            result := generate_object(object);
+            return generate_object(object);
         end
         j_string(string) do
-            result := generate_string(string);
+            return generate_string(string);
         end
     end
-    return result;
 end
 
 service Test()
