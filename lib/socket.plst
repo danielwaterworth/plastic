@@ -1,0 +1,44 @@
+interface SocketOperations
+    socket() -> Socket;
+    bind(Socket, String, UInt) -> Void;
+    listen(Socket, UInt) -> Void;
+    accept(Socket) -> Socket;
+    recv(Socket, UInt) -> ByteString;
+    send(Socket, ByteString) -> Void;
+    close(Socket) -> Void;
+end
+
+service SysSocket()
+    constructor new()
+    end
+
+    implements SocketOperations
+        define socket() -> Socket do
+            return sys socket_socket(2, 1, 0);
+        end
+
+        define bind(sock : Socket, host : String, port : UInt) -> Void do
+            return sys socket_bind(sock, host, port);
+        end
+
+        define listen(sock : Socket, backlog : UInt) -> Void do
+            return sys socket_listen(sock, backlog);
+        end
+
+        define accept(sock : Socket) -> Socket do
+            return sys socket_accept(sock);
+        end
+
+        define recv(sock : Socket, n : UInt) -> ByteString do
+            return sys socket_recv(sock, n);
+        end
+
+        define send(sock : Socket, data : ByteString) -> Void do
+            return sys socket_send(sock, data);
+        end
+
+        define close(sock : Socket) -> Void do
+            return sys socket_close(sock);
+        end
+    end
+end

@@ -1,18 +1,10 @@
-# Rationale
+# Plastic
 
-I was working on a ruby project where the domain objects all did their own work
-and stored their own data. As the project grew over time it became increasingly
-difficult to manage. Eventually, we refactored it into a dependency injected
-style where everything happened through service objects and the domain objects
-became values. This was much better.
+Plastic is a functional language in OO clothing. It maintains a clear division
+between objects that do things, which are called services, and objects that are
+things, which are called values.
 
-Around the same time, I noticed that, when I was writing Haskell, it became
-much easier to manage complexity by explicitly delineating layers using
-operational and I realized that the way to write good Haskell and good
-ruby were very similar.
 
-So, plastic is an attempt to pull these experiences into a language that
-encourages maintainable code.
 
 # Practicals
 
@@ -35,7 +27,7 @@ And (in this project) copy the config file:
 And edit it to point to your pypy checkout. Then you can build the interpreter
 with `./build.sh`. You can compile things with `./compile [input] [output]`.
 
-# Hello, world
+## Hello, world
 
 hello.plst:
 
@@ -83,6 +75,7 @@ This isn't useful unless you use the `debug` function that takes a string. You
 can rerun a program with a trace using different bytecode. This allows you to
 add debug calls to a program's execution after the fact.
 
+# Development
 ## Adding system calls to the VM
 
 Take a look at `src/sys_calls/stdout.py` for an example:
