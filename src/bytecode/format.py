@@ -9,6 +9,8 @@ FUNCTION_START = 2
 
 # Instructions
 PHI = 1
+COPY = 2
+MOVE = 3
 
 VOID = 8
 CONST_INT = 9

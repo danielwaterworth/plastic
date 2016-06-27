@@ -22,6 +22,12 @@ class BasicBlockPrinter(object):
     def phi(self, inputs):
         return self.instruction("PHI", inputs)
 
+    def copy(self):
+        return self.instruction("COPY")
+
+    def move(self, variable):
+        return self.instruction("MOVE", variable)
+
     def constant_bool(self, value):
         return self.instruction("CONST_BOOL", value)
 

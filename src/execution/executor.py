@@ -22,7 +22,10 @@ class ActivationRecord(object):
         self.pc = 0
 
     def resolve_variable(self, var):
-        return self.values[var]
+        value = self.values[var]
+        assert not isinstance(value, data.Invalid)
+        self.values[var] = data.Invalid()
+        return value
 
     def resolve_variable_list(self, variables):
         return [self.resolve_variable(var) for var in variables]
@@ -40,6 +43,10 @@ class ActivationRecord(object):
         self.values[self.next_value] = value
         self.next_value += 1
         self.pc += 1
+
+    def copy(self):
+        assert self.next_value > 1
+        return self.values[self.next_value-1].copy()
 
     def goto(self, block):
         assert block < len(self.function.blocks)
@@ -97,6 +104,10 @@ class Coroutine(data.Data):
             if instr:
                 if isinstance(instr, bytecode.Phi):
                     self.stack[-1].retire(self.stack[-1].resolve_variable(instr.inputs[self.stack[-1].last_block_index]))
+                elif isinstance(instr, bytecode.Copy):
+                    self.stack[-1].retire(self.stack[-1].copy())
+                elif isinstance(instr, bytecode.Move):
+                    self.stack[-1].retire(self.stack[-1].resolve_variable(instr.variable))
                 elif isinstance(instr, bytecode.Operation):
                     arguments = self.stack[-1].resolve_variable_list(instr.arguments)
                     if instr.operator == 'is_done':

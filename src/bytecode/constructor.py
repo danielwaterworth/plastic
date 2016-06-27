@@ -26,6 +26,18 @@ class BasicBlockConstructor(object):
     def phi(self, inputs):
         return self.special_phi(inputs)[0]
 
+    def copy(self):
+        self.instructions.append(bytecode.Copy())
+        return self.function.create_variable()
+
+    def move(self, variable):
+        self.instructions.append(bytecode.Move(variable))
+        return self.function.create_variable()
+
+    def dup(self, variable):
+        variable = self.move(variable)
+        return (variable, self.copy())
+
     def constant_bool(self, value):
         self.instructions.append(bytecode.ConstantBool(value))
         return self.function.create_variable()

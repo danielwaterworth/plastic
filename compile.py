@@ -24,8 +24,7 @@ try:
 
     modules = dict(modules)
     constructor = bytecode.constructor.BytecodeConstructor()
-    optimizer = bytecode.optimizer.BytecodeOptimizer(constructor)
-    with optimizer as writer:
+    with constructor as writer:
         for module in modules.itervalues():
             code_generation.generate_module(writer, module)
 

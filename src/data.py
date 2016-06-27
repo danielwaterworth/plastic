@@ -74,6 +74,9 @@ class Data(object):
         type_by_id[i] = cls
         cls.type_id = i
 
+    def copy(self):
+        return self
+
     def persist(self, fd):
         raise NotImplementedError()
 
@@ -138,7 +141,21 @@ class Bool(Data):
         return basic_block.constant_bool(self.b)
 
     def __repr__(self):
-        return repr(self.n)
+        return repr(self.b)
+
+class Invalid(Data):
+    def write_out(self, basic_block):
+        raise Exception()
+
+    def persist(self, fd):
+        raise Exception()
+
+    @staticmethod
+    def load(fd):
+        raise Exception()
+
+    def __repr__(self):
+        return 'invalid'
 
 class Void(Data):
     def write_out(self, basic_block):

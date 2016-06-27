@@ -38,6 +38,11 @@ def read_bytecode(fd, receiver):
                                         var = runpack('>Q', fd.read(8))
                                         inputs.append((block, var))
                                     basic_block_receiver.phi(inputs)
+                                elif instruction_type == COPY:
+                                    basic_block_receiver.copy()
+                                elif instruction_type == MOVE:
+                                    variable = runpack('>Q', fd.read(8))
+                                    basic_block_receiver.move(variable)
                                 elif instruction_type == CONST_BYTE:
                                     basic_block_receiver.constant_byte(fd.read(1))
                                 elif instruction_type == CONST_CHAR:

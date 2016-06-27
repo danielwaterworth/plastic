@@ -3,6 +3,10 @@ import bytecode
 def serialize_instruction(block_writer, instruction):
     if isinstance(instruction, bytecode.Phi):
         block_writer.phi(instruction.inputs.items())
+    elif isinstance(instruction, bytecode.Copy):
+        block_writer.copy()
+    elif isinstance(instruction, bytecode.Move):
+        block_writer.move(instruction.variable)
     elif isinstance(instruction, bytecode.Operation):
         block_writer.operation(instruction.operator, instruction.arguments)
     elif isinstance(instruction, bytecode.FunctionCall):

@@ -20,6 +20,13 @@ class Phi(Instruction):
     def __init__(self, inputs):
         self.inputs = inputs
 
+class Copy(Instruction):
+    pass
+
+class Move(Instruction):
+    def __init__(self, variable):
+        self.variable = variable
+
 class Operation(Instruction):
     def __init__(self, operator, arguments):
         self.operator = operator

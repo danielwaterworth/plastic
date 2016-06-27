@@ -38,7 +38,10 @@ class RecordContext(GenerationContext):
         self.add('@%s' % name, value)
 
     def attr_lookup(self, name):
-        return self.lookup('@%s' % name)
+        var = self.lookup('@%s' % name)
+        var, var1 = self.basic_block.dup(var)
+        self.add('@%s' % name, var)
+        return var1
 
 class ServiceContext(GenerationContext):
     def __init__(self, current_module_name, name, dependencies, attrs, self_variable, function_writer, basic_block, variables):
@@ -64,16 +67,18 @@ class ServiceContext(GenerationContext):
                 )
 
     def attr_lookup(self, name):
+        self.self_variable, self_variable = self.basic_block.dup(self.self_variable)
         if name in self.dependencies:
-            return self.basic_block.fun_call('%s^%s' % (self.name, name), [self.self_variable])
+            return self.basic_block.fun_call('%s^%s' % (self.name, name), [self_variable])
         elif name in self.attrs:
-            offset = self.basic_block.fun_call('%s^%s' % (self.name, name), [self.self_variable])
+            offset = self.basic_block.fun_call('%s^%s' % (self.name, name), [self_variable])
             return self.basic_block.load(offset)
         else:
             raise NotImplementedError()
 
     def attr_add(self, name, value):
-        offset = self.basic_block.fun_call('%s^%s' % (self.name, name), [self.self_variable])
+        self.self_variable, self_variable = self.basic_block.dup(self.self_variable)
+        offset = self.basic_block.fun_call('%s^%s' % (self.name, name), [self_variable])
         self.basic_block.store(offset, value)
 
 uint_operators = {
@@ -129,7 +134,9 @@ def operator_name(operator, lhs_type):
 
 def generate_expression(context, expression):
     if isinstance(expression, program.Variable):
-        return context.lookup(expression.name)
+        var, var_copy = context.basic_block.dup(context.lookup(expression.name))
+        context.add(expression.name, var)
+        return var_copy
     elif isinstance(expression, program.CharLiteral):
         return context.basic_block.constant_char(expression.b)
     elif isinstance(expression, program.NumberLiteral):
@@ -200,7 +207,8 @@ def generate_statement(context, statement):
         var = generate_expression(context, statement.expression)
         for name, i in zip(statement.names, itertools.count()):
             i_var = context.basic_block.constant_uint(i)
-            v = context.basic_block.operation('list.index', [var, i_var])
+            var, var1 = context.basic_block.dup(var)
+            v = context.basic_block.operation('list.index', [var1, i_var])
             context.add(name, v)
     elif isinstance(statement, program.Conditional):
         condition_variable = generate_expression(context, statement.expression)
@@ -275,27 +283,29 @@ def generate_statement(context, statement):
 
         for body_statement in statement.body.statements:
             generate_statement(context, body_statement)
+        condition_variable = generate_expression(context, statement.expression)
 
         last_body_index = context.basic_block.index
 
         for name, phi in phis.iteritems():
             phi.inputs[last_body_index] = context.lookup(name)
 
-        condition_variable = generate_expression(context, statement.expression)
         body_conditional = context.basic_block.special_conditional(condition_variable, first_body_block, 0)
         context.basic_block = context.function_writer.basic_block()
         body_conditional.false_block = context.basic_block.index
     elif isinstance(statement, program.Match):
         var = generate_expression(context, statement.expression)
+        var, var1 = context.basic_block.dup(var)
         zero = context.basic_block.constant_uint(0)
-        name = context.basic_block.operation('list.index', [var, zero])
+        name = context.basic_block.operation('list.index', [var1, zero])
 
         contexts = []
         gotos = []
 
         for clause in statement.clauses:
             clause_name = context.basic_block.constant_bytestring(clause.name)
-            v = context.basic_block.operation('bytestring.eq', [name, clause_name])
+            name, name1 = context.basic_block.dup(name)
+            v = context.basic_block.operation('bytestring.eq', [name1, clause_name])
             cond = context.basic_block.special_conditional(v, 0, 0)
 
             clause_block = context.function_writer.basic_block()
@@ -303,9 +313,11 @@ def generate_statement(context, statement):
             clause_context = context.new_context(clause_block)
 
             index = 1
+            var1 = var
             for param in clause.parameters:
+                var1, var2 = clause_context.basic_block.dup(var1)
                 index_var = clause_context.basic_block.constant_uint(index)
-                param_var = clause_context.basic_block.operation('list.index', [var, index_var])
+                param_var = clause_context.basic_block.operation('list.index', [var2, index_var])
                 clause_context.add(param, param_var)
                 index += 1
 
@@ -409,21 +421,25 @@ def generate_record(program_writer, record):
 
     def generate_method(method):
         function_name = '%s#%s' % (record.name, method.name)
-        parameter_names = ['self'] + method.parameter_names
         num_parameters = 1 + method.num_parameters
         with program_writer.function(function_name, num_parameters) as (function_writer, variables):
             basic_block = function_writer.basic_block()
 
-            variable_dict = dict(zip(parameter_names, variables))
+            self_variable = variables[0]
+
+            parameter_names = method.parameter_names
+            variable_dict = dict(zip(parameter_names, variables[1:]))
             offset = 0
             offset_var = basic_block.constant_uint(offset)
             for attr, attr_type in record.type_constructor.attrs:
                 offset += 1
                 new_offset_var = basic_block.constant_uint(offset)
-                var = basic_block.operation('list.index', [variables[0], offset_var])
+                self_variable, self_variable1 = basic_block.dup(self_variable)
+                var = basic_block.operation('list.index', [self_variable1, offset_var])
                 variable_dict['@%s' % attr] = var
                 offset_var = new_offset_var
 
+            variable_dict['self'] = self_variable
             context = RecordContext(record.module_interface.name, function_writer, basic_block, variable_dict)
 
             generate_code_block(context, method.body)
@@ -487,7 +503,8 @@ def generate_service_instantiations(program_writer, instantiations, service_decl
             block = 0
             for instantiation in instantiations:
                 service_id = basic_block.constant_uint(instantiation.service_id)
-                v = basic_block.operation('uint.eq', [self_variable, service_id])
+                self_variable, self_variable1 = basic_block.dup(self_variable)
+                v = basic_block.operation('uint.eq', [self_variable1, service_id])
                 basic_block.conditional(v, block + 1, block + 2)
                 basic_block = function_writer.basic_block()
                 result = instantiation.dependencies[dependency_name].interface_variable(basic_block)
@@ -506,7 +523,8 @@ def generate_service_instantiations(program_writer, instantiations, service_decl
             for instantiation in instantiations:
                 attr_offset = memory_offset + instantiation.memory_offset
                 service_id = basic_block.constant_uint(instantiation.service_id)
-                v = basic_block.operation('uint.eq', [self_variable, service_id])
+                self_variable, self_variable1 = basic_block.dup(self_variable)
+                v = basic_block.operation('uint.eq', [self_variable1, service_id])
                 basic_block.conditional(v, block + 1, block + 2)
                 basic_block = function_writer.basic_block()
                 result = basic_block.constant_uint(attr_offset)
@@ -522,15 +540,20 @@ def generate_interface(program_writer, interface, services):
         num_parameters = 1 + len(parameter_types)
         with program_writer.function(function_name, num_parameters) as (function_writer, variables):
             basic_block = function_writer.basic_block()
+
+            self_var, self_var1 = basic_block.dup(variables[0])
             zero = basic_block.constant_uint(0)
             one = basic_block.constant_uint(1)
-            self_type = basic_block.operation('list.index', [variables[0], zero])
-            self_id = basic_block.operation('list.index', [variables[0], one])
+
+            self_type = basic_block.operation('list.index', [self_var, zero])
+            self_id = basic_block.operation('list.index', [self_var1, one])
 
             block = 0
             for service_name, service_type_id in services:
+                self_type, self_type1 = basic_block.dup(self_type)
+
                 service_type = basic_block.constant_uint(service_type_id)
-                v = basic_block.operation('uint.eq', [service_type, self_type])
+                v = basic_block.operation('uint.eq', [service_type, self_type1])
                 basic_block.conditional(v, block + 1, block + 2)
                 basic_block = function_writer.basic_block()
                 result = basic_block.fun_call("%s.%s#%s" % (service_name, interface.name, name), [self_id] + variables[1:])
@@ -609,7 +632,8 @@ def generate_entry(program_writer, entry_service, modules):
             for service in all_services:
                 service_variable = service.service_variable(block_writer)
                 for attr_name, value in service.attrs.iteritems():
-                    attr_address = block_writer.fun_call('%s^%s' % (service.service, attr_name), [service_variable])
+                    service_variable, service_variable1 = block_writer.dup(service_variable)
+                    attr_address = block_writer.fun_call('%s^%s' % (service.service, attr_name), [service_variable1])
                     var = value.write_out(block_writer)
                     block_writer.store(attr_address, var)
 
