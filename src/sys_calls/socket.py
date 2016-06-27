@@ -1,8 +1,9 @@
 import data
-from data import sys_call
+from data import sys_call, expose_constant
 from rpython.rlib import rsocket
 from rpython.rlib.rarithmetic import intmask, r_ulonglong
 from rpython.rlib.rstruct.runpack import runpack
+import select
 
 class Socket(data.Data):
     def __init__(self, sock, fd=-1):

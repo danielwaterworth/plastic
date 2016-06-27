@@ -38,6 +38,9 @@ class ExposeConstant(BuiltinOperator):
         assert len(arguments) == 0
         return self.value
 
+def expose_constant(name, value):
+    ExposeConstant(name, value).register()
+
 class SysCall(object):
     def register(self):
         sys_calls[self.name] = self
