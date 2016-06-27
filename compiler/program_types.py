@@ -50,6 +50,7 @@ uint_methods = {}
 uint = Primitive('uint', uint_methods)
 
 socket = Primitive('socket', {})
+file = Primitive('file', {})
 
 class NamedType(Type):
     def __init__(self, module, name):

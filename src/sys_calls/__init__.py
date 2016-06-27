@@ -3,6 +3,7 @@ import sys_calls.ffi
 import sys_calls.stdout
 import sys_calls.socket
 import sys_calls.epoll
+import sys_calls.file
 from rpython.rlib.rstruct.runpack import runpack
 from rpython.rlib.rarithmetic import r_longlong, r_ulonglong, r_int, intmask
 

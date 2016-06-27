@@ -1,0 +1,21 @@
+import file
+
+service Main(
+            f : file.FileOps
+        )
+    constructor new()
+    end
+
+    implements EntryPoint
+        define main() -> Bool do
+            fd := @f.open("input".encode_utf8(), 0);
+            @f.close(fd);
+            return true;
+        end
+    end
+end
+
+entry
+    f := file.SysFileOps().new();
+    return Main(f).new();
+end

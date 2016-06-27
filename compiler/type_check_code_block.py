@@ -1,5 +1,7 @@
 import program
 import program_types
+from program_types import bool, uint, string, char, byte, bytestring, socket
+from program_types import void, file
 
 class Call(object):
     pass
@@ -82,23 +84,28 @@ class TypeCheckingContext(object):
         return dict(self.variable_types)
 
 sys_call_signatures = {
-    'print_uint': ([program_types.uint], program_types.void),
-    'print_bool': ([program_types.bool], program_types.void),
-    'print_char': ([program_types.char], program_types.void),
-    'print_string': ([program_types.string], program_types.void),
+    'print_uint': ([uint], void),
+    'print_bool': ([bool], void),
+    'print_char': ([char], void),
+    'print_string': ([string], void),
 
-    'socket_socket': ([program_types.uint, program_types.uint, program_types.uint], program_types.socket),
-    'socket_bind': ([program_types.socket, program_types.string, program_types.uint], program_types.void),
-    'socket_listen': ([program_types.socket, program_types.uint], program_types.void),
-    'socket_accept': ([program_types.socket], program_types.socket),
-    'socket_recv': ([program_types.socket, program_types.uint], program_types.bytestring),
-    'socket_send': ([program_types.socket, program_types.bytestring], program_types.void),
-    'socket_close': ([program_types.socket], program_types.void),
+    'socket_socket': ([uint, uint, uint], socket),
+    'socket_bind': ([socket, string, uint], void),
+    'socket_listen': ([socket, uint], void),
+    'socket_accept': ([socket], socket),
+    'socket_recv': ([socket, uint], bytestring),
+    'socket_send': ([socket, bytestring], void),
+    'socket_close': ([socket], void),
+
+    'file_open': ([bytestring, uint], file),
+    'file_read': ([file, uint], bytestring),
+    'file_write': ([file, bytestring], void),
+    'file_close': ([file], void),
 }
 
 op_call_signatures = {
-    "EPOLLIN" : ([], program_types.uint),
-    "EPOLLOUT": ([], program_types.uint),
+    "EPOLLIN" : ([], uint),
+    "EPOLLOUT": ([], uint),
 }
 
 def merge_contexts(a, b):
@@ -115,36 +122,36 @@ comparison_operators = ['<', '>', '<=', '>=']
 arithmetic_operators = ['-', '*', '/']
 logical_operators = ['and', 'or']
 equality_types = [
-    program_types.uint,
-    program_types.bool,
-    program_types.byte,
-    program_types.bytestring,
-    program_types.string,
-    program_types.char,
+    uint,
+    bool,
+    byte,
+    bytestring,
+    string,
+    char,
 ]
 
 def operator_type(operator, rhs_type, lhs_type):
     if operator in logical_operators:
-        assert rhs_type == program_types.bool
-        assert rhs_type == program_types.bool
-        return program_types.bool
+        assert rhs_type == bool
+        assert rhs_type == bool
+        return bool
     elif operator in comparison_operators:
-        assert rhs_type == program_types.uint
-        assert lhs_type == program_types.uint
-        return program_types.bool
+        assert rhs_type == uint
+        assert lhs_type == uint
+        return bool
     elif operator in ['==', '!=']:
         assert lhs_type == rhs_type
         if not lhs_type in equality_types:
             raise Exception("%s doesn't have equality" % type(lhs_type))
-        return program_types.bool
+        return bool
     elif operator == '+':
         assert lhs_type == rhs_type
-        assert lhs_type in [program_types.uint, program_types.string]
+        assert lhs_type in [uint, string]
         return lhs_type
     elif operator in arithmetic_operators:
-        assert lhs_type == program_types.uint
-        assert rhs_type == program_types.uint
-        return program_types.uint
+        assert lhs_type == uint
+        assert rhs_type == uint
+        return uint
     else:
         raise NotImplementedError('unknown operator: %s' % operator)
 
@@ -157,15 +164,15 @@ def type_check_code_block(context, code_block):
         elif isinstance(expression, program.TypeAccess):
             raise Exception('naked type access')
         elif isinstance(expression, program.CharLiteral):
-            expression.type = program_types.char
+            expression.type = char
         elif isinstance(expression, program.NumberLiteral):
-            expression.type = program_types.uint
+            expression.type = uint
         elif isinstance(expression, program.BoolLiteral):
-            expression.type = program_types.bool
+            expression.type = bool
         elif isinstance(expression, program.VoidLiteral):
-            expression.type = program_types.void
+            expression.type = void
         elif isinstance(expression, program.StringLiteral):
-            expression.type = program_types.string
+            expression.type = string
         elif isinstance(expression, program.AttrLoad):
             expression.type = context.lookup_attr(expression.attr)
         elif isinstance(expression, program.Yield):
@@ -191,7 +198,7 @@ def type_check_code_block(context, code_block):
             assert isinstance(coroutine, program_types.Instantiation)
             assert coroutine.constructor == program_types.coroutine
             assert len(coroutine.types) == 2
-            expression.type = program_types.bool
+            expression.type = bool
         elif isinstance(expression, program.BinOp):
             rhs_type = infer_expression_type(expression.rhs)
             lhs_type = infer_expression_type(expression.lhs)
@@ -297,7 +304,7 @@ def type_check_code_block(context, code_block):
             for name, t in zip(statement.names, expression_type.types):
                 context.add(name, t)
         elif isinstance(statement, program.Conditional):
-            assert infer_expression_type(statement.expression) == program_types.bool
+            assert infer_expression_type(statement.expression) == bool
 
             before_context = context.copy_types()
 
@@ -326,7 +333,7 @@ def type_check_code_block(context, code_block):
             for body_statement in statement.body.statements:
                 type_check_statement(body_statement)
 
-            assert infer_expression_type(statement.expression) == program_types.bool
+            assert infer_expression_type(statement.expression) == bool
         elif isinstance(statement, program.Match):
             enum_type = infer_expression_type(statement.expression)
             assert isinstance(enum_type, program_types.Instantiation)
@@ -364,7 +371,7 @@ def type_check_code_block(context, code_block):
                 context.variable_types = {}
         elif isinstance(statement, program.Debug):
             expression = infer_expression_type(statement.expression)
-            assert expression == program_types.string
+            assert expression == string
         elif isinstance(statement, program.Expression):
             infer_expression_type(statement)
         else:

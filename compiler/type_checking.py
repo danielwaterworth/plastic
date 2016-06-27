@@ -1,19 +1,22 @@
 import program
-import program_types
 import type_check_code_block
 import module_interface
+import program_types
+from program_types import bool, uint, string, char, byte, bytestring, socket
+from program_types import void, file
 
 primitives = {
-    'UInt': program_types.uint,
-    'Bool': program_types.bool,
-    'Void': program_types.void,
-    'Byte': program_types.byte,
-    'ByteString': program_types.bytestring,
-    'Char': program_types.char,
-    'String': program_types.string,
-    'Socket': program_types.socket
+    'UInt': uint,
+    'Bool': bool,
+    'Void': void,
+    'Byte': byte,
+    'ByteString': bytestring,
+    'Char': char,
+    'String': string,
+    'Socket': socket,
+    'File': file,
 }
-entry_point = program_types.Interface('EntryPoint', {'main': ([], program_types.bool)})
+entry_point = program_types.Interface('EntryPoint', {'main': ([], bool)})
 builtin_interfaces = {'EntryPoint': entry_point}
 
 def type_check_module(module_interfaces, module_name, module_decl):
@@ -40,7 +43,7 @@ def type_check_module(module_interfaces, module_name, module_decl):
                         module,
                         coroutine.receive_type,
                         coroutine.yield_type,
-                        program_types.void,
+                        void,
                         {},
                         False,
                         dict(coroutine.parameters)
@@ -54,7 +57,7 @@ def type_check_module(module_interfaces, module_name, module_decl):
                         module,
                         None,
                         None,
-                        program_types.void,
+                        void,
                         attr_types,
                         True,
                         dict(constructor.parameters)

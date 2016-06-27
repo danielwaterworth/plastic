@@ -1,0 +1,29 @@
+interface FileOps
+    open(ByteString, UInt) -> File;
+    read(File, UInt) -> ByteString;
+    write(File, ByteString) -> Void;
+    close(File) -> Void;
+end
+
+service SysFileOps()
+    constructor new()
+    end
+
+    implements FileOps
+        define open(name : ByteString, mode : UInt) -> File do
+            return sys file_open(name, mode);
+        end
+
+        define read(file : File, count : UInt) -> ByteString do
+            return sys file_read(file, count);
+        end
+
+        define write(file : File, bytes : ByteString) -> Void do
+            return sys file_write(file, bytes);
+        end
+
+        define close(file : File) -> Void do
+            return sys file_close(file);
+        end
+    end
+end
