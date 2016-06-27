@@ -1,0 +1,20 @@
+import bytecode
+import file
+
+interface ReadFile
+    read_file(ByteString) -> Void;
+end
+
+service BytecodeReader(
+            f : file.FileOps,
+            b : bytecode.BytecodeReceiver
+        )
+    constructor new()
+    end
+
+    implements ReadFile
+        define read_file(filename : ByteString) -> Void do
+            return void;
+        end
+    end
+end

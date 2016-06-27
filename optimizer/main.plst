@@ -1,0 +1,27 @@
+import file
+import printer
+
+import bytecode_reader
+import bytecode_printer
+
+service Main(
+            f : bytecode_reader.ReadFile
+        )
+    constructor new()
+    end
+
+    implements EntryPoint
+        define main() -> Bool do
+            @f.read_file("input".encode_utf8());
+            return true;
+        end
+    end
+end
+
+entry
+    f := file.SysFileOps().new();
+    p := printer.SysPrinter().new();
+    b_printer := bytecode_printer.BytecodePrinter(p).new();
+    reader := bytecode_reader.BytecodeReader(f, b_printer).new();
+    return Main(reader).new();
+end

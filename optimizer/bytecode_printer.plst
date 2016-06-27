@@ -1,0 +1,13 @@
+import bytecode
+import printer
+
+service BytecodePrinter(
+            p : printer.Printer
+        )
+
+    constructor new()
+    end
+
+    implements bytecode.BytecodeReceiver
+    end
+end
