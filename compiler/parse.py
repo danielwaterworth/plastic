@@ -362,6 +362,10 @@ def p_expression_sys_call(p):
     '''expression : SYS LOWER_NAME function_call'''
     p[0] = program.SysCall(p[2], p[3])
 
+def p_expression_op_call(p):
+    '''expression : OP STRING function_call'''
+    p[0] = program.OpCall(p[2][1:-1], p[3])
+
 def p_expression_attr(p):
     '''expression : PROPERTY'''
     p[0] = program.AttrLoad(p[1][1:])

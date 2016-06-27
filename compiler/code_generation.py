@@ -180,6 +180,9 @@ def generate_expression(context, expression):
     elif isinstance(expression, program.SysCall):
         arguments = [generate_expression(context, argument) for argument in expression.arguments]
         return context.basic_block.sys_call(expression.name, arguments)
+    elif isinstance(expression, program.OpCall):
+        arguments = [generate_expression(context, argument) for argument in expression.arguments]
+        return context.basic_block.operation(expression.name, arguments)
     elif isinstance(expression, program.TupleConstructor):
         values = [generate_expression(context, value) for value in expression.values]
         return context.basic_block.operation('list.pack', values)

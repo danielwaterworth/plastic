@@ -71,7 +71,7 @@ epoll_wait = rffi.llexternal(
 
 for key, value in public_symbols.iteritems():
     assert value >= 0
-    expose_constant(key.lower(), data.UInt(value))
+    expose_constant(key, data.UInt(value))
 
 class EPoll(data.Data):
     def __init__(self):

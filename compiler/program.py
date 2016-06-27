@@ -234,6 +234,11 @@ class SysCall(Expression):
         self.name = name
         self.arguments = arguments
 
+class OpCall(Expression):
+    def __init__(self, name, arguments):
+        self.name = name
+        self.arguments = arguments
+
 class Call(Expression):
     def __init__(self, function, arguments):
         self.function = function

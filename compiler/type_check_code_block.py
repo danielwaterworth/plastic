@@ -96,6 +96,11 @@ sys_call_signatures = {
     'socket_close': ([program_types.socket], program_types.void),
 }
 
+op_call_signatures = {
+    "EPOLLIN" : ([], program_types.uint),
+    "EPOLLOUT": ([], program_types.uint),
+}
+
 def merge_contexts(a, b):
     types = {}
     for name in set(a) & set(b):
@@ -258,6 +263,11 @@ def type_check_code_block(context, code_block):
             raise Exception('naked record access')
         elif isinstance(expression, program.SysCall):
             expected_arg_types, return_type = sys_call_signatures[expression.name]
+            argument_types = [infer_expression_type(argument) for argument in expression.arguments]
+            assert expected_arg_types == argument_types
+            expression.type = return_type
+        elif isinstance(expression, program.OpCall):
+            expected_arg_types, return_type = op_call_signatures[expression.name]
             argument_types = [infer_expression_type(argument) for argument in expression.arguments]
             assert expected_arg_types == argument_types
             expression.type = return_type
