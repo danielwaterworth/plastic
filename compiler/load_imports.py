@@ -16,7 +16,6 @@ def load_imports(lib_dir, filename):
         return parse.parser.parse(source)
 
     modules = {}
-    ordered_modules = []
     to_load = [name]
     while to_load:
         module = to_load.pop()
@@ -24,7 +23,19 @@ def load_imports(lib_dir, filename):
             m = load_module(module)
             modules[module] = m
             to_load.extend(m.imports)
-            ordered_modules.append((module, m))
-    ordered_modules.reverse()
+
+    done = set()
+    ordered_modules = []
+
+    while modules:
+        loop = True
+        for module_name, module in modules.items():
+            if set(module.imports) <= done:
+                del modules[module_name]
+                ordered_modules.append((module_name, module))
+                done.add(module_name)
+                loop = False
+        if loop:
+            raise Exception('import loop')
 
     return (name, ordered_modules)
