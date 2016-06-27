@@ -223,6 +223,10 @@ class TypeName(Expression):
     def __init__(self, name):
         self.name = name
 
+class Not(Expression):
+    def __init__(self, expression):
+        self.expression = expression
+
 class BinOp(Expression):
     def __init__(self, lhs, rhs, operator):
         self.lhs = lhs

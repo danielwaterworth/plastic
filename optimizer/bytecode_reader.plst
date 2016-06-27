@@ -1,6 +1,10 @@
 import bytecode
 import file
 
+define unpack_uint(dat : ByteString) -> UInt do
+    return op "unpack_uint"(dat);
+end
+
 interface ReadFile
     read_file(ByteString) -> Void;
 end
@@ -14,6 +18,36 @@ service BytecodeReader(
 
     implements ReadFile
         define read_file(filename : ByteString) -> Void do
+            fd := @f.open(filename, 0);
+
+            magic := self.read_uint(fd);
+            if (magic != bytecode.magic_())
+                throw void;
+            end
+
+            do
+                self.read_top_level(fd);
+            while(true)
+
+            @f.close(fd);
+            return void;
+        end
+    end
+
+    private
+        define read_uint(fd  : File) -> UInt do
+            return unpack_uint(@f.read(fd, 8));
+        end
+
+        define read_top_level(fd : File) -> Void do
+            type := @f.read(fd, 1).index(0).to_uint();
+            if (type == bytecode.function_start_())
+                throw void;
+            elsif (type == bytecode.symbol_())
+                throw void;
+            else
+                throw void;
+            end
             return void;
         end
     end

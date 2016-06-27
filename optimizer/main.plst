@@ -3,6 +3,7 @@ import printer
 
 import bytecode_reader
 import bytecode_printer
+import bytecode_sanitizer
 
 service Main(
             f : bytecode_reader.ReadFile
@@ -12,7 +13,7 @@ service Main(
 
     implements EntryPoint
         define main() -> Bool do
-            @f.read_file("input".encode_utf8());
+            @f.read_file("optimizer.bc".encode_utf8());
             return true;
         end
     end
@@ -22,6 +23,7 @@ entry
     f := file.SysFileOps().new();
     p := printer.SysPrinter().new();
     b_printer := bytecode_printer.BytecodePrinter(p).new();
-    reader := bytecode_reader.BytecodeReader(f, b_printer).new();
+    sanitizer := bytecode_sanitizer.BytecodeSanitizer(b_printer).new();
+    reader := bytecode_reader.BytecodeReader(f, sanitizer).new();
     return Main(reader).new();
 end

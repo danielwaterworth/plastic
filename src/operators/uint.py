@@ -1,3 +1,4 @@
+from rpython.rlib.rstruct.runpack import runpack
 import data
 from data import operator
 
@@ -114,3 +115,11 @@ def call(self, arguments):
         assert c >= 0
         n += c
     return data.UInt(n)
+
+@operator('unpack_uint')
+def call(self, arguments):
+    assert len(arguments) == 0
+    b = arguments[0]
+    assert isinstance(b, data.ByteString)
+    assert len(b.v) == 8
+    return data.UInt(runpack('>Q', b.v))

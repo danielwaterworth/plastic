@@ -162,6 +162,9 @@ def generate_expression(context, expression):
     elif isinstance(expression, program.IsDone):
         coroutine = generate_expression(context, expression.coroutine)
         return context.basic_block.operation('is_done', [coroutine])
+    elif isinstance(expression, program.Not):
+        value = generate_expression(context, expression.expression)
+        return context.basic_block.operation('not', [value])
     elif isinstance(expression, program.BinOp):
         lhs = generate_expression(context, expression.lhs)
         rhs = generate_expression(context, expression.rhs)

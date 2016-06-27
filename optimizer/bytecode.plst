@@ -1,3 +1,132 @@
 interface BytecodeReceiver
-    
+    function_start(String, UInt) -> Void;
+    function_end() -> Void;
+end
+
+define magic_() -> UInt do
+    return 17810926409145293181;
+end
+
+define symbol_() -> UInt do
+    return 1;
+end
+
+define function_start_() -> UInt do
+    return 2;
+end
+
+define phi_() -> UInt do
+    return 1;
+end
+
+define copy_() -> UInt do
+    return 2;
+end
+
+define move_() -> UInt do
+    return 3;
+end
+
+define void_() -> UInt do
+    return 8;
+end
+
+define const_int_() -> UInt do
+    return 9;
+end
+
+define const_uint_() -> UInt do
+    return 10;
+end
+
+define const_double_() -> UInt do
+    return 11;
+end
+
+define const_bool_() -> UInt do
+    return 12;
+end
+
+define const_byte_() -> UInt do
+    return 13;
+end
+
+define const_char_() -> UInt do
+    return 14;
+end
+
+define const_bytestring_() -> UInt do
+    return 15;
+end
+
+define const_string_() -> UInt do
+    return 16;
+end
+
+define operation_() -> UInt do
+    return 32;
+end
+
+define sys_call_() -> UInt do
+    return 33;
+end
+
+define fun_call_() -> UInt do
+    return 34;
+end
+
+define new_coroutine_() -> UInt do
+    return 35;
+end
+
+define debug_() -> UInt do
+    return 36;
+end
+
+define load_() -> UInt do
+    return 64;
+end
+
+define store_() -> UInt do
+    return 65;
+end
+
+define get_() -> UInt do
+    return 66;
+end
+
+define put_() -> UInt do
+    return 67;
+end
+
+define run_coroutine_() -> UInt do
+    return 96;
+end
+
+define yield_() -> UInt do
+    return 97;
+end
+
+define resume_() -> UInt do
+    return 98;
+end
+
+define ret_() -> UInt do
+    return 129;
+end
+
+define goto_() -> UInt do
+    return 130;
+end
+
+define conditional_() -> UInt do
+    return 131;
+end
+
+define catch_fire_and_die_() -> UInt do
+    return 132;
+end
+
+define throw_() -> UInt do
+    return 133;
 end

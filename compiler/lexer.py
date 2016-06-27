@@ -51,6 +51,7 @@ keywords = [
     'interface',
     'is_done',
     'match',
+    'not',
     'op',
     'or',
     'private',

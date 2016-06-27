@@ -402,8 +402,13 @@ precedence = (
     ('left', 'PLUS', 'MINUS'),
     ('left', 'MUL', 'DIV'),
     ('right', 'DOT'),
+    ('right', 'NOT'),
     ('nonassoc', 'OPEN_PARENS')
 )
+
+def p_expression_not(p):
+    '''expression : NOT expression'''
+    p[0] = program.Not(p[2])
 
 def p_expression_binop(p):
     '''expression : expression PLUS expression

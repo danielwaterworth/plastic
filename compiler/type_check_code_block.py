@@ -106,6 +106,7 @@ sys_call_signatures = {
 op_call_signatures = {
     "EPOLLIN" : ([], uint),
     "EPOLLOUT": ([], uint),
+    "unpack_uint": ([bytestring], uint),
 }
 
 def merge_contexts(a, b):
@@ -198,6 +199,10 @@ def type_check_code_block(context, code_block):
             assert isinstance(coroutine, program_types.Instantiation)
             assert coroutine.constructor == program_types.coroutine
             assert len(coroutine.types) == 2
+            expression.type = bool
+        elif isinstance(expression, program.Not):
+            expression_type = infer_expression_type(expression.expression)
+            assert expression_type == bool
             expression.type = bool
         elif isinstance(expression, program.BinOp):
             rhs_type = infer_expression_type(expression.rhs)

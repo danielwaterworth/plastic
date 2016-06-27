@@ -9,5 +9,14 @@ service BytecodePrinter(
     end
 
     implements bytecode.BytecodeReceiver
+        define function_start(name : String, n : UInt) -> Void do
+            @p.print("START FUNCTION " + name + "(" + n.to_string() + ")");
+            return void;
+        end
+
+        define function_end() -> Void do
+            @p.print("END FUNCTION");
+            return void;
+        end
     end
 end
