@@ -1,0 +1,26 @@
+import bytecode
+
+service BytecodeSanitizer(
+            out : bytecode.BytecodeReceiver
+        )
+
+    attr in_function : Bool;
+
+    constructor new()
+        @in_function := false;
+    end
+
+    implements bytecode.BytecodeReceiver
+        define function_start(name : String, n : UInt) -> Void do
+            if (not @in_function) throw void; end
+            @in_function := true;
+            return @out.function_start(name, n);
+        end
+
+        define function_end() -> Void do
+            if (@in_function) throw void; end
+            @in_function := false;
+            return @out.function_end();
+        end
+    end
+end
