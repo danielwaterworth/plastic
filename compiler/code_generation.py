@@ -49,10 +49,10 @@ class ServiceContext(GenerationContext):
         self.name = name
         self.dependencies = dependencies
         self.attrs = attrs
-        self.self_variable = self_variable
         self.function_writer = function_writer
         self.basic_block = basic_block
         self.variables = variables
+        self.variables['self'] = self_variable
 
     def new_context(self, basic_block):
         return ServiceContext(
@@ -60,14 +60,14 @@ class ServiceContext(GenerationContext):
                     self.name,
                     self.dependencies,
                     self.attrs,
-                    self.self_variable,
+                    self.variables['self'],
                     self.function_writer,
                     basic_block,
                     dict(self.variables)
                 )
 
     def attr_lookup(self, name):
-        self.self_variable, self_variable = self.basic_block.dup(self.self_variable)
+        self.variables['self'], self_variable = self.basic_block.dup(self.variables['self'])
         if name in self.dependencies:
             return self.basic_block.fun_call('%s^%s' % (self.name, name), [self_variable])
         elif name in self.attrs:
@@ -77,7 +77,7 @@ class ServiceContext(GenerationContext):
             raise NotImplementedError()
 
     def attr_add(self, name, value):
-        self.self_variable, self_variable = self.basic_block.dup(self.self_variable)
+        self.variables['self'], self_variable = self.basic_block.dup(self.variables['self'])
         offset = self.basic_block.fun_call('%s^%s' % (self.name, name), [self_variable])
         self.basic_block.store(offset, value)
 
@@ -201,6 +201,7 @@ def generate_expression(context, expression):
 
 def generate_statement(context, statement):
     if isinstance(statement, program.Assignment):
+        assert statement.name != 'self'
         var = generate_expression(context, statement.expression)
         context.add(statement.name, var)
     elif isinstance(statement, program.AttrStore):
