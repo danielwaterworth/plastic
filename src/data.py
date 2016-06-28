@@ -1,3 +1,4 @@
+from rpython.rlib.objectmodel import compute_hash
 from rpython.rlib.rstruct.runpack import runpack
 from rpython.rlib.rarithmetic import intmask, r_ulonglong
 import hashlib
@@ -80,6 +81,12 @@ class Data(object):
     def persist(self, fd):
         raise NotImplementedError()
 
+    def eq(self, other):
+        raise NotImplementedError()
+
+    def hash(self):
+        raise NotImplementedError()
+
 def load(fd):
     id = fd.read(8)
     return type_by_id[id].load(fd)
@@ -94,6 +101,12 @@ class Int(Data):
 
     def write_out(self, basic_block):
         return basic_block.constant_int(self.n)
+
+    def eq(self, other):
+        return isinstance(other, Int) and self.n == other.n
+
+    def hash(self):
+        return compute_hash(self.n)
 
 class UInt(Data):
     def __init__(self, n):
@@ -116,6 +129,9 @@ class UInt(Data):
 
     def eq(self, other):
         return isinstance(other, UInt) and self.n == other.n
+
+    def hash(self):
+        return compute_hash(self.n)
 
 class Double(Data):
     def __init__(self, d):
@@ -142,6 +158,12 @@ class Bool(Data):
 
     def __repr__(self):
         return repr(self.b)
+
+    def eq(self, other):
+        return isinstance(other, Bool) and self.b == other.b
+
+    def hash(self):
+        return compute_hash(self.b)
 
 class Invalid(Data):
     def write_out(self, basic_block):
@@ -189,6 +211,12 @@ class Byte(Data):
     def __repr__(self):
         return repr(self.b)
 
+    def eq(self, other):
+        return isinstance(other, Byte) and self.b == other.b
+
+    def hash(self):
+        return compute_hash(self.b)
+
 class Char(Data):
     def __init__(self, b):
         self.b = b
@@ -206,6 +234,12 @@ class Char(Data):
 
     def __repr__(self):
         return repr(self.b)
+
+    def eq(self, other):
+        return isinstance(other, Char) and self.b == other.b
+
+    def hash(self):
+        return compute_hash(self.b)
 
 class ByteString(Data):
     def __init__(self, v):
@@ -231,6 +265,9 @@ class ByteString(Data):
     def eq(self, other):
         return isinstance(other, ByteString) and self.v == other.v
 
+    def hash(self):
+        return compute_hash(self.v)
+
 class String(Data):
     def __init__(self, v):
         self.v = v
@@ -254,3 +291,6 @@ class String(Data):
 
     def eq(self, other):
         return isinstance(other, String) and self.v == other.v
+
+    def hash(self):
+        return compute_hash(self.v)

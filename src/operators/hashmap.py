@@ -1,5 +1,15 @@
+from rpython.rlib.objectmodel import r_dict
 import data
 from data import operator
+
+def data_eq(a, b):
+    return a.eq(b)
+
+def data_hash(a):
+    return a.hash()
+
+def empty():
+    return r_dict(data_eq, data_hash)
 
 class DHashMap(data.Data):
     def __init__(self, h):
@@ -8,32 +18,29 @@ class DHashMap(data.Data):
 @operator('hashmap.empty')
 def call(self, arguments):
     assert len(arguments) == 0
-    return [DHashMap({})]
+    return [DHashMap(empty())]
 
 @operator('hashmap.set')
 def call(self, arguments):
     map, key, value = arguments
     assert isinstance(map, DHashMap)
-    assert isinstance(key, data.String)
-    updated_map = {}
+    updated_map = empty()
     updated_map.update(map.h)
-    updated_map[key.v] = value
+    updated_map[key] = value
     return [DHashMap(updated_map)]
 
 @operator('hashmap.get')
 def call(self, arguments):
     map, key = arguments
     assert isinstance(map, DHashMap)
-    assert isinstance(key, data.String)
-    return [map.h[key.v]]
+    return [map.h[key]]
 
 @operator('hashmap.del')
 def call(self, arguments):
     map, key = arguments
     assert isinstance(map, DHashMap)
-    assert isinstance(key, data.String)
-    updated_map = {}
+    updated_map = empty()
     updated_map.update(map.h)
-    del updated_map[key.v]
+    del updated_map[key]
     return [DHashMap(updated_map)]
 
