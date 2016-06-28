@@ -38,6 +38,10 @@ class BasicBlockConstructor(object):
         variable = self.move(variable)
         return (variable, self.copy())
 
+    def unpack(self):
+        self.instructions.append(bytecode.Unpack())
+        return self.function.create_variable()
+
     def constant_bool(self, value):
         self.instructions.append(bytecode.ConstantBool(value))
         return self.function.create_variable()

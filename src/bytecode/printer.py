@@ -28,6 +28,9 @@ class BasicBlockPrinter(object):
     def move(self, variable):
         return self.instruction("MOVE", variable)
 
+    def unpack(self):
+        return self.instruction("UNPACK")
+
     def constant_bool(self, value):
         return self.instruction("CONST_BOOL", value)
 

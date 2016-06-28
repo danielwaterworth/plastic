@@ -28,6 +28,9 @@ class Move(Instruction):
     def __init__(self, variable):
         self.variable = variable
 
+class Unpack(Instruction):
+    pass
+
 class Operation(Instruction):
     def __init__(self, operator, arguments):
         self.operator = operator

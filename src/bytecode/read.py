@@ -44,6 +44,8 @@ def read_bytecode(fd, receiver):
                                 elif instruction_type == MOVE:
                                     variable = runpack('>Q', fd.read(8))
                                     basic_block_receiver.move(variable)
+                                elif instruction_type == UNPACK:
+                                    basic_block_receiver.unpack()
                                 elif instruction_type == CONST_BYTE:
                                     basic_block_receiver.constant_byte(fd.read(1))
                                 elif instruction_type == CONST_CHAR:

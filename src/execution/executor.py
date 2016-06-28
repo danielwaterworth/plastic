@@ -58,10 +58,6 @@ class ActivationRecord(object):
         self.pc = 0
         self.current_block = self.function.blocks[block]
 
-    def lookup_var(self, var):
-        assert var < len(self.values)
-        return self.values[var]
-
 class CoroutineExit(object):
     pass
 
@@ -180,14 +176,19 @@ class Coroutine(data.Data):
             else:
                 term = self.stack[-1].terminator()
                 if isinstance(term, bytecode.Return):
-                    assert len(term.variables) == 1
-                    value = self.stack[-1].lookup_var(term.variables[0])
-                    self.stack.pop()
+                    frame = self.stack.pop()
+                    assert len(term.variables) >= 1
+                    values = frame.resolve_variable_list(term.variables)
                     if self.stack:
-                        self.stack[-1].retire(value)
+                        self.stack[-1].retire(values[0])
+                        for value in values[1:]:
+                            instr = self.stack[-1].next_instruction()
+                            assert isinstance(instr, bytecode.Unpack)
+                            self.stack[-1].retire(value)
                     else:
+                        assert len(values) == 1
                         self.done = True
-                        return CoroutineReturn(value)
+                        return CoroutineReturn(values[0])
                 elif isinstance(term, bytecode.Goto):
                     self.stack[-1].goto(term.block_index)
                 elif isinstance(term, bytecode.Conditional):

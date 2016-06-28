@@ -41,6 +41,11 @@ class BasicBlockWriter(object):
         self.block_writer.write(struct.pack('>Q', variable))
         return self.function.create_variable()
 
+    def unpack(self):
+        assert not self.terminated
+        self.block_writer.write(struct.pack('>B', UNPACK))
+        return self.function.create_variable()
+
     def constant_bool(self, value):
         assert not self.terminated
         self.block_writer.write(struct.pack('>B', CONST_BOOL))

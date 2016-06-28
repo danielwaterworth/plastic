@@ -7,6 +7,8 @@ def serialize_instruction(block_writer, instruction):
         block_writer.copy()
     elif isinstance(instruction, bytecode.Move):
         block_writer.move(instruction.variable)
+    elif isinstance(instruction, bytecode.Unpack):
+        block_writer.unpack()
     elif isinstance(instruction, bytecode.Operation):
         block_writer.operation(instruction.operator, instruction.arguments)
     elif isinstance(instruction, bytecode.FunctionCall):
