@@ -99,23 +99,23 @@ class Coroutine(data.Data):
             instr = self.stack[-1].next_instruction()
             if instr:
                 if isinstance(instr, bytecode.Phi):
-                    self.stack[-1].retire(self.stack[-1].resolve_variable(instr.inputs[self.stack[-1].last_block_index]))
+                    self.retire(self.stack[-1].resolve_variable(instr.inputs[self.stack[-1].last_block_index]))
                 elif isinstance(instr, bytecode.Copy):
-                    self.stack[-1].retire(self.stack[-1].copy())
+                    self.retire(self.stack[-1].copy())
                 elif isinstance(instr, bytecode.Move):
-                    self.stack[-1].retire(self.stack[-1].resolve_variable(instr.variable))
+                    self.retire(self.stack[-1].resolve_variable(instr.variable))
                 elif isinstance(instr, bytecode.Operation):
                     arguments = self.stack[-1].resolve_variable_list(instr.arguments)
                     if instr.operator == 'is_done':
                         assert len(arguments) == 1
                         coroutine = arguments[0]
                         assert isinstance(coroutine, Coroutine)
-                        self.stack[-1].retire(data.Bool(coroutine.done))
+                        self.retire(data.Bool(coroutine.done))
                     else:
-                        self.stack[-1].retire(operators.operation(instr.operator, arguments))
+                        self.retire_multiple(operators.operation(instr.operator, arguments))
                 elif isinstance(instr, bytecode.SysCall):
                     arguments = self.stack[-1].resolve_variable_list(instr.arguments)
-                    self.stack[-1].retire(self.executor.sys_caller.sys_call(instr.function, arguments))
+                    self.retire_multiple(self.executor.sys_caller.sys_call(instr.function, arguments))
                 elif isinstance(instr, bytecode.FunctionCall):
                     arguments = self.stack[-1].resolve_variable_list(instr.arguments)
                     self.stack.append(ActivationRecord(self.program.functions[instr.function], arguments))
@@ -126,41 +126,41 @@ class Coroutine(data.Data):
                     value = self.stack[-1].resolve_variable(instr.value)
                     assert isinstance(value, data.String)
                     print value.v
-                    self.stack[-1].retire(data.Void())
+                    self.retire(data.Void())
                 elif isinstance(instr, bytecode.ConstantBool):
-                    self.stack[-1].retire(data.Bool(instr.value))
+                    self.retire(data.Bool(instr.value))
                 elif isinstance(instr, bytecode.ConstantByte):
-                    self.stack[-1].retire(data.Byte(instr.value))
+                    self.retire(data.Byte(instr.value))
                 elif isinstance(instr, bytecode.ConstantChar):
-                    self.stack[-1].retire(data.Char(instr.value))
+                    self.retire(data.Char(instr.value))
                 elif isinstance(instr, bytecode.ConstantByteString):
-                    self.stack[-1].retire(data.ByteString(instr.value))
+                    self.retire(data.ByteString(instr.value))
                 elif isinstance(instr, bytecode.ConstantString):
-                    self.stack[-1].retire(data.String(instr.value))
+                    self.retire(data.String(instr.value))
                 elif isinstance(instr, bytecode.ConstantInt):
-                    self.stack[-1].retire(data.Int(instr.value))
+                    self.retire(data.Int(instr.value))
                 elif isinstance(instr, bytecode.ConstantUInt):
-                    self.stack[-1].retire(data.UInt(instr.value))
+                    self.retire(data.UInt(instr.value))
                 elif isinstance(instr, bytecode.ConstantDouble):
-                    self.stack[-1].retire(data.Double(instr.value))
+                    self.retire(data.Double(instr.value))
                 elif isinstance(instr, bytecode.Void):
-                    self.stack[-1].retire(data.Void())
+                    self.retire(data.Void())
                 elif isinstance(instr, bytecode.Load):
                     address = self.stack[-1].resolve_variable(instr.address)
                     assert isinstance(address, data.UInt)
                     dat = self.executor.memory[address.n]
-                    self.stack[-1].retire(dat)
+                    self.retire(dat)
                 elif isinstance(instr, bytecode.Store):
                     address = self.stack[-1].resolve_variable(instr.address)
                     value = self.stack[-1].resolve_variable(instr.variable)
                     assert isinstance(address, data.UInt)
                     self.executor.memory[address.n] = value
-                    self.stack[-1].retire(data.Void())
+                    self.retire(data.Void())
                 elif isinstance(instr, bytecode.Get):
-                    self.stack[-1].retire(self.var)
+                    self.retire(self.var)
                 elif isinstance(instr, bytecode.Put):
                     self.var = self.stack[-1].resolve_variable(instr.variable)
-                    self.stack[-1].retire(data.Void())
+                    self.retire(data.Void())
                 elif isinstance(instr, bytecode.RunCoroutine):
                     coroutine = self.stack[-1].resolve_variable(instr.coroutine)
                     return CoroutineRun(coroutine)
@@ -177,14 +177,9 @@ class Coroutine(data.Data):
                 term = self.stack[-1].terminator()
                 if isinstance(term, bytecode.Return):
                     frame = self.stack.pop()
-                    assert len(term.variables) >= 1
                     values = frame.resolve_variable_list(term.variables)
                     if self.stack:
-                        self.stack[-1].retire(values[0])
-                        for value in values[1:]:
-                            instr = self.stack[-1].next_instruction()
-                            assert isinstance(instr, bytecode.Unpack)
-                            self.stack[-1].retire(value)
+                        self.retire_multiple(values)
                     else:
                         assert len(values) == 1
                         self.done = True
@@ -206,6 +201,17 @@ class Coroutine(data.Data):
                     raise Exception('throw')
                 else:
                     raise NotImplementedError('missing terminator implementation')
+
+    def retire(self, value):
+        self.stack[-1].retire(value)
+
+    def retire_multiple(self, values):
+        assert len(values) >= 1
+        self.stack[-1].retire(values[0])
+        for value in values[1:]:
+            instr = self.stack[-1].next_instruction()
+            assert isinstance(instr, bytecode.Unpack)
+            self.stack[-1].retire(value)
 
     def resume(self, value):
         self.stack[-1].retire(value)

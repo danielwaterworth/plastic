@@ -34,7 +34,7 @@ def call(self, arguments):
     assert isinstance(family, data.UInt)
     assert isinstance(type, data.UInt)
     assert isinstance(proto, data.UInt)
-    return Socket(rsocket.RSocket(intmask(family.n), intmask(type.n), intmask(proto.n)))
+    return [Socket(rsocket.RSocket(intmask(family.n), intmask(type.n), intmask(proto.n)))]
 
 @sys_call('socket_bind')
 def call(self, arguments):
@@ -43,7 +43,7 @@ def call(self, arguments):
     assert isinstance(address, data.String)
     assert isinstance(port, data.UInt)
     socket.sock.bind(rsocket.INETAddress(address.v.encode('utf-8'), intmask(port.n)))
-    return data.Void()
+    return [data.Void()]
 
 @sys_call('socket_listen')
 def call(self, arguments):
@@ -51,7 +51,7 @@ def call(self, arguments):
     assert isinstance(socket, Socket)
     assert isinstance(backlog, data.UInt)
     socket.sock.listen(backlog.n)
-    return data.Void()
+    return [data.Void()]
 
 @sys_call('socket_accept')
 def call(self, arguments):
@@ -59,14 +59,14 @@ def call(self, arguments):
     socket = arguments[0]
     assert isinstance(socket, Socket)
     s, _ = socket.sock.accept()
-    return Socket(rsocket.RSocket(fd=s))
+    return [Socket(rsocket.RSocket(fd=s))]
 
 @sys_call('socket_recv')
 def call(self, arguments):
     socket, n = arguments
     assert isinstance(socket, Socket)
     assert isinstance(n, data.UInt)
-    return data.ByteString(socket.sock.recv(intmask(n.n)))
+    return [data.ByteString(socket.sock.recv(intmask(n.n)))]
 
 @sys_call('socket_send')
 def call(self, arguments):
@@ -74,7 +74,7 @@ def call(self, arguments):
     assert isinstance(socket, Socket)
     assert isinstance(dat, data.ByteString)
     socket.sock.sendall(dat.v)
-    return data.Void()
+    return [data.Void()]
 
 @sys_call('socket_close')
 def call(self, arguments):
@@ -82,4 +82,5 @@ def call(self, arguments):
     socket = arguments[0]
     assert isinstance(socket, Socket)
     socket.sock.close()
-    return data.Void()
+    return [data.Void()]
+

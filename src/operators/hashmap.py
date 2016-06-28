@@ -8,7 +8,7 @@ class DHashMap(data.Data):
 @operator('hashmap.empty')
 def call(self, arguments):
     assert len(arguments) == 0
-    return DHashMap({})
+    return [DHashMap({})]
 
 @operator('hashmap.set')
 def call(self, arguments):
@@ -18,14 +18,14 @@ def call(self, arguments):
     updated_map = {}
     updated_map.update(map.h)
     updated_map[key.v] = value
-    return DHashMap(updated_map)
+    return [DHashMap(updated_map)]
 
 @operator('hashmap.get')
 def call(self, arguments):
     map, key = arguments
     assert isinstance(map, DHashMap)
     assert isinstance(key, data.String)
-    return map.h[key.v]
+    return [map.h[key.v]]
 
 @operator('hashmap.del')
 def call(self, arguments):
@@ -35,4 +35,5 @@ def call(self, arguments):
     updated_map = {}
     updated_map.update(map.h)
     del updated_map[key.v]
-    return DHashMap(updated_map)
+    return [DHashMap(updated_map)]
+

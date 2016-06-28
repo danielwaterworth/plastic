@@ -14,14 +14,14 @@ def call(self, arguments):
     assert isinstance(mode, data.UInt)
     fd = os.open(filename.v, intmask(mode.n), 0777)
     assert fd >= 0
-    return File(fd)
+    return [File(fd)]
 
 @sys_call('file_read')
 def call(self, arguments):
     file, n = arguments
     assert isinstance(file, File)
     assert isinstance(n, data.UInt)
-    return data.ByteString(os.read(file.fd, intmask(n.n)))
+    return [data.ByteString(os.read(file.fd, intmask(n.n)))]
 
 @sys_call('file_write')
 def call(self, arguments):
@@ -29,7 +29,7 @@ def call(self, arguments):
     assert isinstance(file, File)
     assert isinstance(dat, data.ByteString)
     os.write(file.fd, dat.v)
-    return data.Void()
+    return [data.Void()]
 
 @sys_call('file_close')
 def call(self, arguments):
@@ -37,4 +37,5 @@ def call(self, arguments):
     file = arguments[0]
     assert isinstance(file, File)
     os.close(file.fd)
-    return data.Void()
+    return [data.Void()]
+

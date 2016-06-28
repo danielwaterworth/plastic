@@ -21,16 +21,20 @@ class TraceProxy(SysCallInterface):
         self.fd = fd
 
     def sys_call(self, name, arguments):
-        value = self.target.sys_call(name, arguments)
+        values = self.target.sys_call(name, arguments)
 
         self.fd.write(data.pack_uint(len(name)))
         self.fd.write(name)
+
         self.fd.write(data.pack_uint(len(arguments)))
         for arg in arguments:
             arg.persist(self.fd)
-        value.persist(self.fd)
 
-        return value
+        self.fd.write(data.pack_uint(len(values)))
+        for value in values:
+            value.persist(self.fd)
+
+        return values
 
 class EofFd(object):
     def __init__(self, fd):
@@ -49,9 +53,13 @@ class Replay(SysCallInterface):
     def sys_call(self, name, arguments):
         n = intmask(runpack('>Q', self.fd.read(8)))
         expected_name = self.fd.read(n)
+
         n = intmask(runpack('>Q', self.fd.read(8)))
         expected_arguments = [data.load(self.fd) for i in xrange(n)]
-        return_value = data.load(self.fd)
+
+        n = intmask(runpack('>Q', self.fd.read(8)))
+        return_values = [data.load(self.fd) for i in xrange(n)]
+
         assert expected_name == name
         assert len(expected_arguments) == len(arguments)
         for i in xrange(len(expected_arguments)):
@@ -59,7 +67,7 @@ class Replay(SysCallInterface):
             arg = arguments[i]
             if not expected.eq(arg):
                 raise Exception('expected %s to equal %s' % (expected, arg))
-        return return_value
+        return return_values
 
 def read_trace(fd):
     trace = []
@@ -70,10 +78,14 @@ def read_trace(fd):
                 break
             n = runpack('>Q', b)
             name = fd.read(n)
+
             n = runpack('>Q', fd.read(8))
             arguments = [data.load(fd) for i in xrange(n)]
-            return_value = data.load(fd)
-            trace.append((name, arguments, return_value))
+
+            n = runpack('>Q', fd.read(8))
+            return_values = [data.load(fd) for i in xrange(n)]
+
+            trace.append((name, arguments, return_values))
     except:
         pass
     return trace

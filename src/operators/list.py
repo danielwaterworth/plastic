@@ -7,14 +7,14 @@ class DList(data.Data):
 
 @operator('list.pack')
 def call(self, arguments):
-    return DList(arguments)
+    return [DList(arguments)]
 
 @operator('list.append')
 def call(self, arguments):
     list, element = arguments
     if not isinstance(list, DList):
         raise TypeError()
-    return DList(list.elements + [element])
+    return [DList(list.elements + [element])]
 
 @operator('list.extend')
 def call(self, arguments):
@@ -23,14 +23,14 @@ def call(self, arguments):
         raise TypeError()
     if not isinstance(b, DList):
         raise TypeError()
-    return DList(a.elements + b.elements)
+    return [DList(a.elements + b.elements)]
 
 @operator('list.repeat')
 def call(self, arguments):
     element, n = arguments
     if not isinstance(n, data.UInt):
         raise TypeError()
-    return DList([element] * n.n)
+    return [DList([element] * n.n)]
 
 @operator('list.set')
 def call(self, arguments):
@@ -43,7 +43,7 @@ def call(self, arguments):
         raise TypeError()
     if index_n < 0 or index_n >= len(list.elements):
         raise IndexError()
-    return DList(list.elements[:index_n] + [value] + list.elements[index_n+1:])
+    return [DList(list.elements[:index_n] + [value] + list.elements[index_n+1:])]
 
 @operator('list.index')
 def call(self, arguments):
@@ -54,4 +54,5 @@ def call(self, arguments):
         raise TypeError()
     if index.n < 0 or index.n >= len(list.elements):
         raise IndexError()
-    return list.elements[index.n]
+    return [list.elements[index.n]]
+

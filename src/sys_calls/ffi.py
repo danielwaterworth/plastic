@@ -33,14 +33,14 @@ class DStructType(DType):
 @sys_call('ffi.get_libc_name')
 def call(self, arguments):
     assert len(arguments) == 0
-    return data.ByteString(ffi.get_libc_name())
+    return [data.ByteString(ffi.get_libc_name())]
 
 @sys_call('ffi.get_lib')
 def call(self, arguments):
     assert len(arguments) == 1
     name = arguments[0]
     assert isinstance(name, data.ByteString)
-    return DLib(ffi.CDLL(name.v))
+    return [DLib(ffi.CDLL(name.v))]
 
 @sys_call('ffi.get_pointer')
 def call(self, arguments):
@@ -56,7 +56,7 @@ def call(self, arguments):
         args.append(arg_type.ty)
         copied_types.append(arg_type)
     f = lib.lib.getpointer(name.v, args, ret_type.ty)
-    return DForeignFunction(f, copied_types, ret_type)
+    return [DForeignFunction(f, copied_types, ret_type)]
 
 for name in ffi.base_names:
     value = DType(getattr(ffi, 'ffi_type_%s' % name))
@@ -72,7 +72,7 @@ def call(self, arguments):
     for ty in types.elements:
         assert isinstance(ty, DType)
         ffi_types.append(ty.ty)
-    return DStructType(ffi_types)
+    return [DStructType(ffi_types)]
 
 @sys_call('ffi.call')
 def call(self, arguments):
@@ -93,9 +93,9 @@ def call(self, arguments):
             raise TypeError()
     if function.ret_type.ty == ffi.ffi_type_pointer:
         ptr = function.foreign_function.call(rffi.VOIDP)
-        return DForeignPtr(ptr)
+        return [DForeignPtr(ptr)]
     elif function.ret_type.ty == ffi.ffi_type_sint:
         n = function.foreign_function.call(rffi.LONG)
-        return data.Int(n)
+        return [data.Int(n)]
     else:
         raise TypeError()

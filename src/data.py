@@ -36,7 +36,7 @@ class ExposeConstant(BuiltinOperator):
 
     def call(self, arguments):
         assert len(arguments) == 0
-        return self.value
+        return [self.value]
 
 def expose_constant(name, value):
     ExposeConstant(name, value).register()

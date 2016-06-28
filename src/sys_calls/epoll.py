@@ -125,25 +125,25 @@ class EPoll(data.Data):
 @sys_call('epoll')
 def call(self, arguments):
     assert len(arguments) == 0
-    return EPoll()
+    return [EPoll()]
 
 @sys_call('epoll_register')
 def call(self, arguments):
     epoll, sock, flags = arguments
     assert isinstance(epoll, EPoll)
     epoll.register_sock(sock, flags)
-    return data.Void()
+    return [data.Void()]
 
 @sys_call('epoll_unregister')
 def call(self, arguments):
     epoll, sock = arguments
     assert isinstance(epoll, EPoll)
     epoll.unregister_sock(sock)
-    return data.Void()
+    return [data.Void()]
 
 @sys_call('epoll_poll')
 def call(self, arguments):
     assert len(arguments) == 1
     epoll = arguments[0]
     assert isinstance(epoll, EPoll)
-    return epoll.poll()
+    return [epoll.poll()]
