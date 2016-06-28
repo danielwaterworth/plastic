@@ -118,7 +118,7 @@ def call(self, arguments):
 
 @operator('unpack_uint')
 def call(self, arguments):
-    assert len(arguments) == 0
+    assert len(arguments) == 1
     b = arguments[0]
     assert isinstance(b, data.ByteString)
     assert len(b.v) == 8
