@@ -192,10 +192,15 @@ class BasicBlockWriter(object):
         assert not self.terminated
         self.terminated = True
 
-    def ret(self, variable):
+    def ret_multiple(self, variables):
         self.terminator()
+        assert len(variables) == self.function.num_return_values
         self.block_writer.write(struct.pack('>B', RET))
-        self.block_writer.write(struct.pack('>Q', variable))
+        for variable in variables:
+            self.block_writer.write(struct.pack('>Q', variable))
+
+    def ret(self, variable):
+        return self.ret_multiple([variable])
 
     def goto(self, block):
         self.terminator()
@@ -222,11 +227,12 @@ class BasicBlockWriter(object):
         self.writer.write(self.block_writer.getvalue())
 
 class FunctionWriter(object):
-    def __init__(self, writer, name, num_arguments):
+    def __init__(self, writer, name, num_arguments, num_return_values):
         self.writer = writer
         self.name = name
         self.basic_blocks = []
         self.num_arguments = num_arguments
+        self.num_return_values = num_return_values
         self.next_variable = num_arguments
 
     def create_variable(self):
@@ -244,6 +250,7 @@ class FunctionWriter(object):
             self.writer.write(name_symbol)
 
             self.writer.write(struct.pack('>Q', self.num_arguments))
+            self.writer.write(struct.pack('>Q', self.num_return_values))
 
             self.writer.write(struct.pack('>Q', len(self.basic_blocks)))
             for basic_block in self.basic_blocks:
@@ -258,8 +265,8 @@ class ProgramWriter(object):
     def __init__(self, writer):
         self.writer = writer
 
-    def function(self, name, num_arguments):
-        return FunctionWriter(self.writer, name, num_arguments)
+    def function(self, name, num_arguments, num_return_values=1):
+        return FunctionWriter(self.writer, name, num_arguments, num_return_values)
 
 class BytecodeWriter(object):
     def __init__(self, fd):

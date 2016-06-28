@@ -23,8 +23,9 @@ def read_bytecode(fd, receiver):
                 name_n = intmask(runpack('>Q', fd.read(8)))
                 name = symbols[name_n]
                 arguments_n = intmask(runpack('>Q', fd.read(8)))
+                return_n = intmask(runpack('>Q', fd.read(8)))
 
-                with program_receiver.function(name, arguments_n) as (function_receiver, _):
+                with program_receiver.function(name, arguments_n, return_n) as (function_receiver, _):
                     basic_block_n = intmask(runpack('>Q', fd.read(8)))
                     for i in xrange(basic_block_n):
                         with function_receiver.basic_block() as basic_block_receiver:
@@ -121,8 +122,8 @@ def read_bytecode(fd, receiver):
                                     value = runpack('>Q', fd.read(8))
                                     basic_block_receiver.resume(coroutine, value)
                                 elif instruction_type == RET:
-                                    variable = runpack('>Q', fd.read(8))
-                                    basic_block_receiver.ret(variable)
+                                    variables = [runpack('>Q', fd.read(8)) for i in xrange(return_n)]
+                                    basic_block_receiver.ret_multiple(variables)
                                     break
                                 elif instruction_type == GOTO:
                                     block = runpack('>Q', fd.read(8))

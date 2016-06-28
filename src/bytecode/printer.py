@@ -1,7 +1,7 @@
 class BasicBlockPrinter(object):
     def __init__(self, function, i):
-        self.i = i
         self.function = function
+        self.i = i
 
     def __enter__(self):
         print "  BASIC BLOCK START %d" % self.i
@@ -91,8 +91,11 @@ class BasicBlockPrinter(object):
     def resume(self, coroutine, value):
         return self.instruction("RESUME", coroutine, value)
 
+    def ret_multiple(self, variables):
+        self.terminator("RET", variables)
+
     def ret(self, variable):
-        self.terminator("RET", variable)
+        return self.ret_multiple([variable])
 
     def goto(self, block):
         self.terminator("GOTO", block)
@@ -107,9 +110,10 @@ class BasicBlockPrinter(object):
         self.terminator("THROW", exception)
 
 class FunctionPrinter(object):
-    def __init__(self, name, num_arguments):
+    def __init__(self, name, num_arguments, num_return_values):
         self.name = name
         self.num_arguments = num_arguments
+        self.num_return_values = num_return_values
         self.next_variable = num_arguments
         self.num_basic_blocks = 0
 
@@ -132,8 +136,8 @@ class FunctionPrinter(object):
         return BasicBlockPrinter(self, i)
 
 class ProgramPrinter(object):
-    def function(self, name, num_arguments):
-        return FunctionPrinter(name, num_arguments)
+    def function(self, name, num_arguments, num_return_values=1):
+        return FunctionPrinter(name, num_arguments, num_return_values)
 
 class BytecodePrinter(object):
     def __enter__(self):

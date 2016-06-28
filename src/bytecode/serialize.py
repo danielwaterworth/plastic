@@ -54,7 +54,7 @@ def serialize_instruction(block_writer, instruction):
 
 def serialize_terminator(block_writer, terminator):
     if isinstance(terminator, bytecode.Return):
-        block_writer.ret(terminator.variable)
+        block_writer.ret_multiple(terminator.variables)
     elif isinstance(terminator, bytecode.Goto):
         block_writer.goto(terminator.block_index)
     elif isinstance(terminator, bytecode.Conditional):

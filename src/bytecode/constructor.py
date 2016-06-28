@@ -122,8 +122,12 @@ class BasicBlockConstructor(object):
         self.instructions.append(bytecode.Resume(coroutine, value))
         return self.function.create_variable()
 
+    def ret_multiple(self, variables):
+        assert len(variables) == self.function.num_return_values
+        self.terminal = bytecode.Return(variables)
+
     def ret(self, variable):
-        self.terminal = bytecode.Return(variable)
+        return self.ret_multiple([variable])
 
     # Only available for constructor
     def special_goto(self, block):
@@ -151,11 +155,12 @@ class BasicBlockConstructor(object):
         return bytecode.BasicBlock(self.instructions, self.terminal)
 
 class FunctionConstructor(object):
-    def __init__(self, name, num_arguments):
+    def __init__(self, name, num_arguments, num_return_values):
         self.name = name
         self.basic_blocks = []
         self.num_arguments = num_arguments
         self.next_variable = num_arguments
+        self.num_return_values = num_return_values
 
     def create_variable(self):
         n = self.next_variable
@@ -177,14 +182,14 @@ class FunctionConstructor(object):
 
     def get_function(self):
         basic_blocks = [basic_block.get_basic_block() for basic_block in self.basic_blocks]
-        return bytecode.Function(self.name, self.num_arguments, basic_blocks)
+        return bytecode.Function(self.name, self.num_arguments, self.num_return_values, basic_blocks)
 
 class ProgramConstructor(object):
     def __init__(self):
         self.functions = []
 
-    def function(self, name, num_arguments):
-        function = FunctionConstructor(name, num_arguments)
+    def function(self, name, num_arguments, num_return_values=1):
+        function = FunctionConstructor(name, num_arguments, num_return_values)
         self.functions.append(function)
         return function
 

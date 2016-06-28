@@ -180,7 +180,8 @@ class Coroutine(data.Data):
             else:
                 term = self.stack[-1].terminator()
                 if isinstance(term, bytecode.Return):
-                    value = self.stack[-1].lookup_var(term.variable)
+                    assert len(term.variables) == 1
+                    value = self.stack[-1].lookup_var(term.variables[0])
                     self.stack.pop()
                     if self.stack:
                         self.stack[-1].retire(value)

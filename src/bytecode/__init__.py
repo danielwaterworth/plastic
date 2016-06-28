@@ -3,9 +3,10 @@ class Program(object):
         self.functions = functions
 
 class Function(object):
-    def __init__(self, name, num_arguments, blocks):
+    def __init__(self, name, num_arguments, num_return_values, blocks):
         self.name = name
         self.num_arguments = num_arguments
+        self.num_return_values = num_return_values
         self.blocks = blocks
 
 class BasicBlock(object):
@@ -119,8 +120,8 @@ class Terminator(object):
     pass
 
 class Return(Terminator):
-    def __init__(self, variable):
-        self.variable = variable
+    def __init__(self, variables):
+        self.variables = variables
 
 class Goto(Terminator):
     def __init__(self, block_index):
