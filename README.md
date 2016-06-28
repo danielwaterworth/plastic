@@ -2,9 +2,11 @@
 
 Plastic is a functional language in OO clothing. It maintains a clear division
 between objects that do things, which are called services, and objects that are
-things, which are called values.
+things, which are called values. It's statically typed and in a very early
+stage of development.
 
-
+You can see what I'm working on on
+[this trello board](https://trello.com/b/qMXnTTLI/plastic).
 
 # Practicals
 
