@@ -207,14 +207,15 @@ class Coroutine(data.Data):
 
     def retire_multiple(self, values):
         assert len(values) >= 1
-        self.stack[-1].retire(values[0])
+        self.retire(values[0])
         for value in values[1:]:
             instr = self.stack[-1].next_instruction()
             assert isinstance(instr, bytecode.Unpack)
-            self.stack[-1].retire(value)
+            self.retire(value)
 
     def resume(self, value):
-        self.stack[-1].retire(value)
+        assert len(self.stack) > 0
+        self.retire(value)
         return self.run()
 
 class Executor(object):
@@ -244,7 +245,7 @@ class Executor(object):
                     raise Exception('yielded from top level coroutine')
             elif isinstance(result, CoroutineResume):
                 self.coroutine_stack.append(result.coroutine)
-                result = coroutine.resume(result.value)
+                result = result.coroutine.resume(result.value)
             elif isinstance(result, CoroutineNew):
                 function = self.program.functions[result.function]
                 coroutine = Coroutine(self, self.program, function, result.arguments)

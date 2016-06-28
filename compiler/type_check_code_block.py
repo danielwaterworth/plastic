@@ -74,6 +74,9 @@ class TypeCheckingContext(object):
         else:
             self.variable_types[name] = type
 
+    def delete(self, name):
+        del self.variable_types[name]
+
     def lookup(self, name):
         return self.variable_types[name]
 
@@ -332,6 +335,21 @@ def type_check_code_block(context, code_block):
             else:
                 # Both branches terminated, nothing is in scope
                 context.variable_types = {}
+        elif isinstance(statement, program.For):
+            assert not statement.body.terminator
+
+            iterator_type = infer_expression_type(statement.expression)
+            assert isinstance(iterator_type, program_types.Instantiation)
+            assert iterator_type.constructor == program_types.coroutine
+            receive_type, yield_type = iterator_type.types
+            assert receive_type == void
+
+            context.add(statement.name, yield_type)
+
+            for body_statement in statement.body.statements:
+                type_check_statement(body_statement)
+
+            context.delete(statement.name)
         elif isinstance(statement, program.While):
             assert not statement.body.terminator
 

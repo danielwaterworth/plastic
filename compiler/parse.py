@@ -318,6 +318,10 @@ def p_elif(p):
     '''if_end : ELSIF OPEN_PARENS expression CLOSE_PARENS code_block if_end'''
     p[0] = program.CodeBlock([program.Conditional(p[3], p[5], p[6])])
 
+def p_for(p):
+    '''statement : FOR LOWER_NAME IN expression DO code_block END'''
+    p[0] = program.For(p[2], p[4], p[6])
+
 def p_while(p):
     '''statement : DO code_block WHILE OPEN_PARENS expression CLOSE_PARENS'''
     p[0] = program.While(p[2], p[5])

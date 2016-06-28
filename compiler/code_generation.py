@@ -17,6 +17,9 @@ class GenerationContext(object):
     def lookup(self, name):
         return self.variables[name]
 
+    def delete(self, name):
+        del self.variables[name]
+
     def new_context(self, basic_block):
         raise NotImplementedError()
 
@@ -80,6 +83,107 @@ class ServiceContext(GenerationContext):
         self.variables['self'], self_variable = self.basic_block.dup(self.variables['self'])
         offset = self.basic_block.fun_call('%s^%s' % (self.name, name), [self_variable])
         self.basic_block.store(offset, value)
+
+def do_while(context, fn):
+    current_index = context.basic_block.index
+    entry_goto = context.basic_block.special_goto(0)
+    context.basic_block = context.function_writer.basic_block()
+    first_body_block = context.basic_block.index
+    entry_goto.block_index = first_body_block
+
+    variables = {}
+    phis = {}
+    for name, variable in context.variables.iteritems():
+        inputs = [(current_index, variable)]
+        variable, phi = context.basic_block.special_phi(inputs)
+        phis[name] = phi
+        variables[name] = variable
+    context.variables = variables
+
+    condition_variable = fn(context)
+
+    last_body_index = context.basic_block.index
+
+    for name, phi in phis.iteritems():
+        phi.inputs[last_body_index] = context.lookup(name)
+
+    body_conditional = context.basic_block.special_conditional(condition_variable, first_body_block, 0)
+    context.basic_block = context.function_writer.basic_block()
+    body_conditional.false_block = context.basic_block.index
+
+def do_while_block(context, body, expression):
+    assert not body.terminator
+
+    def gen_body(context):
+        for body_statement in body.statements:
+            generate_statement(context, body_statement)
+        return generate_expression(context, expression)
+
+    do_while(context, gen_body)
+
+def if_then_else(context, condition_variable, true_code_block, false_code_block):
+    entry_conditional = context.basic_block.special_conditional(condition_variable, 0, 0)
+
+    true_block = context.function_writer.basic_block()
+    entry_conditional.true_block = true_block.index
+    true_context = context.new_context(true_block)
+
+    true_code_block(true_context)
+    true_terminated = true_context.basic_block.terminated
+
+    if not true_terminated:
+        last_true_block = true_context.basic_block.index
+        true_goto = true_context.basic_block.special_goto(0)
+
+    false_block = context.function_writer.basic_block()
+    entry_conditional.false_block = false_block.index
+    false_context = context.new_context(false_block)
+
+    false_code_block(false_context)
+    false_terminated = false_context.basic_block.terminated
+
+    if not false_terminated:
+        last_false_block = false_context.basic_block.index
+        false_goto = false_context.basic_block.special_goto(0)
+
+    context.basic_block = context.function_writer.basic_block()
+
+    if not true_terminated:
+        true_goto.block_index = context.basic_block.index
+
+    if not false_terminated:
+        false_goto.block_index = context.basic_block.index
+
+    if not true_terminated and not false_terminated:
+        variables = {}
+        for variable in set(true_context.variables.keys()) & set(false_context.variables.keys()):
+            true_variable = true_context.lookup(variable)
+            false_variable = false_context.lookup(variable)
+            if true_variable == false_variable:
+                variables[variable] = true_variable
+            else:
+                phi_inputs = [(last_true_block, true_variable), (last_false_block, false_variable)]
+                variables[variable] = context.basic_block.phi(phi_inputs)
+        context.variables = variables
+    elif not true_terminated:
+        context.variables = true_context.variables
+    elif not false_terminated:
+        context.variables = false_context.variables
+    else:
+        context.variables = {}
+
+def if_then_else_block(context, condition_variable, true_code_block, false_code_block):
+    def true_block(context):
+        for true_statement in true_code_block.statements:
+            generate_statement(context, true_statement)
+        generate_terminator(context, true_code_block.terminator)
+
+    def false_block(context):
+        for false_statement in false_code_block.statements:
+            generate_statement(context, false_statement)
+        generate_terminator(context, false_code_block.terminator)
+
+    if_then_else(context, condition_variable, true_block, false_block)
 
 uint_operators = {
     '<': 'uint.lt',
@@ -216,87 +320,50 @@ def generate_statement(context, statement):
             context.add(name, v)
     elif isinstance(statement, program.Conditional):
         condition_variable = generate_expression(context, statement.expression)
-        entry_conditional = context.basic_block.special_conditional(condition_variable, 0, 0)
-
-        true_block = context.function_writer.basic_block()
-        entry_conditional.true_block = true_block.index
-        true_context = context.new_context(true_block)
-
-        for true_statement in statement.true_block.statements:
-            generate_statement(true_context, true_statement)
-        generate_terminator(true_context, statement.true_block.terminator)
-
-        if not statement.true_block.terminator:
-            last_true_block = true_context.basic_block.index
-            true_goto = true_context.basic_block.special_goto(0)
-
-        false_block = context.function_writer.basic_block()
-        entry_conditional.false_block = false_block.index
-        false_context = context.new_context(false_block)
-
-        for false_statement in statement.false_block.statements:
-            generate_statement(false_context, false_statement)
-        generate_terminator(false_context, statement.false_block.terminator)
-
-        if not statement.false_block.terminator:
-            last_false_block = false_context.basic_block.index
-            false_goto = false_context.basic_block.special_goto(0)
-
-        context.basic_block = context.function_writer.basic_block()
-
-        if not statement.true_block.terminator:
-            true_goto.block_index = context.basic_block.index
-
-        if not statement.false_block.terminator:
-            false_goto.block_index = context.basic_block.index
-
-        if not statement.true_block.terminator and not statement.false_block.terminator:
-            variables = {}
-            for variable in set(true_context.variables.keys()) & set(false_context.variables.keys()):
-                true_variable = true_context.lookup(variable)
-                false_variable = false_context.lookup(variable)
-                if true_variable == false_variable:
-                    variables[variable] = true_variable
-                else:
-                    phi_inputs = [(last_true_block, true_variable), (last_false_block, false_variable)]
-                    variables[variable] = context.basic_block.phi(phi_inputs)
-            context.variables = variables
-        elif not statement.true_block.terminator:
-            context.variables = true_context.variables
-        elif not statement.false_block.terminator:
-            context.variables = false_context.variables
-        else:
-            context.variables = {}
-    elif isinstance(statement, program.While):
+        if_then_else_block(context, condition_variable, statement.true_block, statement.false_block)
+    elif isinstance(statement, program.For):
         assert not statement.body.terminator
 
-        current_index = context.basic_block.index
-        entry_goto = context.basic_block.special_goto(0)
-        context.basic_block = context.function_writer.basic_block()
-        first_body_block = context.basic_block.index
-        entry_goto.block_index = first_body_block
+        coroutine = generate_expression(context, statement.expression)
+        coroutine1 = context.basic_block.copy()
+        coroutine2 = context.basic_block.copy()
 
-        variables = {}
-        phis = {}
-        for name, variable in context.variables.iteritems():
-            inputs = [(current_index, variable)]
-            variable, phi = context.basic_block.special_phi(inputs)
-            phis[name] = phi
-            variables[name] = variable
-        context.variables = variables
+        last_value = context.basic_block.run_coroutine(coroutine1)
+        done = context.basic_block.operation('is_done', [coroutine2])
 
-        for body_statement in statement.body.statements:
-            generate_statement(context, body_statement)
-        condition_variable = generate_expression(context, statement.expression)
+        coroutine_var_name = '$coroutine_%s' % id(statement)
 
-        last_body_index = context.basic_block.index
+        context.add(coroutine_var_name, coroutine)
+        context.add(statement.name, last_value)
 
-        for name, phi in phis.iteritems():
-            phi.inputs[last_body_index] = context.lookup(name)
+        def true_block(context):
+            pass
 
-        body_conditional = context.basic_block.special_conditional(condition_variable, first_body_block, 0)
-        context.basic_block = context.function_writer.basic_block()
-        body_conditional.false_block = context.basic_block.index
+        def false_block(context):
+            def fn(context):
+                for st in statement.body.statements:
+                    generate_statement(context, st)
+
+                coroutine = context.lookup(coroutine_var_name)
+                coroutine = context.basic_block.move(coroutine)
+                coroutine1 = context.basic_block.copy()
+                coroutine2 = context.basic_block.copy()
+                context.add(coroutine_var_name, coroutine)
+
+                v = context.basic_block.void()
+                last_value = context.basic_block.resume(coroutine1, v)
+                context.add(statement.name, last_value)
+
+                done = context.basic_block.operation('is_done', [coroutine2])
+                return context.basic_block.operation('not', [done])
+
+            do_while(context, fn)
+
+        if_then_else(context, done, true_block, false_block)
+        context.delete(statement.name)
+        context.delete(coroutine_var_name)
+    elif isinstance(statement, program.While):
+        do_while_block(context, statement.body, statement.expression)
     elif isinstance(statement, program.Match):
         var = generate_expression(context, statement.expression)
         var, var1 = context.basic_block.dup(var)

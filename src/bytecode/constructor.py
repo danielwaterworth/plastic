@@ -8,6 +8,10 @@ class BasicBlockConstructor(object):
         self.terminal = None
         self.index = index
 
+    @property
+    def terminated(self):
+        return self.terminal != None
+
     def __enter__(self):
         return self
 

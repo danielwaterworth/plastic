@@ -193,6 +193,12 @@ class Conditional(Statement):
         self.true_block = true_block
         self.false_block = false_block
 
+class For(Statement):
+    def __init__(self, name, expression, body):
+        self.name = name
+        self.expression = expression
+        self.body = body
+
 class While(Statement):
     def __init__(self, body, expression):
         self.expression = expression
