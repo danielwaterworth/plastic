@@ -25,9 +25,14 @@ def type_check_module(module_interfaces, module_name, module_decl):
     module_interfaces[module_name] = module
 
     def type_check_function(function):
+        types = {}
+        types.update(primitives)
+        types.update(module.types)
+
         context = type_check_code_block.TypeCheckingContext(
                         module_interfaces,
                         module,
+                        types,
                         None,
                         None,
                         function.return_type,
@@ -39,9 +44,14 @@ def type_check_module(module_interfaces, module_name, module_decl):
         type_check_code_block.type_check_code_block(context, function.body)
 
     def type_check_coroutine(coroutine):
+        types = {}
+        types.update(primitives)
+        types.update(module.types)
+
         context = type_check_code_block.TypeCheckingContext(
                         module_interfaces,
                         module,
+                        types,
                         coroutine.receive_type,
                         coroutine.yield_type,
                         void,
@@ -53,9 +63,14 @@ def type_check_module(module_interfaces, module_name, module_decl):
         type_check_code_block.type_check_code_block(context, coroutine.body)
 
     def type_check_constructor(attr_types, constructor):
+        types = {}
+        types.update(primitives)
+        types.update(module.types)
+
         context = type_check_code_block.TypeCheckingContext(
                         module_interfaces,
                         module,
+                        types,
                         None,
                         None,
                         void,
@@ -67,11 +82,16 @@ def type_check_module(module_interfaces, module_name, module_decl):
         type_check_code_block.type_check_code_block(context, constructor.body)
 
     def type_check_method(self_type, attr_types, method, store_attributes=False):
+        types = {}
+        types.update(primitives)
+        types.update(module.types)
+
         scope = dict(method.parameters)
         scope['self'] = self_type
         context = type_check_code_block.TypeCheckingContext(
                         module_interfaces,
                         module,
+                        types,
                         None,
                         None,
                         method.return_type,
@@ -281,6 +301,10 @@ def type_check_module(module_interfaces, module_name, module_decl):
         type_check_coroutine(coroutine)
 
     if entry:
+        types = {}
+        types.update(primitives)
+        types.update(module.types)
+
         entry_point_type = program_types.Instantiation(entry_point, [])
-        context = type_check_code_block.TypeCheckingContext(module_interfaces, module, None, None, entry_point_type, {}, False, {})
+        context = type_check_code_block.TypeCheckingContext(module_interfaces, module, types, None, None, entry_point_type, {}, False, {})
         type_check_code_block.type_check_code_block(context, entry.body)

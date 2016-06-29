@@ -65,9 +65,10 @@ class FunctionSignature(Signature):
         return self.return_type.template(quantified)
 
 class TypeCheckingContext(object):
-    def __init__(self, module_interfaces, current_module, receive_type, yield_type, return_type, attrs, attr_store, variable_types):
+    def __init__(self, module_interfaces, current_module, types, receive_type, yield_type, return_type, attrs, attr_store, variable_types):
         self.module_interfaces = module_interfaces
         self.current_module = current_module
+        self.types = types
         self.receive_type = receive_type
         self.yield_type = yield_type
         self.return_type = return_type
@@ -171,6 +172,17 @@ def operator_type(operator, rhs_type, lhs_type):
         raise NotImplementedError('unknown operator: %s' % operator)
 
 def type_check_code_block(context, code_block):
+    def check_expression_type(type, expression):
+        expression.type = type
+        if isinstance(expression, program.ListConstructor):
+            assert isinstance(type, program_types.Instantiation)
+            assert type.constructor == program_types.list
+            assert len(type.types) == 1
+            for value in expression.values:
+                check_expression_type(type.types[0], value)
+        else:
+            assert infer_expression_type(expression) == type
+
     def infer_expression_type(expression):
         if isinstance(expression, program.Variable):
             expression.type = context.lookup(expression.name)
@@ -191,8 +203,7 @@ def type_check_code_block(context, code_block):
         elif isinstance(expression, program.AttrLoad):
             expression.type = context.lookup_attr(expression.attr)
         elif isinstance(expression, program.Yield):
-            value_type = infer_expression_type(expression.value)
-            assert value_type == context.yield_type
+            check_expression_type(context.yield_type, expression.value)
             expression.type = context.receive_type
         elif isinstance(expression, program.Run):
             coroutine = infer_expression_type(expression.coroutine)
@@ -215,8 +226,7 @@ def type_check_code_block(context, code_block):
             assert len(coroutine.types) == 2
             expression.type = bool
         elif isinstance(expression, program.Not):
-            expression_type = infer_expression_type(expression.expression)
-            assert expression_type == bool
+            check_expression_type(bool, expression.expression)
             expression.type = bool
         elif isinstance(expression, program.BinOp):
             rhs_type = infer_expression_type(expression.rhs)
@@ -304,6 +314,9 @@ def type_check_code_block(context, code_block):
             for t in value_types[1:]:
                 assert value_types[0] == t
             expression.type = program_types.Instantiation(program_types.list, [value_types[0]])
+        elif isinstance(expression, program.Annotated):
+            expression.type = expression.type.resolve_type(context.module_interfaces, context.types)
+            check_expression_type(expression.type, expression.expression)
         else:
             raise NotImplementedError('unknown expression type: %s' % type(expression))
         return expression.type
@@ -316,9 +329,7 @@ def type_check_code_block(context, code_block):
             if not context.attr_store:
                 raise Exception('Attributes cannot be stored in this context')
             expected_type = context.lookup_attr(statement.attr)
-            actual_type = infer_expression_type(statement.value)
-            if expected_type != actual_type:
-                raise TypeError('expected %s to equal %s' % (actual_type, expected_type))
+            check_expression_type(expected_type, statement.value)
         elif isinstance(statement, program.TupleDestructure):
             expression_type = infer_expression_type(statement.expression)
             assert isinstance(expression_type, program_types.Instantiation)

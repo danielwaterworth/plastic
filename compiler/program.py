@@ -329,6 +329,11 @@ class StringLiteral(Expression):
     def evaluate(self, context):
         return data.String(v.decode('utf8'))
 
+class Annotated(Expression):
+    def __init__(self, expression, type):
+        self.expression = expression
+        self.type = type
+
 class Terminator(object):
     pass
 

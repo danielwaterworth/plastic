@@ -40,6 +40,8 @@ service BytecodeReader(
         end
 
         define read_top_level(fd : File) -> Void do
+            symbols := [] : (List(String));
+
             type := @f.read(fd, 1).index(0).to_uint();
             if (type == bytecode.function_start_())
                 throw void;

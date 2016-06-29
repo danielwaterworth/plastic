@@ -433,6 +433,7 @@ def p_bracketed_expr(p):
     p[0] = p[2]
 
 precedence = (
+    ('nonassoc', 'COLON'),
     ('right', 'YIELD'),
     ('left', 'AND', 'OR'),
     ('nonassoc', 'LT', 'LE', 'GT', 'GE', 'EQ', 'NE'),
@@ -442,6 +443,10 @@ precedence = (
     ('right', 'NOT'),
     ('nonassoc', 'OPEN_PARENS')
 )
+
+def p_annotation(p):
+    '''expression : expression COLON OPEN_PARENS type CLOSE_PARENS'''
+    p[0] = program.Annotated(p[1], p[4])
 
 def p_expression_not(p):
     '''expression : NOT expression'''
