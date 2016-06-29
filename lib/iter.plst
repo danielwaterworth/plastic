@@ -1,0 +1,8 @@
+coroutine range(n : UInt) Void -> UInt do
+    i := 0;
+    do
+        yield(i);
+        i := i + 1;
+    while(i < n)
+    return void;
+end
