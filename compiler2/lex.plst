@@ -1,0 +1,321 @@
+import iter
+import file
+import json
+
+enum Token
+    keyword(String) |
+    symbol(String) |
+    char(Char) |
+    lower_name(String) |
+    number(UInt) |
+    property(String) |
+    string(String) |
+    upper_name(String)
+end
+
+define symbols() -> List(String) do
+    return [
+        "->",
+        ":=",
+        ")",
+        "]",
+        ":",
+        ",",
+        "/",
+        ".",
+        "==",
+        ">=",
+        ">",
+        "<=",
+        "<",
+        "-",
+        "*",
+        "!=",
+        "(",
+        "[",
+        "|",
+        "+",
+        ";"
+    ];
+end
+
+define keywords() -> List(String) do
+    return [
+        "attr", 
+        "and", 
+        "constructor", 
+        "coroutine", 
+        "debug", 
+        "define", 
+        "do", 
+        "elsif", 
+        "else", 
+        "end", 
+        "entry", 
+        "enum", 
+        "false", 
+        "for", 
+        "if", 
+        "implements", 
+        "import", 
+        "in", 
+        "interface", 
+        "is_done", 
+        "match", 
+        "not", 
+        "op", 
+        "or", 
+        "private", 
+        "record", 
+        "resume", 
+        "return", 
+        "run", 
+        "service", 
+        "sys", 
+        "throw", 
+        "true", 
+        "void", 
+        "while", 
+        "yield"
+    ];
+end
+
+define starts_with(a : String, b : String) -> (Bool, String) do
+    if (a.length() < b.length())
+        return (false, "");
+    elsif (a.take(b.length()) == b)
+        return (true, a.drop(b.length()));
+    else
+        return (false, "");
+    end
+end
+
+define next(source : String) -> (Char, String) do
+    return (source.head(), source.tail());
+end
+
+define skip_comment(source : String) -> String do
+    do
+        if (source.length() == 0)
+            return "";
+        end
+        c, source := next(source);
+        if (c == '\n')
+            return source;
+        end
+    while (source.length() != 0)
+    return "";
+end
+
+define skip_whitespace(source : String) -> String do
+    do
+        if (source.length() == 0)
+            return "";
+        end
+        c, tail := next(source);
+        if (c.is_space())
+            source := tail;
+        elsif (c == '#')
+            source := skip_comment(tail);
+        else
+            return source;
+        end
+    while (true)
+    throw void;
+end
+
+define lex_char(source : String) -> (Token, String) do
+    throw void;
+end
+
+define lex_property(source : String) -> (Token, String) do
+    i := 0;
+    original := source;
+    do
+        c, source := next(source);
+        i := i + 1;
+    while (c.is_lower() or c == '_' or c.is_digit())
+    taken := original.take(i-1);
+    source := original.drop(i-1);
+    return (property(taken), source);
+end
+
+define lex_string(source : String) -> (Token, String) do
+    i := 0;
+    original := source;
+    do
+        c := source.head();
+        if (c == '"')
+            return (string(original.take(i)), source.drop(1));
+        elsif (c == '\\')
+            throw void;
+        end
+        source := source.tail();
+        i := i + 1;
+    while (true)
+    throw void;
+end
+
+define lex_lower(source : String) -> (Token, String) do
+    i := 0;
+    original := source;
+    do
+        c, source := next(source);
+        i := i + 1;
+    while (c.is_lower() or c == '_' or c.is_digit())
+    taken := original.take(i-1);
+    source := original.drop(i-1);
+    for key in iter.l(keywords()) do
+        if (taken == key)
+            return (keyword(key), source);
+        end
+    end
+    return (lower_name(taken), source);
+end
+
+define lex_upper(source : String) -> (Token, String) do
+    i := 0;
+    original := source;
+    do
+        c, source := next(source);
+        i := i + 1;
+    while (c.is_lower() or c.is_upper() or c.is_digit())
+    return (upper_name(original.take(i-1)), original.drop(i-1));
+end
+
+define lex_digit(source : String) -> (Token, String) do
+    n := 0;
+    tail := source;
+    do
+        source := tail;
+        c, tail := next(source);
+        if (c.is_digit())
+            n := n * 10;
+        end
+        if (c == '0')
+            n := n + 0;
+        elsif (c == '1')
+            n := n + 1;
+        elsif (c == '2')
+            n := n + 2;
+        elsif (c == '3')
+            n := n + 3;
+        elsif (c == '4')
+            n := n + 4;
+        elsif (c == '5')
+            n := n + 5;
+        elsif (c == '6')
+            n := n + 6;
+        elsif (c == '7')
+            n := n + 7;
+        elsif (c == '8')
+            n := n + 8;
+        elsif (c == '9')
+            n := n + 9;
+        else
+            return (number(n), source);
+        end
+    while (true)
+    throw void;
+end
+
+define lex_token(source : String) -> (Token, String) do
+    for s in iter.l(symbols()) do
+        b, tail := starts_with(source, s);
+        if (b)
+            return (symbol(s), tail);
+        end
+    end
+    c, tail := next(source);
+    if (c == '\'')
+        return lex_char(tail);
+    elsif (c == '@')
+        return lex_property(tail);
+    elsif (c == '"')
+        return lex_string(tail);
+    elsif (c.is_lower())
+        return lex_lower(source);
+    elsif (c.is_upper())
+        return lex_upper(source);
+    elsif (c.is_digit())
+        return lex_digit(source);
+    end
+    throw void;
+end
+
+define lex(source : String) -> List(Token) do
+    tokens := [] : (List(Token));
+    source := skip_whitespace(source);
+    do
+        token, source := lex_token(source);
+        tokens := tokens.append(token);
+        source := skip_whitespace(source);
+    while (source.length() != 0)
+    return tokens.reverse();
+end
+
+define token_to_json(token : Token) -> json.JSON do
+    match (token)
+        keyword(k) do
+            return json.j_string(k);
+        end
+        symbol(s) do
+            return json.j_string(s);
+        end
+        lower_name(name) do
+            return json.j_array(json.j_cons_array(json.j_string("lower_name"), json.j_cons_array(json.j_string(name), json.j_empty_array())));
+        end
+        string(s) do
+            return json.j_array(json.j_cons_array(json.j_string("string"), json.j_cons_array(json.j_string(s), json.j_empty_array())));
+        end
+        number(n) do
+            return json.j_array(json.j_cons_array(json.j_string("number"), json.j_cons_array(json.j_string(n.to_string()), json.j_empty_array())));
+        end
+        property(name) do
+            return json.j_array(json.j_cons_array(json.j_string("property"), json.j_cons_array(json.j_string(name), json.j_empty_array())));
+        end
+        upper_name(name) do
+            return json.j_array(json.j_cons_array(json.j_string("upper_name"), json.j_cons_array(json.j_string(name), json.j_empty_array())));
+        end
+        char(c) do
+            return json.j_array(json.j_cons_array(json.j_string("char"), json.j_cons_array(json.j_string(c.to_string()), json.j_empty_array())));
+        end
+    end
+    throw void;
+end
+
+define tokens_to_json(tokens : List(Token)) -> json.JSON do
+    output := json.j_empty_array();
+    for token in iter.l(tokens) do
+        output := json.j_cons_array(token_to_json(token), output);
+    end
+    return json.j_array(output);
+end
+
+service Test(
+            f : file.FileOps
+        )
+    constructor new()
+    end
+
+    implements EntryPoint
+        define main() -> Bool do
+            fd := @f.open("input.plst".encode_utf8(), 0);
+            source := @f.read(fd, 4096).decode_utf8();
+            if (source.length() == 4096)
+                throw void;
+            end
+            @f.close(fd);
+            debug("lexing");
+            tokens := lex(source);
+            debug("lexed");
+            debug(json.generate(tokens_to_json(tokens)));
+            return true;
+        end
+    end
+end
+
+entry
+    f := file.SysFileOps().new();
+    return Test(f).new();
+end

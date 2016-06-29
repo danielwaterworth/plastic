@@ -62,3 +62,12 @@ def call(self, arguments):
     list = arguments[0]
     assert isinstance(list, DList)
     return [data.UInt(len(list.elements))]
+
+@operator('list.reverse')
+def call(self, arguments):
+    assert len(arguments) == 1
+    l = arguments[0]
+    assert isinstance(l, DList)
+    l = list(l.elements)
+    l.reverse()
+    return [DList(l)]

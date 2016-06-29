@@ -144,14 +144,22 @@ class List(Type):
             return ([], uint)
         elif name == 'index':
             return ([uint], t)
+        elif name == 'append':
+            return ([t], Instantiation(list, [t]))
+        elif name == 'reverse':
+            return ([], Instantiation(list, [t]))
         else:
-            raise KeyError()
+            raise KeyError("on such method on list: %s" % name)
 
     def method(self, basic_block, object_variable, name, arguments):
         if name == 'length':
             return basic_block.operation('list.length', [object_variable])
         elif name == 'index':
             return basic_block.operation('list.index', [object_variable] + arguments)
+        elif name == 'append':
+            return basic_block.operation('list.append', [object_variable] + arguments)
+        elif name == 'reverse':
+            return basic_block.operation('list.reverse', [object_variable])
 
 list = List()
 
@@ -252,7 +260,11 @@ byte_methods.update({
 })
 
 char_methods.update({
-    'to_string': (([], string), 'char.to_string')
+    'to_string': (([], string), 'char.to_string'),
+    'is_lower': (([], bool), 'char.is_lower'),
+    'is_upper': (([], bool), 'char.is_upper'),
+    'is_digit': (([], bool), 'char.is_digit'),
+    'is_space': (([], bool), 'char.is_space'),
 })
 
 bytestring_methods.update({
@@ -269,5 +281,6 @@ string_methods.update({
     'tail': (([], string), 'string.tail'),
     'drop': (([uint], string), 'string.drop'),
     'take': (([uint], string), 'string.take'),
-    'encode_utf8': (([], bytestring), 'string.encode_utf8')
+    'encode_utf8': (([], bytestring), 'string.encode_utf8'),
+    'length': (([], uint), 'string.length'),
 })

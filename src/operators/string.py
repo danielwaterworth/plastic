@@ -1,6 +1,13 @@
 import data
 from data import operator
 
+@operator('string.length')
+def call(self, arguments):
+    assert len(arguments) == 1
+    x = arguments[0]
+    assert isinstance(x, data.String)
+    return [data.UInt(len(x.v))]
+
 @operator('string.concat')
 def call(self, arguments):
     x, y = arguments
