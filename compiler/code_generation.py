@@ -693,7 +693,7 @@ def generate_entry(program_writer, entry_service, modules):
     for name in grouped_services:
         service_decl = service_decls[name]
         for interface in service_decl.type.interfaces:
-            services_by_interface[interface].add((name, service_types[name]))
+            services_by_interface[interface.constructor].add((name, service_types[name]))
 
     for interface_type, services in services_by_interface.iteritems():
         generate_interface(program_writer, interface_type, services)

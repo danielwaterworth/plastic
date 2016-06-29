@@ -65,9 +65,9 @@ class NamedType(Type):
 
     def resolve_interface(self, modules, interface_types):
         if self.module:
-            return modules[self.module].interface_types[self.name]
+            return Instantiation(modules[self.module].interface_types[self.name], [])
         else:
-            return interface_types[self.name]
+            return Instantiation(interface_types[self.name], [])
 
 class Variable(Type):
     def __init__(self, name):
@@ -156,19 +156,16 @@ class Record(TypeConstructor):
         self.methods[name]
         return basic_block.fun_call('%s#%s' % (self.name, name), [object_variable] + arguments)
 
-class Interface(Type):
+class Interface(TypeConstructor):
     def __init__(self, name, methods):
         self.name = name
         self.methods = methods
 
-    def method_signature(self, name):
+    def constructor_method_signature(self, types, name):
         return self.methods[name]
 
     def method(self, basic_block, object_variable, name, arguments):
         return basic_block.fun_call("%s#%s" % (self.name, name), [object_variable] + arguments)
-
-    def __repr__(self):
-        return "<Interface %s>" % self.name
 
 # Type used for self in a service context
 class PrivateService(Type):
@@ -201,7 +198,8 @@ class Service(Type):
         return [t for _, t in self.dependencies]
 
     def is_subtype_of(self, other):
-        if isinstance(other, Interface):
+        assert isinstance(other, Type)
+        if isinstance(other, Instantiation) and isinstance(other.constructor, Interface):
             return other in self.interfaces
         return self == other
 

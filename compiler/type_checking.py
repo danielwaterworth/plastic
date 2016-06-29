@@ -175,10 +175,10 @@ def type_check_module(module_interfaces, module_name, module_decl):
             decl.resolve_types(module_interfaces, types)
             methods[decl.name] = (decl.parameters, decl.return_type)
 
-        interface.type = program_types.Interface(interface.name, methods)
+        interface.type_constructor = program_types.Interface(interface.name, methods)
         assert not interface.name in builtin_interfaces
         assert not interface.name in module.interface_types
-        module.interface_types[interface.name] = interface.type
+        module.interface_types[interface.name] = interface.type_constructor
 
     for service in service_decls:
         types = {}
@@ -193,7 +193,7 @@ def type_check_module(module_interfaces, module_name, module_decl):
         dependency_names = {name for name, interface_name in service.dependencies}
         dependencies = [(name, interface.resolve_interface(module_interfaces, interface_types)) for name, interface in service.dependencies]
         constructor_signatures = {}
-        interfaces = set()
+        interfaces = list()
         private_methods = {}
 
         for service_decl in service.decls:
@@ -210,8 +210,8 @@ def type_check_module(module_interfaces, module_name, module_decl):
                     method_decl.resolve_types(module_interfaces, types)
                     methods[method_decl.name] = method_decl.signature
 
-                assert methods == interface.methods
-                interfaces.add(interface)
+                assert methods == interface.constructor.methods
+                interfaces.append(interface)
             elif isinstance(service_decl, program.Private):
                 for private_decl in service_decl.decls:
                     private_decl.resolve_types(module_interfaces, types)
@@ -270,5 +270,6 @@ def type_check_module(module_interfaces, module_name, module_decl):
         type_check_coroutine(coroutine)
 
     if entry:
-        context = type_check_code_block.TypeCheckingContext(module_interfaces, module, None, None, entry_point, {}, False, {})
+        entry_point_type = program_types.Instantiation(entry_point, [])
+        context = type_check_code_block.TypeCheckingContext(module_interfaces, module, None, None, entry_point_type, {}, False, {})
         type_check_code_block.type_check_code_block(context, entry.body)
