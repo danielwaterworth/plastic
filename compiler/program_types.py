@@ -134,6 +134,27 @@ coroutine.name = 'Coroutine'
 def coroutine_type(receive_type, yield_type):
     return Instantiation(coroutine, [receive_type, yield_type])
 
+class List(Type):
+    name = 'List'
+
+    def constructor_method_signature(self, types, name):
+        assert len(types) == 1
+        t = types[0]
+        if name == 'length':
+            return ([], uint)
+        elif name == 'index':
+            return ([uint], t)
+        else:
+            raise KeyError()
+
+    def method(self, basic_block, object_variable, name, arguments):
+        if name == 'length':
+            return basic_block.operation('list.length', [object_variable])
+        elif name == 'index':
+            return basic_block.operation('list.index', [object_variable] + arguments)
+
+list = List()
+
 class Enum(Type):
     def __init__(self, name, constructors):
         self.name = name

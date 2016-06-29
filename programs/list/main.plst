@@ -1,0 +1,19 @@
+import iter
+
+service Test()
+    constructor new()
+    end
+
+    implements EntryPoint
+        define main() -> Bool do
+            for element in iter.l(["Foo", "Bar", "Baz"]) do
+                debug(element);
+            end
+            return false;
+        end
+    end
+end
+
+entry
+    return Test().new();
+end

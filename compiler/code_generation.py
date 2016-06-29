@@ -300,6 +300,9 @@ def generate_expression(context, expression):
     elif isinstance(expression, program.TupleConstructor):
         values = [generate_expression(context, value) for value in expression.values]
         return context.basic_block.operation('list.pack', values)
+    elif isinstance(expression, program.ListConstructor):
+        values = [generate_expression(context, value) for value in expression.values]
+        return context.basic_block.operation('list.pack', values)
     else:
         raise NotImplementedError('unknown expression type: %s' % type(expression))
 

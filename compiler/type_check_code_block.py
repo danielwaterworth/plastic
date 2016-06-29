@@ -39,6 +39,17 @@ class CoroutineSignature(Signature):
         self.receive_type = receive_type
         self.yield_type = yield_type
 
+    def produce_return_type(self, argument_types):
+        assert len(self.parameter_types) == len(argument_types)
+
+        quantified = {}
+        for parameter, argument in zip(self.parameter_types, argument_types):
+            parameter.match(quantified, argument)
+
+        receive_type = self.receive_type.template(quantified)
+        yield_type = self.yield_type.template(quantified)
+        return program_types.coroutine_type(receive_type, yield_type)
+
 class FunctionSignature(Signature):
     def __init__(self, parameter_types, return_type):
         self.parameter_types = parameter_types
@@ -245,13 +256,11 @@ def type_check_code_block(context, code_block):
             function = expression.function_name
             if isinstance(expression.call, FunctionCall):
                 signature = expression.call.module.signatures[function]
+                expression.type = signature.produce_return_type(argument_types)
                 if isinstance(signature, FunctionSignature):
                     expression.call.coroutine_call = False
-                    expression.type = signature.produce_return_type(argument_types)
                 elif isinstance(signature, CoroutineSignature):
-                    assert signature.parameter_types == argument_types
                     expression.call.coroutine_call = True
-                    expression.type = program_types.coroutine_type(signature.receive_type, signature.yield_type)
                 else:
                     raise NotImplementedError('not implemented signature type: %s' % type(signature))
             elif isinstance(expression.call, MethodCall):
@@ -289,6 +298,12 @@ def type_check_code_block(context, code_block):
         elif isinstance(expression, program.TupleConstructor):
             value_types = [infer_expression_type(value) for value in expression.values]
             expression.type = program_types.Instantiation(program_types.tuple, value_types)
+        elif isinstance(expression, program.ListConstructor):
+            value_types = [infer_expression_type(value) for value in expression.values]
+            assert len(value_types) >= 1
+            for t in value_types[1:]:
+                assert value_types[0] == t
+            expression.type = program_types.Instantiation(program_types.list, [value_types[0]])
         else:
             raise NotImplementedError('unknown expression type: %s' % type(expression))
         return expression.type

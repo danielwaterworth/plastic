@@ -56,3 +56,9 @@ def call(self, arguments):
         raise IndexError()
     return [list.elements[index.n]]
 
+@operator('list.length')
+def call(self, arguments):
+    assert len(arguments) == 1
+    list = arguments[0]
+    assert isinstance(list, DList)
+    return [data.UInt(len(list.elements))]

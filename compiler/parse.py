@@ -424,6 +424,10 @@ def p_expression_tuple(p):
     p[2].append(p[4])
     p[0] = program.TupleConstructor(p[2])
 
+def p_expression_list(p):
+    '''expression : OPEN_SQUARE argument_list CLOSE_SQUARE'''
+    p[0] = program.ListConstructor(p[2])
+
 def p_bracketed_expr(p):
     '''expression : OPEN_PARENS expression CLOSE_PARENS'''
     p[0] = p[2]

@@ -6,3 +6,14 @@ coroutine range(n : UInt) Void -> UInt do
     while(i < n)
     return void;
 end
+
+coroutine l(items : List(a)) Void -> a do
+    for i in range(items.length()) do
+        yield(items.index(i));
+    end
+    return void;
+end
+
+define first(items : List(a)) -> a do
+    return items.index(0);
+end

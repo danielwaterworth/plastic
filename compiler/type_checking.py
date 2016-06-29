@@ -17,6 +17,7 @@ primitives = {
     'Socket': socket,
     'File': file,
     'EntryPoint': entry_point,
+    'List': program_types.list
 }
 
 def type_check_module(module_interfaces, module_name, module_decl):

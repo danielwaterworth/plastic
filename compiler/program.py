@@ -272,6 +272,10 @@ class TupleConstructor(Expression):
     def __init__(self, values):
         self.values = values
 
+class ListConstructor(Expression):
+    def __init__(self, values):
+        self.values = values
+
 class AttrLoad(Expression):
     def __init__(self, attr):
         self.attr = attr
