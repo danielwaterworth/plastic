@@ -47,8 +47,8 @@ def p_enum(p):
     p[0] = program.Enum(p[2], p[3])
 
 def p_interface(p):
-    '''top_level_decl : INTERFACE UPPER_NAME interface_decl_list END'''
-    p[0] = program.Interface(p[2], p[3])
+    '''top_level_decl : INTERFACE UPPER_NAME type_parameters interface_decl_list END'''
+    p[0] = program.Interface(p[2], p[3], p[4])
 
 def p_service(p):
     '''top_level_decl : SERVICE UPPER_NAME OPEN_PARENS dependencies CLOSE_PARENS service_decl_list END'''
@@ -57,6 +57,23 @@ def p_service(p):
 def p_entry(p):
     '''top_level_decl : ENTRY code_block END'''
     p[0] = program.Entry(p[2])
+
+def p_type_parameters_empty(p):
+    '''type_parameters : empty'''
+    p[0] = []
+
+def p_type_parameters(p):
+    '''type_parameters : OPEN_PARENS non_empty_type_parameters CLOSE_PARENS'''
+    p[0] = p[2]
+
+def p_non_empty_type_parameters_initial(p):
+    '''non_empty_type_parameters : LOWER_NAME'''
+    p[0] = [p[1]]
+
+def p_non_empty_type_parameters(p):
+    '''non_empty_type_parameters : non_empty_type_parameters COMMA LOWER_NAME'''
+    p[1].append(p[3])
+    p[0] = p[1]
 
 def p_enum_constructors_initial(p):
     '''enum_constructors : enum_constructor'''
@@ -114,7 +131,7 @@ def p_non_empty_dependencies(p):
     p[0] = p[1]
 
 def p_dependency(p):
-    '''dependency : LOWER_NAME COLON named_type'''
+    '''dependency : LOWER_NAME COLON type'''
     p[0] = (p[1], p[3])
 
 def p_parameter_list_empty(p):
@@ -194,8 +211,16 @@ def p_service_decl_private(p):
     p[0] = program.Private(p[2])
 
 def p_service_decl_implements(p):
-    '''service_decl : IMPLEMENTS named_type service_method_list END'''
-    p[0] = program.Implements(p[2], p[3])
+    '''service_decl : IMPLEMENTS named_type optional_type_list service_method_list END'''
+    p[0] = program.Implements(program_types.Instantiation(p[2], p[3]), p[4])
+
+def p_optional_type_list_empty(p):
+    '''optional_type_list : empty'''
+    p[0] = []
+
+def p_optional_type_list(p):
+    '''optional_type_list : OPEN_PARENS non_empty_type_list CLOSE_PARENS'''
+    p[0] = p[2]
 
 def p_service_method_list_empty(p):
     '''service_method_list : empty'''
@@ -213,6 +238,10 @@ def p_service_method(p):
 def p_type_variable(p):
     '''type : LOWER_NAME'''
     p[0] = program_types.Variable(p[1])
+
+def p_instantiation(p):
+    '''type : named_type OPEN_PARENS non_empty_type_list CLOSE_PARENS'''
+    p[0] = program_types.Instantiation(p[1], p[3])
 
 def p_named_type(p):
     '''type : named_type'''

@@ -1,18 +1,18 @@
-interface SocketOperations
-    socket() -> Socket;
-    bind(Socket, String, UInt) -> Void;
-    listen(Socket, UInt) -> Void;
-    accept(Socket) -> Socket;
-    recv(Socket, UInt) -> ByteString;
-    send(Socket, ByteString) -> Void;
-    close(Socket) -> Void;
+interface SocketOperations(s)
+    socket() -> s;
+    bind(s, String, UInt) -> Void;
+    listen(s, UInt) -> Void;
+    accept(s) -> s;
+    recv(s, UInt) -> ByteString;
+    send(s, ByteString) -> Void;
+    close(s) -> Void;
 end
 
 service SysSocket()
     constructor new()
     end
 
-    implements SocketOperations
+    implements SocketOperations(Socket)
         define socket() -> Socket do
             return sys socket_socket(2, 1, 0);
         end

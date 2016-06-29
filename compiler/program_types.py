@@ -1,3 +1,4 @@
+# Not necessarily something of kind *
 class Type(object):
     def method_signature(self, name):
         raise KeyError('no such method %s on %s' % (name, self))
@@ -63,12 +64,6 @@ class NamedType(Type):
         else:
             return types[self.name]
 
-    def resolve_interface(self, modules, interface_types):
-        if self.module:
-            return Instantiation(modules[self.module].interface_types[self.name], [])
-        else:
-            return Instantiation(interface_types[self.name], [])
-
 class Variable(Type):
     def __init__(self, name):
         self.name = name
@@ -91,6 +86,7 @@ class Instantiation(Type):
         self.types = types
 
     def resolve_type(self, modules, types):
+        self.constructor = self.constructor.resolve_type(modules, types)
         self.types = [t.resolve_type(modules, types) for t in self.types]
         return self
 
@@ -116,33 +112,34 @@ class Instantiation(Type):
         else:
             return '<%s (%s)>' % (self.constructor.name, ', '.join([repr(t) for t in self.types]))
 
+    @property
+    def methods(self):
+        return self.constructor.instance_methods(self.types)
+
     def method_signature(self, name):
         return self.constructor.constructor_method_signature(self.types, name)
 
     def method(self, basic_block, object_variable, name, arguments):
         return self.constructor.method(basic_block, object_variable, name, arguments)
 
-class TypeConstructor(object):
-    pass
-
-tuple = TypeConstructor()
+tuple = Type()
 tuple.name = 'Tuple'
 
 def tuple_type(*arguments):
     return Instantiation(tuple, arguments)
 
-coroutine = TypeConstructor()
+coroutine = Type()
 coroutine.name = 'Coroutine'
 
 def coroutine_type(receive_type, yield_type):
     return Instantiation(coroutine, [receive_type, yield_type])
 
-class Enum(TypeConstructor):
+class Enum(Type):
     def __init__(self, name, constructors):
         self.name = name
         self.constructors = constructors
 
-class Record(TypeConstructor):
+class Record(Type):
     def __init__(self, name, attrs, constructor_signatures, methods):
         self.name = name
         self.attrs = attrs
@@ -156,13 +153,31 @@ class Record(TypeConstructor):
         self.methods[name]
         return basic_block.fun_call('%s#%s' % (self.name, name), [object_variable] + arguments)
 
-class Interface(TypeConstructor):
-    def __init__(self, name, methods):
+def template_signature((arguments, return_type), replacements):
+    arguments = [arg.template(replacements) for arg in arguments]
+    return_type = return_type.template(replacements)
+    return (arguments, return_type)
+
+class Interface(Type):
+    def __init__(self, name, parameters, methods):
         self.name = name
+        self.parameters = parameters
         self.methods = methods
 
+    def instance_methods(self, types):
+        assert len(types) == len(self.parameters)
+        replacements = dict(zip(self.parameters, types))
+
+        methods = {}
+        for method_name, signature in self.methods.iteritems():
+            methods[method_name] = template_signature(signature, replacements)
+        return methods
+
     def constructor_method_signature(self, types, name):
-        return self.methods[name]
+        assert len(types) == len(self.parameters)
+        replacements = dict(zip(self.parameters, types))
+
+        return template_signature(self.methods[name], replacements)
 
     def method(self, basic_block, object_variable, name, arguments):
         return basic_block.fun_call("%s#%s" % (self.name, name), [object_variable] + arguments)

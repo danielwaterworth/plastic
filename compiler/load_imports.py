@@ -8,12 +8,18 @@ def load_imports(lib_dir, filename):
 
     def load_module(module_name):
         try:
-            with open(os.path.join(lib_dir, module_name) + '.plst', 'r') as fd:
+            filename = os.path.join(lib_dir, module_name) + '.plst'
+            with open(filename, 'r') as fd:
                 source = fd.read()
         except IOError:
-            with open(os.path.join(dir, module_name) + '.plst', 'r') as fd:
+            filename = os.path.join(dir, module_name) + '.plst'
+            with open(filename, 'r') as fd:
                 source = fd.read()
-        return parse.parser.parse(source)
+        try:
+            return parse.parser.parse(source)
+        except:
+            print filename
+            raise
 
     modules = {}
     to_load = [name]

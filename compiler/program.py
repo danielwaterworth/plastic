@@ -72,8 +72,9 @@ class Enum(Decl):
         self.constructors = constructors
 
 class Interface(Decl):
-    def __init__(self, name, decls):
+    def __init__(self, name, parameters, decls):
         self.name = name
+        self.parameters = parameters
         self.decls = decls
 
 class Service(Decl):
@@ -117,8 +118,8 @@ class Constructor(Decl):
         return [param[0] for param in self.parameters]
 
 class Implements(Decl):
-    def __init__(self, interface, decls):
-        self.interface = interface
+    def __init__(self, interface_type, decls):
+        self.interface_type = interface_type
         self.decls = decls
 
 class Private(Decl):

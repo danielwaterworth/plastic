@@ -5,6 +5,7 @@ import program_types
 from program_types import bool, uint, string, char, byte, bytestring, socket
 from program_types import void, file
 
+entry_point = program_types.Interface('EntryPoint', [], {'main': ([], bool)})
 primitives = {
     'UInt': uint,
     'Bool': bool,
@@ -15,9 +16,8 @@ primitives = {
     'String': string,
     'Socket': socket,
     'File': file,
+    'EntryPoint': entry_point,
 }
-entry_point = program_types.Interface('EntryPoint', {'main': ([], bool)})
-builtin_interfaces = {'EntryPoint': entry_point}
 
 def type_check_module(module_interfaces, module_name, module_decl):
     module = module_interface.ModuleInterface(module_name, module_decl.imports)
@@ -175,26 +175,30 @@ def type_check_module(module_interfaces, module_name, module_decl):
             decl.resolve_types(module_interfaces, types)
             methods[decl.name] = (decl.parameters, decl.return_type)
 
-        interface.type_constructor = program_types.Interface(interface.name, methods)
-        assert not interface.name in builtin_interfaces
-        assert not interface.name in module.interface_types
-        module.interface_types[interface.name] = interface.type_constructor
+        interface.type_constructor = program_types.Interface(interface.name, interface.parameters, methods)
+        assert not interface.name in primitives
+        assert not interface.name in module.types
+        module.types[interface.name] = interface.type_constructor
 
     for service in service_decls:
         types = {}
         types.update(primitives)
         types.update(module.types)
 
-        interface_types = {}
-        interface_types.update(builtin_interfaces)
-        interface_types.update(module.interface_types)
-
         attrs = {}
-        dependency_names = {name for name, interface_name in service.dependencies}
-        dependencies = [(name, interface.resolve_interface(module_interfaces, interface_types)) for name, interface in service.dependencies]
+        dependency_names = [name for name, interface_name in service.dependencies]
+        dependencies = []
         constructor_signatures = {}
         interfaces = list()
         private_methods = {}
+
+        for name, interface in service.dependencies:
+            interface = interface.resolve_type(module_interfaces, types)
+            if isinstance(interface, program_types.Interface):
+                interface = program_types.Instantiation(interface, [])
+            assert isinstance(interface, program_types.Instantiation)
+            assert isinstance(interface.constructor, program_types.Interface)
+            dependencies.append((name, interface))
 
         for service_decl in service.decls:
             if isinstance(service_decl, program.Attr):
@@ -203,14 +207,20 @@ def type_check_module(module_interfaces, module_name, module_decl):
                 assert not service_decl.name in dependency_names
                 attrs[service_decl.name] = service_decl.type
             elif isinstance(service_decl, program.Implements):
-                interface = service_decl.interface.resolve_interface(module_interfaces, interface_types)
-                methods = {}
+                interface = service_decl.interface_type.resolve_type(module_interfaces, types)
+                if isinstance(interface, program_types.Interface):
+                    interface = program_types.Instantiation(interface, [])
+                assert isinstance(interface, program_types.Instantiation)
+                assert isinstance(interface.constructor, program_types.Interface)
 
+                assert len(interface.types) == len(interface.constructor.parameters)
+
+                methods = {}
                 for method_decl in service_decl.decls:
                     method_decl.resolve_types(module_interfaces, types)
                     methods[method_decl.name] = method_decl.signature
 
-                assert methods == interface.constructor.methods
+                assert methods == interface.methods
                 interfaces.append(interface)
             elif isinstance(service_decl, program.Private):
                 for private_decl in service_decl.decls:

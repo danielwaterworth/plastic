@@ -557,7 +557,8 @@ def generate_service_methods(program_writer, service_decl):
                 function_name = "%s#%s" % (name, function.name)
                 generate_service_method(function_name, function)
         elif isinstance(decl, program.Implements):
-            interface = decl.interface
+            assert isinstance(decl.interface_type, program_types.Instantiation)
+            interface = decl.interface_type.constructor
             for function in decl.decls:
                 function_name = "%s.%s#%s" % (name, interface.name, function.name)
                 generate_service_method(function_name, function)

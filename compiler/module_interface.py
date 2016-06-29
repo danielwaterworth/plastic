@@ -4,5 +4,4 @@ class ModuleInterface(object):
         self.imports = imports
         self.signatures = {}
         self.types = {}
-        self.interface_types = {}
         self.services = {}
