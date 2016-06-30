@@ -105,25 +105,28 @@ def do_while(context, fn):
 
     condition_variable = fn(context)
 
-    last_body_index = context.basic_block.index
+    if context.basic_block:
+        last_body_index = context.basic_block.index
 
-    for name, phi in phis.iteritems():
-        if context.has(name):
+        for name, phi in phis.iteritems():
             phi.inputs[last_body_index] = context.lookup(name)
 
-    body_conditional = context.basic_block.special_conditional(condition_variable, first_body_block, 0)
-    context.basic_block = context.function_writer.basic_block()
-    body_conditional.false_block = context.basic_block.index
+        body_conditional = context.basic_block.special_conditional(condition_variable, first_body_block, 0)
+        context.basic_block = context.function_writer.basic_block()
+        body_conditional.false_block = context.basic_block.index
 
 def do_while_block(context, body, expression):
-    assert not body.terminator
-
-    def gen_body(context):
+    if body.terminator:
         for body_statement in body.statements:
             generate_statement(context, body_statement)
-        return generate_expression(context, expression)
+    else:
+        def gen_body(context):
+            for body_statement in body.statements:
+                generate_statement(context, body_statement)
+            if context.basic_block is not None:
+                return generate_expression(context, expression)
 
-    do_while(context, gen_body)
+        do_while(context, gen_body)
 
 def if_then_else(context, condition_variable, true_code_block, false_code_block):
     entry_conditional = context.basic_block.special_conditional(condition_variable, 0, 0)
@@ -133,7 +136,7 @@ def if_then_else(context, condition_variable, true_code_block, false_code_block)
     true_context = context.new_context(true_block)
 
     true_code_block(true_context)
-    true_terminated = true_context.basic_block.terminated
+    true_terminated = (true_context.basic_block is None) or true_context.basic_block.terminated
 
     if not true_terminated:
         last_true_block = true_context.basic_block.index
@@ -144,13 +147,16 @@ def if_then_else(context, condition_variable, true_code_block, false_code_block)
     false_context = context.new_context(false_block)
 
     false_code_block(false_context)
-    false_terminated = false_context.basic_block.terminated
+    false_terminated = (false_context.basic_block is None) or false_context.basic_block.terminated
 
     if not false_terminated:
         last_false_block = false_context.basic_block.index
         false_goto = false_context.basic_block.special_goto(0)
 
-    context.basic_block = context.function_writer.basic_block()
+    if not true_terminated or not false_terminated:
+        context.basic_block = context.function_writer.basic_block()
+    else:
+        context.basic_block = None
 
     if not true_terminated:
         true_goto.block_index = context.basic_block.index
@@ -319,6 +325,7 @@ def generate_expression(context, expression):
         raise NotImplementedError('unknown expression type: %s' % type(expression))
 
 def generate_statement(context, statement):
+    assert context.basic_block is not None
     if isinstance(statement, program.Assignment):
         assert statement.name != 'self'
         var = generate_expression(context, statement.expression)
@@ -410,21 +417,23 @@ def generate_statement(context, statement):
             for clause_statement in clause.block.statements:
                 generate_statement(clause_context, clause_statement)
 
-            if clause.block.terminator:
-                generate_terminator(clause_context, clause.block.terminator)
-            else:
-                gotos.append(clause_context.basic_block.special_goto(0))
-                contexts.append(clause_context)
+            if clause_context.basic_block is not None:
+                if clause.block.terminator:
+                    generate_terminator(clause_context, clause.block.terminator)
+                else:
+                    gotos.append(clause_context.basic_block.special_goto(0))
+                    contexts.append(clause_context)
 
             context.basic_block = context.function_writer.basic_block()
             cond.false_block = context.basic_block.index
 
         context.basic_block.catch_fire_and_die()
-        context.basic_block = context.function_writer.basic_block()
-        for goto in gotos:
-            goto.block_index = context.basic_block.index
 
         if contexts:
+            context.basic_block = context.function_writer.basic_block()
+            for goto in gotos:
+                goto.block_index = context.basic_block.index
+
             variable_names = reduce(lambda a, b: a & b, [set(ctx.variables.keys()) for ctx in contexts])
             variables = {}
             for variable_name in variable_names:
@@ -437,6 +446,7 @@ def generate_statement(context, statement):
 
             context.variables = variables
         else:
+            context.basic_block = None
             context.variables = {}
     elif isinstance(statement, program.Debug):
         value = generate_expression(context, statement.expression)
@@ -461,7 +471,8 @@ def generate_code_block(context, code_block):
     for statement in code_block.statements:
         generate_statement(context, statement)
 
-    generate_terminator(context, code_block.terminator)
+    if context.basic_block is not None:
+        generate_terminator(context, code_block.terminator)
 
 def generate_function(program_writer, function):
     parameter_names = function.parameter_names
@@ -473,7 +484,7 @@ def generate_function(program_writer, function):
         context = FunctionContext(function.module_interface.name, function_writer, basic_block, variables)
 
         generate_code_block(context, function.body)
-        if not function.body.terminator:
+        if context.basic_block is not None and not function.body.terminator:
             context.basic_block.catch_fire_and_die()
 
 def generate_coroutine(program_writer, coroutine):
