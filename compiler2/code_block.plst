@@ -89,6 +89,20 @@ define parse_match(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
     throw void;
 end
 
+define parse_return(tokens : List(lex.Token)) -> (Terminator, List(lex.Token)) do
+    tokens := ts.assert_keyword(tokens, "return");
+    exp, tokens := expr.parse_expression(tokens);
+    tokens := ts.assert_symbol(tokens, ";");
+    return (return_(exp), tokens);
+end
+
+define parse_throw(tokens : List(lex.Token)) -> (Terminator, List(lex.Token)) do
+    tokens := ts.assert_keyword(tokens, "throw");
+    exp, tokens := expr.parse_expression(tokens);
+    tokens := ts.assert_symbol(tokens, ";");
+    return (throw_(exp), tokens);
+end
+
 define parse_code_block(tokens : List(lex.Token)) -> (Block, List(lex.Token)) do
     statements := [] : (List(Statement));
     do
@@ -110,6 +124,12 @@ define parse_code_block(tokens : List(lex.Token)) -> (Block, List(lex.Token)) do
                 elsif (k1 == "match")
                     statement, tokens := parse_match(tokens);
                     statements := statements.append(statement);
+                elsif (k1 == "return")
+                    terminator, tokens := parse_return(tokens);
+                    return (block(statements, terminator), tokens);
+                elsif (k1 == "throw")
+                    terminator, tokens := parse_throw(tokens);
+                    return (block(statements, terminator), tokens);
                 else
                     return (block(statements, no_terminator()), tokens);
                 end

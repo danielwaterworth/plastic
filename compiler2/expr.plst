@@ -31,34 +31,72 @@ enum Expression
     call(Expression, List(Expression)) |
     bin_op(Expression, BinOperator, Expression) |
     not_(Expression) |
-    annotated(Expression, type.Type)
-end
-
-define parse_tuple_literal_tail(tokens : List(lex.Token)) -> (List(Expression), List(lex.Token)) do
-    throw void;
+    annotated(Expression, type.Type) |
+    sys_call(String, List(Expression)) |
+    operation(String, List(Expression)) |
+    yield_(Expression)
 end
 
 define parse_bracketed_expression(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
     tokens := ts.assert_symbol(tokens, "(");
-    expr, tokens := parse_expression(tokens);
+    exp, tokens := parse_expression(tokens);
     s, tokens := ts.assert_is_symbol(tokens);
     if (s == ",")
-        exprs, tokens := parse_tuple_literal_tail(tokens);
-        return (tuple_literal([expr] + exprs), tokens);
+        expressions := [exp];
     elsif (s == ")")
-        return (expr, tokens);
+        return (exp, tokens);
+    else
+        throw void;
     end
-    throw void;
+
+    do
+        exp, tokens := parse_expression(tokens);
+        expressions := expressions.append(exp);
+
+        s, tokens := ts.assert_is_symbol(tokens);
+        if (s == ",")
+        elsif (s == ")")
+            return (tuple_literal(expressions), tokens);
+        else
+            throw void;
+        end
+    while (true)
 end
 
 define parse_list_literal(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
     tokens := ts.assert_symbol(tokens, "[");
-    throw void;
+    expressions := [] : (List(Expression));
+
+    s := ts.peek_symbol(tokens);
+    match (s)
+        just_string(s1) do
+            if (s1 == "]")
+                return (list_literal(expressions), tokens.drop(1));
+            end
+        end
+        nothing_string do
+        end
+    end
+
+    exp, tokens := parse_expression(tokens);
+    expressions := expressions.append(exp);
+    do
+        s2, tokens := ts.assert_is_symbol(tokens);
+        if (s2 == ",")
+            exp, tokens := parse_expression(tokens);
+            expressions := expressions.append(exp);
+        elsif (s2 == ")")
+            return (list_literal(expressions), tokens);
+        else
+            throw void;
+        end
+    while (true)
 end
 
 define parse_argument_list(tokens : List(lex.Token)) -> (List(Expression), List(lex.Token)) do
     tokens := ts.assert_symbol(tokens, "(");
     arguments := [] : (List(Expression));
+
     s := ts.peek_symbol(tokens);
     match (s)
         just_string(s1) do
@@ -69,6 +107,7 @@ define parse_argument_list(tokens : List(lex.Token)) -> (List(Expression), List(
         nothing_string do
         end
     end
+
     exp, tokens := parse_expression(tokens);
     arguments := arguments.append(exp);
     do
@@ -84,6 +123,44 @@ define parse_argument_list(tokens : List(lex.Token)) -> (List(Expression), List(
     while (true)
 end
 
+define parse_sys_call(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
+    tokens := ts.assert_keyword(tokens, "sys");
+    match (tokens.index(0))
+        lower_name(name) do
+            sys_call_name := name;
+        end
+        string(name) do
+            sys_call_name := name;
+        end
+    end
+    tokens := tokens.drop(1);
+    arguments, tokens := parse_argument_list(tokens);
+    return (sys_call(sys_call_name, arguments), tokens);
+end
+
+define parse_operator(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
+    tokens := ts.assert_keyword(tokens, "op");
+    match (tokens.index(0))
+        lower_name(name) do
+            operator := name;
+        end
+        string(name) do
+            operator := name;
+        end
+    end
+    tokens := tokens.drop(1);
+    arguments, tokens := parse_argument_list(tokens);
+    return (operation(operator, arguments), tokens);
+end
+
+define parse_yield(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
+    tokens := ts.assert_keyword(tokens, "yield");
+    tokens := ts.assert_symbol(tokens, "(");
+    exp, tokens := expr.parse_expression(tokens);
+    tokens := ts.assert_symbol(tokens, ")");
+    return (yield_(exp), tokens);
+end
+
 define parse_term(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
     match (tokens.index(0))
         lower_name(n) do
@@ -97,6 +174,8 @@ define parse_term(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
                 return parse_bracketed_expression(tokens);
             elsif (s == "[")
                 return parse_list_literal(tokens);
+            else
+                throw void;
             end
         end
         keyword(k) do
@@ -104,6 +183,14 @@ define parse_term(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
                 return (bool_literal(true), tokens.drop(1));
             elsif (k == "false")
                 return (bool_literal(false), tokens.drop(1));
+            elsif (k == "sys")
+                return parse_sys_call(tokens.drop(1));
+            elsif (k == "op")
+                return parse_operator(tokens.drop(1));
+            elsif (k == "yield")
+                return parse_yield(tokens.drop(1));
+            else
+                throw void;
             end
         end
         number(n) do
