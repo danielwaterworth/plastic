@@ -1,0 +1,123 @@
+import ts
+import expr
+
+enum IfTail
+    end_ |
+    else_(Block) |
+    elsif_(expr.Expression, Block, IfTail)
+end
+
+enum Statement
+    assignment(String, expr.Expression) |
+    if_(expr.Expression, Block, IfTail) |
+    do_while(Block, expr.Expression) |
+    while_(expr.Expression, Block) |
+    for_(String, expr.Expression, Block)
+end
+
+enum Terminator
+    return_(expr.Expression) |
+    throw_(expr.Expression) |
+    no_terminator
+end
+
+enum Block
+    block(List(Statement), Terminator)
+end
+
+define parse_if_tail(tokens : List(lex.Token)) -> (IfTail, List(lex.Token)) do
+    k, tokens := ts.assert_is_keyword(tokens);
+    if (k == "end")
+        return (end_(), tokens);
+    elsif (k == "else")
+        block, tokens := parse_code_block(tokens);
+        tokens := ts.assert_keyword(tokens, "end");
+        return (else_(block), tokens);
+    elsif (k == "elsif")
+        tokens := ts.assert_symbol(tokens, "(");
+        exp, tokens := expr.parse_expression(tokens);
+        tokens := ts.assert_symbol(tokens, ")");
+        block, tokens := parse_code_block(tokens);
+        tail, tokens := parse_if_tail(tokens);
+        return (elsif_(exp, block, tail), tokens);
+    end
+    throw void;
+end
+
+define parse_if(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
+    tokens := ts.assert_keyword(tokens, "if");
+    tokens := ts.assert_symbol(tokens, "(");
+    exp, tokens := expr.parse_expression(tokens);
+    tokens := ts.assert_symbol(tokens, ")");
+    block, tokens := parse_code_block(tokens);
+    tail, tokens := parse_if_tail(tokens);
+    return (if_(exp, block, tail), tokens);
+end
+
+define parse_do_while(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
+    tokens := ts.assert_keyword(tokens, "do");
+    block, tokens := parse_code_block(tokens);
+    tokens := ts.assert_keyword(tokens, "while");
+    tokens := ts.assert_symbol(tokens, "(");
+    exp, tokens := expr.parse_expression(tokens);
+    tokens := ts.assert_symbol(tokens, ")");
+    return (do_while(block, exp), tokens);
+end
+
+define parse_while(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
+    tokens := ts.assert_keyword(tokens, "while");
+    tokens := ts.assert_symbol(tokens, "(");
+    exp, tokens := expr.parse_expression(tokens);
+    tokens := ts.assert_symbol(tokens, ")");
+    block, tokens := parse_code_block(tokens);
+    tokens := ts.assert_keyword(tokens, "end");
+    return (while_(exp, block), tokens);
+end
+
+define parse_for(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
+    tokens := ts.assert_keyword(tokens, "for");
+    name, tokens := ts.assert_is_lower_name(tokens);
+    tokens := ts.assert_keyword(tokens, "in");
+    exp, tokens := expr.parse_expression(tokens);
+    tokens := ts.assert_keyword(tokens, "do");
+    block, tokens := parse_code_block(tokens);
+    tokens := ts.assert_keyword(tokens, "end");
+    return (for_(name, exp, block), tokens);
+end
+
+define parse_match(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
+    throw void;
+end
+
+define parse_code_block(tokens : List(lex.Token)) -> (Block, List(lex.Token)) do
+    statements := [] : (List(Statement));
+    do
+        k := ts.peek_keyword(tokens);
+        match (k)
+            just_string(k1) do
+                if (k1 == "if")
+                    statement, tokens := parse_if(tokens);
+                    statements := statements.append(statement);
+                elsif (k1 == "do")
+                    statement, tokens := parse_do_while(tokens);
+                    statements := statements.append(statement);
+                elsif (k1 == "while")
+                    statement, tokens := parse_while(tokens);
+                    statements := statements.append(statement);
+                elsif (k1 == "for")
+                    statement, tokens := parse_for(tokens);
+                    statements := statements.append(statement);
+                elsif (k1 == "match")
+                    statement, tokens := parse_match(tokens);
+                    statements := statements.append(statement);
+                else
+                    return (block(statements, no_terminator()), tokens);
+                end
+            end
+            nothing_string do
+                return (block(statements, no_terminator()), tokens);
+            end
+        end
+    while (true)
+    throw void;
+end
