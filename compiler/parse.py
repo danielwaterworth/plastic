@@ -38,10 +38,6 @@ def p_top_level_coroutine(p):
     '''top_level_decl : coroutine'''
     p[0] = p[1]
 
-def p_record(p):
-    '''top_level_decl : RECORD UPPER_NAME record_decl_list END'''
-    p[0] = program.Record(p[2], p[3])
-
 def p_enum(p):
     '''top_level_decl : ENUM UPPER_NAME enum_constructors END'''
     p[0] = program.Enum(p[2], p[3])
@@ -154,27 +150,6 @@ def p_non_empty_parameter_list(p):
 def p_parameter(p):
     '''parameter : LOWER_NAME COLON type'''
     p[0] = (p[1], p[3])
-
-def p_record_decl_list_empty(p):
-    '''record_decl_list : empty'''
-    p[0] = []
-
-def p_record_decl_list(p):
-    '''record_decl_list : record_decl_list record_decl'''
-    p[1].append(p[2])
-    p[0] = p[1]
-
-def p_attr(p):
-    '''record_decl : ATTR LOWER_NAME COLON type SEMICOLON'''
-    p[0] = program.Attr(p[2], p[4])
-
-def p_record_constructor(p):
-    '''record_decl : CONSTRUCTOR LOWER_NAME OPEN_PARENS parameter_list CLOSE_PARENS code_block END'''
-    p[0] = program.Constructor(p[2], p[4], p[6])
-
-def p_record_method(p):
-    '''record_decl : function'''
-    p[0] = p[1]
 
 def p_interface_decl_list_empty(p):
     '''interface_decl_list : empty'''

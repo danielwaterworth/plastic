@@ -57,7 +57,6 @@ keywords = [
     'op',
     'or',
     'private',
-    'record',
     'resume',
     'return',
     'run',

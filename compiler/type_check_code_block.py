@@ -14,11 +14,6 @@ class MethodCall(Call):
     def __init__(self, obj):
         self.obj = obj
 
-class RecordConstructorCall(Call):
-    def __init__(self, module, record):
-        self.module = module
-        self.record = record
-
 class ServiceConstructorCall(Call):
     def __init__(self, module, service, dependencies):
         self.module = module
@@ -246,8 +241,6 @@ def type_check_code_block(context, code_block):
                 expression.function_name = expression.function.name
                 if isinstance(obj, program.Variable) and obj.name in context.current_module.imports:
                     expression.call = FunctionCall(context.module_interfaces[obj.name])
-                elif isinstance(obj, program.TypeName):
-                    expression.call = RecordConstructorCall(context.current_module, obj.name)
                 elif isinstance(obj, program.Call):
                     if isinstance(obj.function, program.TypeName):
                         expression.call = ServiceConstructorCall(context.current_module, obj.function.name, obj.arguments)
@@ -257,10 +250,6 @@ def type_check_code_block(context, code_block):
                         expression.call = ServiceConstructorCall(module, obj.function.name, obj.arguments)
                     else:
                         expression.call = MethodCall(obj)
-                elif isinstance(obj, program.TypeAccess):
-                    assert isinstance(obj.obj, program.Variable)
-                    module = context.module_interfaces[obj.obj.name]
-                    expression.call = RecordConstructorCall(module, obj.name)
                 else:
                     expression.call = MethodCall(obj)
             else:
@@ -281,13 +270,6 @@ def type_check_code_block(context, code_block):
                 expected_arg_types, return_type = object_type.method_signature(function)
                 assert expected_arg_types == argument_types
                 expression.type = return_type
-            elif isinstance(expression.call, RecordConstructorCall):
-                record_type = expression.call.module.types[expression.call.record]
-                assert isinstance(record_type, program_types.Instantiation)
-                assert isinstance(record_type.constructor, program_types.Record)
-                expected_arg_types = record_type.constructor.constructor_signatures[function]
-                assert expected_arg_types == argument_types
-                expression.type = record_type
             elif isinstance(expression.call, ServiceConstructorCall):
                 service = expression.call.module.services[expression.call.service]
                 dependency_types = [infer_expression_type(argument) for argument in expression.call.dependencies]

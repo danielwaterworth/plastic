@@ -61,11 +61,6 @@ class Function(Decl):
     def parameter_names(self):
         return [param[0] for param in self.parameters]
 
-class Record(Decl):
-    def __init__(self, name, decls):
-        self.name = name
-        self.decls = decls
-
 class Enum(Decl):
     def __init__(self, name, constructors):
         self.name = name

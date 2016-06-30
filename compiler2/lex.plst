@@ -64,7 +64,6 @@ define keywords() -> List(String) do
         "op",
         "or",
         "private",
-        "record",
         "return",
         "service",
         "sys",

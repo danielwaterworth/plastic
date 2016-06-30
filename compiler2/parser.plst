@@ -101,11 +101,6 @@ define parse_enum(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
     throw void;
 end
 
-define parse_record(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
-    tokens := ts.assert_keyword(tokens, "record");
-    throw void;
-end
-
 define parse_interface(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
     tokens := ts.assert_keyword(tokens, "interface");
     throw void;
@@ -161,9 +156,6 @@ define parse(tokens : List(lex.Token)) -> (List(String), List(TopLevel)) do
                     decls := decls.append(decl);
                 elsif (key == "enum")
                     decl, tokens := parse_enum(tokens);
-                    decls := decls.append(decl);
-                elsif (key == "record")
-                    decl, tokens := parse_record(tokens);
                     decls := decls.append(decl);
                 elsif (key == "interface")
                     decl, tokens := parse_interface(tokens);

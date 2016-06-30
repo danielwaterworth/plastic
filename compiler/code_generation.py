@@ -36,19 +36,6 @@ class FunctionContext(GenerationContext):
     def new_context(self, basic_block):
         return FunctionContext(self.current_module_name, self.function_writer, basic_block, dict(self.variables))
 
-class RecordContext(GenerationContext):
-    def new_context(self, basic_block):
-        return RecordContext(self.current_module_name, self.function_writer, basic_block, dict(self.variables))
-
-    def attr_add(self, name, value):
-        self.add('@%s' % name, value)
-
-    def attr_lookup(self, name):
-        var = self.lookup('@%s' % name)
-        var, var1 = self.basic_block.dup(var)
-        self.add('@%s' % name, var)
-        return var1
-
 class ServiceContext(GenerationContext):
     def __init__(self, current_module_name, name, dependencies, attrs, self_variable, function_writer, basic_block, variables):
         self.current_module_name = current_module_name
@@ -303,8 +290,6 @@ def generate_expression(context, expression):
             obj = expression.call.obj
             object_variable = generate_expression(context, obj)
             return obj.type.method(context.basic_block, object_variable, function, arguments)
-        elif isinstance(expression.call, type_check_code_block.RecordConstructorCall):
-            return context.basic_block.fun_call('%s.%s' % (expression.call.record, function), arguments)
         else:
             raise NotImplementedError('unknown call type: %s' % type(expression.call))
     elif isinstance(expression, program.SysCall):
@@ -498,55 +483,6 @@ def generate_coroutine(program_writer, coroutine):
 
         generate_code_block(context, coroutine.body)
 
-def generate_record(program_writer, record):
-    def generate_constructor(constructor):
-        assert not constructor.body.terminator
-
-        function_name = '%s.%s' % (record.name, constructor.name)
-        parameter_names = constructor.parameter_names
-        num_parameters = constructor.num_parameters
-        with program_writer.function(function_name, num_parameters) as (function_writer, variables):
-            variables = dict(zip(parameter_names, variables))
-            basic_block = function_writer.basic_block()
-            context = RecordContext(record.module_interface.name, function_writer, basic_block, variables)
-
-            generate_code_block(context, constructor.body)
-
-            arguments = [context.lookup('@%s' % attr) for attr, _ in record.type_constructor.attrs]
-            result = context.basic_block.operation('list.pack', arguments)
-            context.basic_block.ret(result)
-
-    def generate_method(method):
-        function_name = '%s#%s' % (record.name, method.name)
-        num_parameters = 1 + method.num_parameters
-        with program_writer.function(function_name, num_parameters) as (function_writer, variables):
-            basic_block = function_writer.basic_block()
-
-            self_variable = variables[0]
-
-            parameter_names = method.parameter_names
-            variable_dict = dict(zip(parameter_names, variables[1:]))
-            offset = 0
-            offset_var = basic_block.constant_uint(offset)
-            for attr, attr_type in record.type_constructor.attrs:
-                offset += 1
-                new_offset_var = basic_block.constant_uint(offset)
-                self_variable, self_variable1 = basic_block.dup(self_variable)
-                var = basic_block.operation('list.index', [self_variable1, offset_var])
-                variable_dict['@%s' % attr] = var
-                offset_var = new_offset_var
-
-            variable_dict['self'] = self_variable
-            context = RecordContext(record.module_interface.name, function_writer, basic_block, variable_dict)
-
-            generate_code_block(context, method.body)
-
-    for decl in record.decls:
-        if isinstance(decl, program.Constructor):
-            generate_constructor(decl)
-        elif isinstance(decl, program.Function):
-            generate_method(decl)
-
 def generate_enum(program_writer, enum):
     for constructor in enum.constructors:
         name = "%s::%s" % (enum.module_interface.name, constructor.name)
@@ -677,8 +613,6 @@ def generate_module(program_writer, module):
             generate_function(program_writer, decl)
         elif isinstance(decl, program.Coroutine):
             generate_coroutine(program_writer, decl)
-        elif isinstance(decl, program.Record):
-            generate_record(program_writer, decl)
         elif isinstance(decl, program.Enum):
             generate_enum(program_writer, decl)
         elif isinstance(decl, program.Service):

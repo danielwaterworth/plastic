@@ -172,20 +172,6 @@ class Enum(Type):
         self.name = name
         self.constructors = constructors
 
-class Record(Type):
-    def __init__(self, name, attrs, constructor_signatures, methods):
-        self.name = name
-        self.attrs = attrs
-        self.constructor_signatures = constructor_signatures
-        self.methods = methods
-
-    def constructor_method_signature(self, types, name):
-        return self.methods[name]
-
-    def method(self, basic_block, object_variable, name, arguments):
-        self.methods[name]
-        return basic_block.fun_call('%s#%s' % (self.name, name), [object_variable] + arguments)
-
 def template_signature((arguments, return_type), replacements):
     arguments = [arg.template(replacements) for arg in arguments]
     return_type = return_type.template(replacements)
