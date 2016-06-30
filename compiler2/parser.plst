@@ -1,3 +1,419 @@
 import iter
+import lex
+import json
 
+enum Expression
+    variable(String)
+end
 
+enum Statement
+    assignment(String, Expression)
+end
+
+enum Terminator
+    return_(Expression) |
+    throw_(Expression) |
+    no_terminator
+end
+
+enum Block
+    block(List(Statement), Terminator)
+end
+
+enum ServiceDecl
+    attr_(String, Type) |
+    private_ |
+    implements_
+end
+
+enum TopLevel
+    record_ |
+    enum_(String, List((String, List(Type)))) |
+    service_(String, List((String, Type)), List(ServiceDecl)) |
+    entry_(Block) |
+    function_(String, List((String, Type)), Type, Block) |
+    coroutine_(String, List((String, Type)), Type, Type, Block)
+end
+
+enum MaybeString
+    just_string(String) |
+    nothing_string
+end
+
+enum Type
+    named_type(MaybeString, String)
+end
+
+define assert(b : Bool) -> Void do
+    if (not b)
+        throw void;
+    end
+    return void;
+end
+
+define assert_is_keyword(tokens : List(lex.Token)) -> (String, List(lex.Token)) do
+    match (tokens.index(0))
+        keyword(k) do
+            return (k, tokens.drop(1));
+        end
+    end
+    throw void;
+end
+
+define assert_keyword(tokens : List(lex.Token), k : String) -> List(lex.Token) do
+    key, tokens := assert_is_keyword(tokens);
+    assert(key == k);
+    return tokens;
+end
+
+define assert_is_symbol(tokens : List(lex.Token)) -> (String, List(lex.Token)) do
+    match (tokens.index(0))
+        symbol(k) do
+            return (k, tokens.drop(1));
+        end
+    end
+    throw void;
+end
+
+define assert_symbol(tokens : List(lex.Token), k : String) -> List(lex.Token) do
+    key, tokens := assert_is_symbol(tokens);
+    assert(key == k);
+    return tokens;
+end
+
+define assert_is_lower_name(tokens : List(lex.Token)) -> (String, List(lex.Token)) do
+    match (tokens.index(0))
+        lower_name(k) do
+            return (k, tokens.drop(1));
+        end
+    end
+    throw void;
+end
+
+define assert_lower_name(tokens : List(lex.Token), k : String) -> List(lex.Token) do
+    key, tokens := assert_is_lower_name(tokens);
+    assert(key == k);
+    return tokens;
+end
+
+define assert_is_upper_name(tokens : List(lex.Token)) -> (String, List(lex.Token)) do
+    match (tokens.index(0))
+        upper_name(k) do
+            return (k, tokens.drop(1));
+        end
+    end
+    throw void;
+end
+
+define assert_upper_name(tokens : List(lex.Token), k : String) -> List(lex.Token) do
+    key, tokens := assert_is_upper_name(tokens);
+    assert(key == k);
+    return tokens;
+end
+
+define parse_imports(tokens : List(lex.Token)) -> (List(String), List(lex.Token)) do
+    imports := [] : (List(String));
+    do
+        if (tokens.length() > 0)
+            match (tokens.index(0))
+                keyword(k) do
+                    if (k == "import")
+                        match(tokens.index(1))
+                            lower_name(mod) do
+                                tokens := tokens.drop(2);
+                                imports := imports.append(mod);
+                            end
+                        end
+                    else
+                        return (imports, tokens);
+                    end
+                end
+                symbol(s) do
+                    return (imports, tokens);
+                end
+                char(c) do
+                    return (imports, tokens);
+                end
+                lower_name(n) do
+                    return (imports, tokens);
+                end
+                number(n) do
+                    return (imports, tokens);
+                end
+                property(p) do
+                    return (imports, tokens);
+                end
+                string(s) do
+                    return (imports, tokens);
+                end
+                upper_name(u) do
+                    return (imports, tokens);
+                end
+            end
+        end
+    while (true)
+    throw void;
+end
+
+define parse_type(tokens : List(lex.Token)) -> (Type, List(lex.Token)) do
+    match (tokens.index(0))
+        lower_name(module) do
+            tokens := assert_symbol(tokens.drop(1), ".");
+            name, tokens := assert_is_upper_name(tokens);
+            return (named_type(just_string(module), name), tokens);
+        end
+        upper_name(name) do
+            return (named_type(nothing_string(), name), tokens.drop(1));
+        end
+    end
+end
+
+define parse_parameter(tokens : List(lex.Token)) -> (String, Type, List(lex.Token)) do
+    name, tokens := assert_is_lower_name(tokens);
+    tokens := assert_symbol(tokens, ":");
+    type, tokens := parse_type(tokens);
+    return (name, type, tokens);
+end
+
+define parse_parameter_list(tokens : List(lex.Token)) -> (List((String, Type)), List(lex.Token)) do
+    tokens := assert_symbol(tokens, "(");
+    parameters := [] : (List((String, Type)));
+    do
+        token := tokens.index(0);
+        match (token)
+            lower_name(name) do
+                name, type, tokens := parse_parameter(tokens);
+                parameters := parameters.append((name, type));
+            end
+            symbol(s) do
+                tokens := assert_symbol(tokens, ")");
+                return (parameters, tokens);
+            end
+        end
+    while(true)
+    throw void;
+end
+
+define parse_expression(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
+    throw void;
+end
+
+define parse_if(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
+    throw void;
+end
+
+define parse_do(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
+    throw void;
+end
+
+define parse_while(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
+    throw void;
+end
+
+define parse_for(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
+    throw void;
+end
+
+define parse_match(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
+    throw void;
+end
+
+define parse_code_block(tokens : List(lex.Token)) -> (Block, List(lex.Token)) do
+    statements := [] : (List(Statement));
+    do
+        match (tokens.index(0))
+            keyword(k) do
+                if (k == "if")
+                    statement, tokens := parse_if(tokens);
+                    statements := statements.append(statement);
+                elsif (k == "do")
+                    statement, tokens := parse_do(tokens);
+                    statements := statements.append(statement);
+                elsif (k == "while")
+                    statement, tokens := parse_while(tokens);
+                    statements := statements.append(statement);
+                elsif (k == "for")
+                    statement, tokens := parse_for(tokens);
+                    statements := statements.append(statement);
+                elsif (k == "match")
+                    statement, tokens := parse_match(tokens);
+                    statements := statements.append(statement);
+                elsif (k == "end")
+                    return (block(statements, no_terminator()), tokens);
+                else
+                    throw void;
+                end
+            end
+            symbol(s) do
+                throw void;
+            end
+            char(c) do
+                throw void;
+            end
+            lower_name(n) do
+                throw void;
+            end
+            number(n) do
+                throw void;
+            end
+            property(p) do
+                throw void;
+            end
+            string(s) do
+                throw void;
+            end
+            upper_name(u) do
+                throw void;
+            end
+        end
+    while (true)
+    throw void;
+end
+
+define parse_function(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
+    tokens := assert_keyword(tokens, "define");
+    debug("define");
+    name, tokens := assert_is_lower_name(tokens);
+    debug("lower");
+    parameter_list, tokens := parse_parameter_list(tokens);
+    debug("parameter");
+    tokens := assert_symbol(tokens, "->");
+    debug("arrow");
+    return_type, tokens := parse_type(tokens);
+    debug("type");
+    tokens := assert_keyword(tokens, "do");
+    debug("do");
+    code_block, tokens := parse_code_block(tokens);
+    debug("code_block");
+    tokens := assert_keyword(tokens, "end");
+    debug((name, parameter_list, return_type, code_block));
+    return (function_(name, parameter_list, return_type, code_block), tokens);
+end
+
+define parse_coroutine(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
+    tokens := assert_keyword(tokens, "coroutine");
+    name, tokens := assert_is_lower_name(tokens);
+    parameter_list, tokens := parse_parameter_list(tokens);
+    receive_type, tokens := parse_type(tokens);
+    tokens := assert_symbol(tokens, "->");
+    yield_type, tokens := parse_type(tokens);
+    tokens := assert_keyword(tokens, "do");
+    code_block, tokens := parse_code_block(tokens);
+    tokens := assert_keyword(tokens, "end");
+    return (coroutine_(name, parameter_list, receive_type, yield_type, code_block), tokens);
+end
+
+define parse_enum(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
+    tokens := assert_keyword(tokens, "enum");
+    throw void;
+end
+
+define parse_record(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
+    tokens := assert_keyword(tokens, "record");
+    throw void;
+end
+
+define parse_interface(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
+    tokens := assert_keyword(tokens, "interface");
+    throw void;
+end
+
+define parse_dependency(tokens : List(lex.Token)) -> (String, Type, List(lex.Token)) do
+    name, tokens := assert_is_lower_name(tokens);
+    tokens := assert_symbol(tokens, ":");
+    type, tokens := parse_type(tokens);
+    return (name, type, tokens);
+end
+
+define parse_dependencies(tokens : List(lex.Token)) -> (List((String, Type)), List(lex.Token)) do
+    throw void;
+end
+
+define parse_service_decls(tokens : List(lex.Token)) -> (List(ServiceDecl), List(lex.Token)) do
+    throw void;
+end
+
+define parse_service(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
+    tokens := assert_keyword(tokens, "service");
+    name, tokens := assert_is_upper_name(tokens);
+    dependencies, tokens := parse_dependencies(tokens);
+    decls, tokens := parse_service_decls(tokens);
+    tokens := assert_keyword(tokens, "end");
+    return (service_(name, dependencies, decls), tokens);
+end
+
+define parse_entry(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
+    tokens := assert_keyword(tokens, "entry");
+    code_block, tokens := parse_code_block(tokens);
+    tokens := assert_keyword(tokens, "end");
+    return (entry_(code_block), tokens);
+end
+
+define parse(tokens : List(lex.Token)) -> (List(String), List(TopLevel)) do
+    imports, tokens := parse_imports(tokens);
+    decls := [] : (List(TopLevel));
+    do
+        if (tokens.length() == 0)
+            return (imports, decls);
+        end
+
+        token := tokens.index(0);
+        match (token)
+            keyword(key) do
+                if (key == "define")
+                    decl, tokens := parse_function(tokens);
+                    decls := decls.append(decl);
+                elsif (key == "coroutine")
+                    decl, tokens := parse_coroutine(tokens);
+                    decls := decls.append(decl);
+                elsif (key == "enum")
+                    decl, tokens := parse_enum(tokens);
+                    decls := decls.append(decl);
+                elsif (key == "record")
+                    decl, tokens := parse_record(tokens);
+                    decls := decls.append(decl);
+                elsif (key == "interface")
+                    decl, tokens := parse_interface(tokens);
+                    decls := decls.append(decl);
+                elsif (key == "service")
+                    decl, tokens := parse_service(tokens);
+                    decls := decls.append(decl);
+                elsif (key == "entry")
+                    decl, tokens := parse_entry(tokens);
+                    decls := decls.append(decl);
+                else
+                    throw void;
+                end
+            end
+        end
+    while (true)
+end
+
+service Test(
+            f : file.FileOps
+        )
+    constructor new()
+    end
+
+    implements EntryPoint
+        define main() -> Bool do
+            fd := @f.open("input.plst".encode_utf8(), 0);
+            source := @f.read(fd, 4096).decode_utf8();
+            if (source.length() == 4096)
+                throw void;
+            end
+            @f.close(fd);
+            debug("lexing");
+            tokens := lex.lex(source);
+            debug("lexed");
+            imports, decls := parse(tokens);
+            debug("parsed");
+            return true;
+        end
+    end
+end
+
+entry
+    f := file.SysFileOps().new();
+    return Test(f).new();
+end

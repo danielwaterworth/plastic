@@ -1,0 +1,23 @@
+service Test()
+    constructor new()
+    end
+
+    implements EntryPoint
+        define main() -> Bool do
+            a := "foo";
+            do
+                debug(a);
+                if (true)
+                    return true;
+                else
+                    return true;
+                end
+            while(true)
+            throw void;
+        end
+    end
+end
+
+entry
+    return Test().new();
+end

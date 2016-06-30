@@ -2,6 +2,9 @@ import data
 from data import operator
 
 class DList(data.Data):
+    def debug(self):
+        return u'[%s]' % u', '.join([el.debug() for el in self.elements])
+
     def __init__(self, elements):
         self.elements = elements
 
@@ -71,3 +74,11 @@ def call(self, arguments):
     l = list(l.elements)
     l.reverse()
     return [DList(l)]
+
+@operator('list.drop')
+def call(self, arguments):
+    l, n = arguments
+    assert isinstance(l, DList)
+    assert isinstance(n, data.UInt)
+    assert len(l.elements) >= n.n
+    return [DList(l.elements[n.n:])]

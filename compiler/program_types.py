@@ -148,6 +148,8 @@ class List(Type):
             return ([t], Instantiation(list, [t]))
         elif name == 'reverse':
             return ([], Instantiation(list, [t]))
+        elif name == 'drop':
+            return ([uint], Instantiation(list, [t]))
         else:
             raise KeyError("on such method on list: %s" % name)
 
@@ -160,6 +162,8 @@ class List(Type):
             return basic_block.operation('list.append', [object_variable] + arguments)
         elif name == 'reverse':
             return basic_block.operation('list.reverse', [object_variable])
+        elif name == 'drop':
+            return basic_block.operation('list.drop', [object_variable] + arguments)
 
 list = List()
 

@@ -14,6 +14,9 @@ class GenerationContext(object):
     def add(self, name, variable):
         self.variables[name] = variable
 
+    def has(self, name):
+        return name in self.variables
+
     def lookup(self, name):
         return self.variables[name]
 
@@ -105,7 +108,8 @@ def do_while(context, fn):
     last_body_index = context.basic_block.index
 
     for name, phi in phis.iteritems():
-        phi.inputs[last_body_index] = context.lookup(name)
+        if context.has(name):
+            phi.inputs[last_body_index] = context.lookup(name)
 
     body_conditional = context.basic_block.special_conditional(condition_variable, first_body_block, 0)
     context.basic_block = context.function_writer.basic_block()

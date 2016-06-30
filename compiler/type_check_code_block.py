@@ -413,14 +413,12 @@ def type_check_code_block(context, code_block):
 
                 context.variable_types = dict(before_context)
 
-            assert generated_constructors == set(constructors)
             if after_contexts:
                 context.variable_types = reduce(merge_contexts, after_contexts)
             else:
                 context.variable_types = {}
         elif isinstance(statement, program.Debug):
             expression = infer_expression_type(statement.expression)
-            assert expression == string
         elif isinstance(statement, program.Expression):
             infer_expression_type(statement)
         else:

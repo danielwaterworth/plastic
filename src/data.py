@@ -75,6 +75,9 @@ class Data(object):
         type_by_id[i] = cls
         cls.type_id = i
 
+    def debug(self):
+        return u"(unknown)"
+
     def copy(self):
         return self
 
@@ -246,6 +249,9 @@ class ByteString(Data):
         assert not v is None
         self.v = v
 
+    def debug(self):
+        return u'b\"%s\"' % self.v.decode('utf-8')
+
     def persist(self, fd):
         fd.write(self.type_id)
         fd.write(pack_uint(len(self.v)))
@@ -271,6 +277,9 @@ class ByteString(Data):
 class String(Data):
     def __init__(self, v):
         self.v = v
+
+    def debug(self):
+        return u'\"%s\"' % self.v
 
     def write_out(self, basic_block):
         return basic_block.constant_string(self.v)

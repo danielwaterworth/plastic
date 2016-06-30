@@ -41,7 +41,11 @@ def type_check_module(module_interfaces, module_name, module_decl):
                         dict(function.parameters)
                     )
 
-        type_check_code_block.type_check_code_block(context, function.body)
+        try:
+            type_check_code_block.type_check_code_block(context, function.body)
+        except:
+            print function.name
+            raise
 
     def type_check_coroutine(coroutine):
         types = {}
