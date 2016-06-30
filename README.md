@@ -41,7 +41,7 @@ service Hello(p : printer.Printer)
     end
 
     implements EntryPoint
-        define main() -> Bool do
+        define main(args : List(ByteString)) -> Bool do
             @p.print("hello, world");
             return true;
         end
@@ -89,7 +89,7 @@ def call(self, arguments):
     a = arguments[0]
     assert isinstance(a, data.String)
     print a.v
-    return data.Void()
+    return [data.Void()]
 ```
 
 The `sys_call` decorator comes from the `data` module. The `self` parameter can
