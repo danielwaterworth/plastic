@@ -3,6 +3,7 @@ import json
 
 import lex
 import ts
+import type
 import expr
 
 enum IfTail
@@ -27,22 +28,18 @@ enum Block
 end
 
 enum ServiceDecl
-    attr_(String, Type) |
+    attr_(String, type.Type) |
     private_ |
     implements_
 end
 
 enum TopLevel
     record_ |
-    enum_(String, List((String, List(Type)))) |
-    service_(String, List((String, Type)), List(ServiceDecl)) |
+    enum_(String, List((String, List(type.Type)))) |
+    service_(String, List((String, type.Type)), List(ServiceDecl)) |
     entry_(Block) |
-    function_(String, List((String, Type)), Type, Block) |
-    coroutine_(String, List((String, Type)), Type, Type, Block)
-end
-
-enum Type
-    named_type(ts.MaybeString, String)
+    function_(String, List((String, type.Type)), type.Type, Block) |
+    coroutine_(String, List((String, type.Type)), type.Type, type.Type, Block)
 end
 
 define parse_imports(tokens : List(lex.Token)) -> (List(String), List(lex.Token)) do
@@ -68,35 +65,22 @@ define parse_imports(tokens : List(lex.Token)) -> (List(String), List(lex.Token)
     throw void;
 end
 
-define parse_type(tokens : List(lex.Token)) -> (Type, List(lex.Token)) do
-    match (tokens.index(0))
-        lower_name(module) do
-            tokens := ts.assert_symbol(tokens.drop(1), ".");
-            name, tokens := ts.assert_is_upper_name(tokens);
-            return (named_type(ts.just_string(module), name), tokens);
-        end
-        upper_name(name) do
-            return (named_type(ts.nothing_string(), name), tokens.drop(1));
-        end
-    end
-end
-
-define parse_parameter(tokens : List(lex.Token)) -> (String, Type, List(lex.Token)) do
+define parse_parameter(tokens : List(lex.Token)) -> (String, type.Type, List(lex.Token)) do
     name, tokens := ts.assert_is_lower_name(tokens);
     tokens := ts.assert_symbol(tokens, ":");
-    type, tokens := parse_type(tokens);
-    return (name, type, tokens);
+    t, tokens := type.parse_type(tokens);
+    return (name, t, tokens);
 end
 
-define parse_parameter_list(tokens : List(lex.Token)) -> (List((String, Type)), List(lex.Token)) do
+define parse_parameter_list(tokens : List(lex.Token)) -> (List((String, type.Type)), List(lex.Token)) do
     tokens := ts.assert_symbol(tokens, "(");
-    parameters := [] : (List((String, Type)));
+    parameters := [] : (List((String, type.Type)));
     do
         token := tokens.index(0);
         match (token)
             lower_name(name) do
-                name, type, tokens := parse_parameter(tokens);
-                parameters := parameters.append((name, type));
+                name, t, tokens := parse_parameter(tokens);
+                parameters := parameters.append((name, t));
             end
             symbol(s) do
                 tokens := ts.assert_symbol(tokens, ")");
@@ -190,7 +174,7 @@ define parse_function(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) d
     name, tokens := ts.assert_is_lower_name(tokens);
     parameter_list, tokens := parse_parameter_list(tokens);
     tokens := ts.assert_symbol(tokens, "->");
-    return_type, tokens := parse_type(tokens);
+    return_type, tokens := type.parse_type(tokens);
     tokens := ts.assert_keyword(tokens, "do");
     code_block, tokens := parse_code_block(tokens);
     tokens := ts.assert_keyword(tokens, "end");
@@ -201,9 +185,9 @@ define parse_coroutine(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) 
     tokens := ts.assert_keyword(tokens, "coroutine");
     name, tokens := ts.assert_is_lower_name(tokens);
     parameter_list, tokens := parse_parameter_list(tokens);
-    receive_type, tokens := parse_type(tokens);
+    receive_type, tokens := type.parse_type(tokens);
     tokens := ts.assert_symbol(tokens, "->");
-    yield_type, tokens := parse_type(tokens);
+    yield_type, tokens := type.parse_type(tokens);
     tokens := ts.assert_keyword(tokens, "do");
     code_block, tokens := parse_code_block(tokens);
     tokens := ts.assert_keyword(tokens, "end");
@@ -225,14 +209,14 @@ define parse_interface(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) 
     throw void;
 end
 
-define parse_dependency(tokens : List(lex.Token)) -> (String, Type, List(lex.Token)) do
+define parse_dependency(tokens : List(lex.Token)) -> (String, type.Type, List(lex.Token)) do
     name, tokens := ts.assert_is_lower_name(tokens);
     tokens := ts.assert_symbol(tokens, ":");
-    type, tokens := parse_type(tokens);
-    return (name, type, tokens);
+    t, tokens := type.parse_type(tokens);
+    return (name, t, tokens);
 end
 
-define parse_dependencies(tokens : List(lex.Token)) -> (List((String, Type)), List(lex.Token)) do
+define parse_dependencies(tokens : List(lex.Token)) -> (List((String, type.Type)), List(lex.Token)) do
     throw void;
 end
 

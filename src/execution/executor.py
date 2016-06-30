@@ -223,7 +223,7 @@ class Coroutine(data.Data):
         print ''
         print 'backtrace:'
         for frame in self.stack:
-            print '  ' + frame.function.name
+            print '  %s:%d' % (frame.function.name, frame.next_value)
         print ''
 
 class Executor(object):

@@ -1,0 +1,18 @@
+import ts
+
+enum Type
+    named_type(ts.MaybeString, String)
+end
+
+define parse_type(tokens : List(lex.Token)) -> (type.Type, List(lex.Token)) do
+    match (tokens.index(0))
+        lower_name(module) do
+            tokens := ts.assert_symbol(tokens.drop(1), ".");
+            name, tokens := ts.assert_is_upper_name(tokens);
+            return (named_type(ts.just_string(module), name), tokens);
+        end
+        upper_name(name) do
+            return (named_type(ts.nothing_string(), name), tokens.drop(1));
+        end
+    end
+end

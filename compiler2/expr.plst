@@ -1,5 +1,6 @@
 import lex
 import ts
+import type
 
 enum BinOperator
     and_ |
@@ -30,7 +31,7 @@ enum Expression
     call(Expression, List(Expression)) |
     bin_op(Expression, BinOperator, Expression) |
     not_(Expression) |
-    yield_(Expression)
+    annotated(Expression, type.Type)
 end
 
 define parse_tuple_literal_tail(tokens : List(lex.Token)) -> (List(Expression), List(lex.Token)) do
@@ -55,8 +56,42 @@ define parse_list_literal(tokens : List(lex.Token)) -> (Expression, List(lex.Tok
     throw void;
 end
 
+define parse_argument_list(tokens : List(lex.Token)) -> (List(Expression), List(lex.Token)) do
+    tokens := ts.assert_symbol(tokens, "(");
+    arguments := [] : (List(Expression));
+    s := ts.peek_symbol(tokens);
+    match (s)
+        just_string(s1) do
+            if (s1 == ")")
+                return (arguments, tokens.drop(1));
+            end
+        end
+        nothing_string do
+        end
+    end
+    exp, tokens := parse_expression(tokens);
+    arguments := arguments.append(exp);
+    do
+        s2, tokens := ts.assert_is_symbol(tokens);
+        if (s2 == ",")
+            exp, tokens := parse_expression(tokens);
+            arguments := arguments.append(exp);
+        elsif (s2 == ")")
+            return (arguments, tokens);
+        else
+            throw void;
+        end
+    while (true)
+end
+
 define parse_term(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
     match (tokens.index(0))
+        lower_name(n) do
+            return (variable(n), tokens.drop(1));
+        end
+        upper_name(n) do
+            return (type_name(n), tokens.drop(1));
+        end
         symbol(s) do
             if (s == "(")
                 return parse_bracketed_expression(tokens);
@@ -80,17 +115,49 @@ define parse_term(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
     end
 end
 
-define parse_expression_1(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
+define parse_expression_0(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
     output, tokens := parse_term(tokens);
     do
         s := ts.peek_symbol(tokens);
         match (s)
             just_string(s1) do
+                if (s1 == "(")
+                    arguments, tokens := parse_argument_list(tokens);
+                    output := call(output, arguments);
+                elsif (s1 == ".")
+                    tokens := tokens.drop(1);
+                    match (tokens.index(0))
+                        upper_name(name) do
+                            tokens := tokens.drop(1);
+                            output := type_access(output, name);
+                        end
+                        lower_name(name) do
+                            tokens := tokens.drop(1);
+                            output := record_access(output, name);
+                        end
+                    end
+                else
+                    return (output, tokens);
+                end
+            end
+            nothing_string do
+                return (output, tokens);
+            end
+        end
+    while (true)
+end
+
+define parse_expression_1(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
+    output, tokens := parse_expression_0(tokens);
+    do
+        s := ts.peek_symbol(tokens);
+        match (s)
+            just_string(s1) do
                 if (s1 == "*")
-                    next, tokens := parse_term(tokens.drop(1));
+                    next, tokens := parse_expression_0(tokens.drop(1));
                     output := bin_op(output, mul(), next);
                 elsif (s1 == "/")
-                    next, tokens := parse_term(tokens.drop(1));
+                    next, tokens := parse_expression_0(tokens.drop(1));
                     output := bin_op(output, div(), next);
                 else
                     return (output, tokens);
@@ -195,7 +262,7 @@ define parse_expression_5(tokens : List(lex.Token)) -> (Expression, List(lex.Tok
     while (true)
 end
 
-define parse_expression(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
+define parse_expression_6(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
     output, tokens := parse_expression_5(tokens);
     do
         s := ts.peek_keyword(tokens);
@@ -213,4 +280,21 @@ define parse_expression(tokens : List(lex.Token)) -> (Expression, List(lex.Token
             end
         end
     while (true)
+end
+
+define parse_expression(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
+    output, tokens := parse_expression_6(tokens);
+    s := ts.peek_symbol(tokens);
+    match (s)
+        just_string(s1) do
+            if (s1 == ":")
+                t, tokens := type.parse_type(tokens.drop(1));
+                output := annotated(output, t);
+            end
+            return (output, tokens);
+        end
+        nothing_string do
+            return (output, tokens);
+        end
+    end
 end
