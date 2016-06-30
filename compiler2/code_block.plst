@@ -7,12 +7,17 @@ enum IfTail
     elsif_(expr.Expression, Block, IfTail)
 end
 
+enum Clause
+    clause(String, List(String), Block)
+end
+
 enum Statement
     assignment(String, expr.Expression) |
     if_(expr.Expression, Block, IfTail) |
     do_while(Block, expr.Expression) |
     while_(expr.Expression, Block) |
-    for_(String, expr.Expression, Block)
+    for_(String, expr.Expression, Block) |
+    match_(expr.Expression, List(Clause))
 end
 
 enum Terminator
@@ -85,8 +90,18 @@ define parse_for(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
     return (for_(name, exp, block), tokens);
 end
 
-define parse_match(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
+define parse_match_clauses(tokens : List(lex.Token)) -> (List(Clause), List(lex.Token)) do
     throw void;
+end
+
+define parse_match(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
+    tokens := ts.assert_keyword(tokens, "match");
+    tokens := ts.assert_symbol(tokens, "(");
+    exp, tokens := expr.parse_expression(tokens);
+    tokens := ts.assert_symbol(tokens, ")");
+    clauses, tokens := parse_match_clauses(tokens);
+    tokens := ts.assert_keyword(tokens, "end");
+    return (match_(exp, clauses), tokens);
 end
 
 define parse_return(tokens : List(lex.Token)) -> (Terminator, List(lex.Token)) do

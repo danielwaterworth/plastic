@@ -37,18 +37,8 @@ enum Expression
     yield_(Expression)
 end
 
-define parse_bracketed_expression(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
-    tokens := ts.assert_symbol(tokens, "(");
-    exp, tokens := parse_expression(tokens);
-    s, tokens := ts.assert_is_symbol(tokens);
-    if (s == ",")
-        expressions := [exp];
-    elsif (s == ")")
-        return (exp, tokens);
-    else
-        throw void;
-    end
-
+define parse_tuple_literal(tokens : List(lex.Token), exp : Expression) -> (Expression, List(lex.Token)) do
+    expressions := [exp];
     do
         exp, tokens := parse_expression(tokens);
         expressions := expressions.append(exp);
@@ -61,6 +51,19 @@ define parse_bracketed_expression(tokens : List(lex.Token)) -> (Expression, List
             throw void;
         end
     while (true)
+end
+
+define parse_bracketed_expression(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
+    tokens := ts.assert_symbol(tokens, "(");
+    exp, tokens := parse_expression(tokens);
+    s, tokens := ts.assert_is_symbol(tokens);
+    if (s == ",")
+        return parse_tuple_literal(tokens, exp);
+    elsif (s == ")")
+        return (exp, tokens);
+    else
+        throw void;
+    end
 end
 
 define parse_list_literal(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
@@ -156,7 +159,7 @@ end
 define parse_yield(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
     tokens := ts.assert_keyword(tokens, "yield");
     tokens := ts.assert_symbol(tokens, "(");
-    exp, tokens := expr.parse_expression(tokens);
+    exp, tokens := parse_expression(tokens);
     tokens := ts.assert_symbol(tokens, ")");
     return (yield_(exp), tokens);
 end

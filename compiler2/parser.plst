@@ -7,19 +7,23 @@ import type
 import expr
 import code_block
 
+enum Function
+    function_(String, List((String, type.Type)), type.Type, code_block.Block) |
+    coroutine_(String, List((String, type.Type)), type.Type, type.Type, code_block.Block)
+end
+
 enum ServiceDecl
     attr_(String, type.Type) |
-    private_ |
-    implements_
+    private_(List(Function)) |
+    implements_(type.Type, List(Function))
 end
 
 enum TopLevel
     record_ |
-    enum_(String, List((String, List(type.Type)))) |
+    enum_(String, List(String), List((String, List(type.Type)))) |
     service_(String, List((String, type.Type)), List(ServiceDecl)) |
     entry_(code_block.Block) |
-    function_(String, List((String, type.Type)), type.Type, code_block.Block) |
-    coroutine_(String, List((String, type.Type)), type.Type, type.Type, code_block.Block)
+    fun_(Function)
 end
 
 define parse_imports(tokens : List(lex.Token)) -> (List(String), List(lex.Token)) do
@@ -71,7 +75,7 @@ define parse_parameter_list(tokens : List(lex.Token)) -> (List((String, type.Typ
     throw void;
 end
 
-define parse_function(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
+define parse_function(tokens : List(lex.Token)) -> (Function, List(lex.Token)) do
     tokens := ts.assert_keyword(tokens, "define");
     name, tokens := ts.assert_is_lower_name(tokens);
     parameter_list, tokens := parse_parameter_list(tokens);
@@ -83,7 +87,7 @@ define parse_function(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) d
     return (function_(name, parameter_list, return_type, block), tokens);
 end
 
-define parse_coroutine(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
+define parse_coroutine(tokens : List(lex.Token)) -> (Function, List(lex.Token)) do
     tokens := ts.assert_keyword(tokens, "coroutine");
     name, tokens := ts.assert_is_lower_name(tokens);
     parameter_list, tokens := parse_parameter_list(tokens);
@@ -96,35 +100,130 @@ define parse_coroutine(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) 
     return (coroutine_(name, parameter_list, receive_type, yield_type, block), tokens);
 end
 
+define parse_type_parameter_list(tokens : List(lex.Token)) -> (List(String), List(lex.Token)) do
+    tokens := ts.assert_symbol(tokens, "(");
+    parameters := [] : (List(String));
+    do
+        token := tokens.index(0);
+        match (token)
+            lower_name(name) do
+                name, tokens := ts.assert_is_lower_name(tokens);
+                parameters := parameters.append(name);
+            end
+            symbol(s) do
+                tokens := ts.assert_symbol(tokens, ")");
+                return (parameters, tokens);
+            end
+        end
+    while(true)
+    throw void;
+end
+
+define parse_optional_type_parameter_list(tokens : List(lex.Token)) -> (List(String), List(lex.Token)) do
+    s := ts.peek_symbol(tokens);
+
+    match (s)
+        just_string(s1) do
+            if (s1 == "(")
+                return parse_type_parameter_list(tokens);
+            end
+        end
+        nothing_string do
+        end
+    end
+
+    return ([] : (List(String)), tokens);
+end
+
+define parse_constructors(tokens : List(lex.Token)) -> (List((String, List(type.Type))), List(lex.Token)) do
+    throw void;
+end
+
 define parse_enum(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
     tokens := ts.assert_keyword(tokens, "enum");
-    throw void;
+    name, tokens := ts.assert_is_upper_name(tokens);
+    parameters, tokens := parse_optional_type_parameter_list(tokens);
+    constructors, tokens := parse_constructors(tokens);
+    tokens := ts.assert_keyword(tokens, "end");
+    return (enum_(name, parameters, constructors), tokens);
 end
 
 define parse_interface(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
     tokens := ts.assert_keyword(tokens, "interface");
+    name, tokens := ts.assert_is_upper_name(tokens);
+    parameters, tokens := parse_optional_type_parameter_list(tokens);
     throw void;
 end
 
-define parse_dependency(tokens : List(lex.Token)) -> (String, type.Type, List(lex.Token)) do
+define parse_attr(tokens : List(lex.Token)) -> (ServiceDecl, List(lex.Token)) do
+    tokens := ts.assert_keyword(tokens, "attr");
     name, tokens := ts.assert_is_lower_name(tokens);
     tokens := ts.assert_symbol(tokens, ":");
     t, tokens := type.parse_type(tokens);
-    return (name, t, tokens);
+    tokens := ts.assert_symbol(tokens, ";");
+    return (attr_(name, t), tokens);
 end
 
-define parse_dependencies(tokens : List(lex.Token)) -> (List((String, type.Type)), List(lex.Token)) do
-    throw void;
+define parse_private(tokens : List(lex.Token)) -> (ServiceDecl, List(lex.Token)) do
+    tokens := ts.assert_keyword(tokens, "private");
+    decls := [] : (List(Function));
+    do
+        k := ts.peek_keyword(tokens);
+        match (k)
+            just_string(k1) do
+                if (k1 == "end")
+                    return (private_(decls), tokens.drop(1));
+                end
+            end
+            nothing_string do
+            end
+        end
+        function, tokens := parse_function(tokens);
+        decls := decls.append(function);
+    while (true)
+end
+
+define parse_implements(tokens : List(lex.Token)) -> (ServiceDecl, List(lex.Token)) do
+    tokens := ts.assert_keyword(tokens, "implements");
+    t, tokens := type.parse_type(tokens);
+    decls := [] : (List(Function));
+    do
+        k := ts.peek_keyword(tokens);
+        match (k)
+            just_string(k1) do
+                if (k1 == "end")
+                    return (implements_(t, decls), tokens.drop(1));
+                end
+            end
+            nothing_string do
+            end
+        end
+        function, tokens := parse_function(tokens);
+        decls := decls.append(function);
+    while (true)
 end
 
 define parse_service_decls(tokens : List(lex.Token)) -> (List(ServiceDecl), List(lex.Token)) do
-    throw void;
+    decls := [] : (List(ServiceDecl));
+    do
+        k, tokens := ts.assert_is_keyword(tokens);
+        if (k == "attr")
+            decl, tokens := parse_attr(tokens);
+        elsif (k == "private")
+            decl, tokens := parse_private(tokens);
+        elsif (k == "implements")
+            decl, tokens := parse_implements(tokens);
+        else
+            throw void;
+        end
+        decls := decls.append(decl);
+    while (true)
 end
 
 define parse_service(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
     tokens := ts.assert_keyword(tokens, "service");
     name, tokens := ts.assert_is_upper_name(tokens);
-    dependencies, tokens := parse_dependencies(tokens);
+    dependencies, tokens := parse_parameter_list(tokens);
     decls, tokens := parse_service_decls(tokens);
     tokens := ts.assert_keyword(tokens, "end");
     return (service_(name, dependencies, decls), tokens);
@@ -149,26 +248,23 @@ define parse(tokens : List(lex.Token)) -> (List(String), List(TopLevel)) do
         match (token)
             keyword(key) do
                 if (key == "define")
-                    decl, tokens := parse_function(tokens);
-                    decls := decls.append(decl);
+                    d, tokens := parse_function(tokens);
+                    decl := fun_(d);
                 elsif (key == "coroutine")
-                    decl, tokens := parse_coroutine(tokens);
-                    decls := decls.append(decl);
+                    d, tokens := parse_coroutine(tokens);
+                    decl := fun_(d);
                 elsif (key == "enum")
                     decl, tokens := parse_enum(tokens);
-                    decls := decls.append(decl);
                 elsif (key == "interface")
                     decl, tokens := parse_interface(tokens);
-                    decls := decls.append(decl);
                 elsif (key == "service")
                     decl, tokens := parse_service(tokens);
-                    decls := decls.append(decl);
                 elsif (key == "entry")
                     decl, tokens := parse_entry(tokens);
-                    decls := decls.append(decl);
                 else
                     throw void;
                 end
+                decls := decls.append(decl);
             end
         end
     while (true)
@@ -182,17 +278,19 @@ service Test(
 
     implements EntryPoint
         define main(args : List(ByteString)) -> Bool do
+            if (args.length() < 2)
+                debug("expected filename");
+                throw void;
+            end
             fd := @f.open(args.index(1), 0);
             source := @f.read(fd, 4096).decode_utf8();
             if (source.length() == 4096)
                 throw void;
             end
             @f.close(fd);
-            debug("lexing");
             tokens := lex.lex(source);
-            debug("lexed");
             imports, decls := parse(tokens);
-            debug(("parsed", decls));
+            debug(decls);
             return true;
         end
     end
