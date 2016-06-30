@@ -12,8 +12,8 @@ service Main(
     end
 
     implements EntryPoint
-        define main() -> Bool do
-            @f.read_file("optimizer.bc".encode_utf8());
+        define main(args : List(ByteString)) -> Bool do
+            @f.read_file(args.index(1));
             return true;
         end
     end

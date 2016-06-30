@@ -181,8 +181,8 @@ service Test(
     end
 
     implements EntryPoint
-        define main() -> Bool do
-            fd := @f.open("input.plst".encode_utf8(), 0);
+        define main(args : List(ByteString)) -> Bool do
+            fd := @f.open(args.index(1), 0);
             source := @f.read(fd, 4096).decode_utf8();
             if (source.length() == 4096)
                 throw void;

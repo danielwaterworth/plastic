@@ -12,7 +12,7 @@ service Test()
     end
 
     implements EntryPoint
-        define main() -> Bool do
+        define main(args : List(ByteString)) -> Bool do
             a := fst(foo((3, true)));
             sys print_uint(a);
             return false;

@@ -16,7 +16,7 @@ service Test(f : foo.Foo)
     end
 
     implements EntryPoint
-        define main() -> Bool do
+        define main(args : List(ByteString)) -> Bool do
             sys print_bool(@f.foo(true));
             return true;
         end

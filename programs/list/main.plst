@@ -5,7 +5,7 @@ service Test()
     end
 
     implements EntryPoint
-        define main() -> Bool do
+        define main(args : List(ByteString)) -> Bool do
             for element in iter.l(["Foo", "Bar", "Baz"]) do
                 debug(element);
             end

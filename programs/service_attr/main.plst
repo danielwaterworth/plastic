@@ -8,7 +8,7 @@ service Test()
     end
 
     implements EntryPoint
-        define main() -> Bool do
+        define main(args : List(ByteString)) -> Bool do
             @foo := 500;
             sys print_uint(@foo);
             sys print_bool(@bar);

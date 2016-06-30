@@ -19,7 +19,7 @@ service Test(printer : Printer)
     end
 
     implements EntryPoint
-        define main() -> Bool do
+        define main(args : List(ByteString)) -> Bool do
             @printer.print_uint(42);
             return false;
         end

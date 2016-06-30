@@ -8,14 +8,15 @@ import sys_calls
 import execution.executor as executor
 from rpython.rlib import rsocket, rsignal
 import data
+import operators.list
 
 data.register_all()
 
 def print_usage(prog):
     print "usage:"
     print "  %s exec BYTECODE" % prog
-    print "  %s trace BYTECODE TRACE" % prog
-    print "  %s replay BYTECODE TRACE" % prog
+    print "  %s trace TRACE BYTECODE" % prog
+    print "  %s replay TRACE BYTECODE" % prog
 
 def entry_point(argv):
     rsignal.pypysig_setflag(rsignal.SIGINT)
@@ -30,22 +31,30 @@ def entry_point(argv):
     trace_fd = None
     mode = argv[1]
     if mode == 'exec':
+        program = argv[2]
+        argv = argv[2:]
         sys_caller = sys_calls.Perform()
-    elif mode == 'trace' and len(argv) == 4:
-        trace_fd = open(argv[3], 'w')
+    elif mode == 'trace' and len(argv) >= 4:
+        program = argv[3]
+        trace_fd = open(argv[2], 'w')
+        argv = argv[3:]
         sys_caller = sys_calls.TraceProxy(sys_calls.Perform(), trace_fd)
-    elif mode == 'replay' and len(argv) == 4:
-        trace_fd = open(argv[3], 'r')
+    elif mode == 'replay' and len(argv) >= 4:
+        program = argv[3]
+        argv = argv[3:]
+        trace_fd = open(argv[2], 'r')
         sys_caller = sys_calls.Replay(trace_fd)
     else:
         print_usage(argv[0])
         return 1
 
-    with open(argv[2], 'r') as fd:
+    with open(program, 'r') as fd:
         bytecode.read.read_bytecode(fd, constructor)
 
+    arguments = [operators.list.DList([data.ByteString(arg) for arg in argv])]
+
     try:
-        ex = executor.Executor(sys_caller, constructor.get_program())
+        ex = executor.Executor(sys_caller, constructor.get_program(), arguments)
         ex.run()
     finally:
         if trace_fd:

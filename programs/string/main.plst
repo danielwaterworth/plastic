@@ -3,7 +3,7 @@ service Test()
     end
 
     implements EntryPoint
-        define main() -> Bool do
+        define main(args : List(ByteString)) -> Bool do
             sys print_string("Hello, world!");
             sys print_uint("hello".encode_utf8().length());
             sys print_string("#foo###".encode_utf8().slice(1, 4).decode_utf8());

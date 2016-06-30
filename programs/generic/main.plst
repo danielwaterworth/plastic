@@ -11,7 +11,7 @@ service Test()
     end
 
     implements EntryPoint
-        define main() -> Bool do
+        define main(args : List(ByteString)) -> Bool do
             sys print_uint(foo(bar(3, 4)));
             return true;
         end

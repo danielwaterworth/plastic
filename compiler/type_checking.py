@@ -5,7 +5,8 @@ import program_types
 from program_types import bool, uint, string, char, byte, bytestring, socket
 from program_types import void, file
 
-entry_point = program_types.Interface('EntryPoint', [], {'main': ([], bool)})
+bytestring_list = program_types.Instantiation(program_types.list, [program_types.bytestring])
+entry_point = program_types.Interface('EntryPoint', [], {'main': ([bytestring_list], bool)})
 primitives = {
     'UInt': uint,
     'Bool': bool,

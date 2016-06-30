@@ -5,7 +5,7 @@ service Test(p : printer.Printer)
     end
 
     implements EntryPoint
-        define main() -> Bool do
+        define main(args : List(ByteString)) -> Bool do
             @p.print("hello, world");
             return true;
         end

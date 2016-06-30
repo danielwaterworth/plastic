@@ -659,7 +659,7 @@ def generate_entry(program_writer, entry_service, modules):
     for interface_type, services in services_by_interface.iteritems():
         generate_interface(program_writer, interface_type, services)
 
-    with program_writer.function('$main', 0) as (function_writer, _):
+    with program_writer.function('$main', 1) as (function_writer, variables):
         with function_writer.basic_block() as block_writer:
             for service in all_services:
                 service_variable = service.service_variable(block_writer)
@@ -670,5 +670,5 @@ def generate_entry(program_writer, entry_service, modules):
                     block_writer.store(attr_address, var)
 
             service = entry_service.interface_variable(block_writer)
-            x = block_writer.fun_call("EntryPoint#main", [service])
+            x = block_writer.fun_call("EntryPoint#main", [service, variables[0]])
             block_writer.ret(x)

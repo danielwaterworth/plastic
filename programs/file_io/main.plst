@@ -7,7 +7,7 @@ service Main(
     end
 
     implements EntryPoint
-        define main() -> Bool do
+        define main(args : List(ByteString)) -> Bool do
             fd := @f.open("input".encode_utf8(), 0);
             @f.close(fd);
             return true;

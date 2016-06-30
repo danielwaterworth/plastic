@@ -227,10 +227,10 @@ class Coroutine(data.Data):
         print ''
 
 class Executor(object):
-    def __init__(self, sys_caller, program):
+    def __init__(self, sys_caller, program, arguments):
         self.sys_caller = sys_caller
         self.program = program
-        self.coroutine_stack = [Coroutine(self, program, program.functions['$main'], [])]
+        self.coroutine_stack = [Coroutine(self, program, program.functions['$main'], arguments)]
         self.memory = [data.Void()] * 1024**2
 
     def run(self):

@@ -1,16 +1,11 @@
-define main() -> Bool do
-    sys print_uint(50 - 40);
-
-    return false;
-end
-
 service Test()
     constructor new()
     end
 
     implements EntryPoint
         define main(args : List(ByteString)) -> Bool do
-            return main();
+            debug(args);
+            return false;
         end
     end
 end

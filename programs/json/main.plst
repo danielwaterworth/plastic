@@ -5,7 +5,7 @@ service Test()
     end
 
     implements EntryPoint
-        define main() -> Bool do
+        define main(args : List(ByteString)) -> Bool do
             sys print_string(json.generate(json.parse("null")));
             sys print_string(json.generate(json.parse("true")));
             sys print_string(json.generate(json.parse("false")));
