@@ -193,8 +193,10 @@ class Coroutine(data.Data):
                     else:
                         self.stack[-1].goto(term.false_block)
                 elif isinstance(term, bytecode.CatchFireAndDie):
+                    self.print_backtrace()
                     raise Exception('catching fire and dying')
                 elif isinstance(term, bytecode.Throw):
+                    self.print_backtrace()
                     exception = self.stack[-1].resolve_variable(term.exception)
                     print exception
                     raise Exception('throw')
@@ -216,6 +218,13 @@ class Coroutine(data.Data):
         assert len(self.stack) > 0
         self.retire(value)
         return self.run()
+
+    def print_backtrace(self):
+        print ''
+        print 'backtrace:'
+        for frame in self.stack:
+            print '  ' + frame.function.name
+        print ''
 
 class Executor(object):
     def __init__(self, sys_caller, program):

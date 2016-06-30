@@ -3,11 +3,20 @@ import lex
 import json
 
 enum Expression
-    variable(String)
+    bool_literal(Bool) |
+    variable(String) |
+    tuple_literal(List(Expression))
+end
+
+enum IfTail
+    end_ |
+    else_(Block) |
+    elsif_(Expression, Block, IfTail)
 end
 
 enum Statement
-    assignment(String, Expression)
+    assignment(String, Expression) |
+    if_(Expression, Block, IfTail)
 end
 
 enum Terminator
@@ -194,12 +203,66 @@ define parse_parameter_list(tokens : List(lex.Token)) -> (List((String, Type)), 
     throw void;
 end
 
+define parse_tuple_literal_tail(tokens : List(lex.Token)) -> (List(Expression), List(lex.Token)) do
+    throw void;
+end
+
+define parse_bracketed_expression(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
+    tokens := assert_symbol(tokens, "(");
+    expr, tokens := parse_expression(tokens);
+    s, tokens := assert_is_symbol(tokens);
+    if (s == ",")
+        exprs, tokens := parse_tuple_literal_tail(tokens);
+        return (tuple_literal([expr] + exprs), tokens);
+    elsif (s == ")")
+        return (expr, tokens);
+    end
+    throw void;
+end
+
 define parse_expression(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
+    match (tokens.index(0))
+        keyword(k) do
+            if (k == "true")
+                return (bool_literal(true), tokens.drop(1));
+            end
+        end
+        symbol(s) do
+            if (s == "(")
+                return parse_bracketed_expression(tokens);
+            end
+        end
+    end
+    throw void;
+end
+
+define parse_if_tail(tokens : List(lex.Token)) -> (IfTail, List(lex.Token)) do
+    k, tokens := assert_is_keyword(tokens);
+    if (k == "end")
+        return (end_(), tokens);
+    elsif (k == "else")
+        block, tokens := parse_code_block(tokens);
+        tokens := assert_keyword(tokens, "end");
+        return (else_(block), tokens);
+    elsif (k == "elsif")
+        tokens := assert_symbol(tokens, "(");
+        expr, tokens := parse_expression(tokens);
+        tokens := assert_symbol(tokens, ")");
+        block, tokens := parse_code_block(tokens);
+        tail, tokens := parse_if_tail(tokens);
+        return (elsif_(expr, block, tail), tokens);
+    end
     throw void;
 end
 
 define parse_if(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
-    throw void;
+    tokens := assert_keyword(tokens, "if");
+    tokens := assert_symbol(tokens, "(");
+    expr, tokens := parse_expression(tokens);
+    tokens := assert_symbol(tokens, ")");
+    block, tokens := parse_code_block(tokens);
+    tail, tokens := parse_if_tail(tokens);
+    return (if_(expr, block, tail), tokens);
 end
 
 define parse_do(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
@@ -238,32 +301,30 @@ define parse_code_block(tokens : List(lex.Token)) -> (Block, List(lex.Token)) do
                 elsif (k == "match")
                     statement, tokens := parse_match(tokens);
                     statements := statements.append(statement);
-                elsif (k == "end")
-                    return (block(statements, no_terminator()), tokens);
                 else
-                    throw void;
+                    return (block(statements, no_terminator()), tokens);
                 end
             end
             symbol(s) do
-                throw void;
+                return (block(statements, no_terminator()), tokens);
             end
             char(c) do
-                throw void;
+                return (block(statements, no_terminator()), tokens);
             end
             lower_name(n) do
-                throw void;
+                return (block(statements, no_terminator()), tokens);
             end
             number(n) do
-                throw void;
+                return (block(statements, no_terminator()), tokens);
             end
             property(p) do
-                throw void;
+                return (block(statements, no_terminator()), tokens);
             end
             string(s) do
-                throw void;
+                return (block(statements, no_terminator()), tokens);
             end
             upper_name(u) do
-                throw void;
+                return (block(statements, no_terminator()), tokens);
             end
         end
     while (true)
@@ -272,21 +333,13 @@ end
 
 define parse_function(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
     tokens := assert_keyword(tokens, "define");
-    debug("define");
     name, tokens := assert_is_lower_name(tokens);
-    debug("lower");
     parameter_list, tokens := parse_parameter_list(tokens);
-    debug("parameter");
     tokens := assert_symbol(tokens, "->");
-    debug("arrow");
     return_type, tokens := parse_type(tokens);
-    debug("type");
     tokens := assert_keyword(tokens, "do");
-    debug("do");
     code_block, tokens := parse_code_block(tokens);
-    debug("code_block");
     tokens := assert_keyword(tokens, "end");
-    debug((name, parameter_list, return_type, code_block));
     return (function_(name, parameter_list, return_type, code_block), tokens);
 end
 

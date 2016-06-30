@@ -162,7 +162,10 @@ def operator_type(operator, rhs_type, lhs_type):
         return bool
     elif operator == '+':
         assert lhs_type == rhs_type
-        assert lhs_type in [uint, string]
+        if isinstance(lhs_type, program_types.Instantiation):
+            assert lhs_type.constructor == program_types.list
+        else:
+            assert lhs_type in [uint, string]
         return lhs_type
     elif operator in arithmetic_operators:
         assert lhs_type == uint

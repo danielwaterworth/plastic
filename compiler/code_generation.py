@@ -189,6 +189,10 @@ def if_then_else_block(context, condition_variable, true_code_block, false_code_
 
     if_then_else(context, condition_variable, true_block, false_block)
 
+list_operators = {
+    '+': 'list.extend'
+}
+
 uint_operators = {
     '<': 'uint.lt',
     '>': 'uint.gt',
@@ -225,7 +229,9 @@ char_operators = {
 }
 
 def operator_name(operator, lhs_type):
-    if lhs_type == program_types.uint:
+    if isinstance(lhs_type, program_types.Instantiation) and lhs_type.constructor == program_types.list:
+        return list_operators[operator]
+    elif lhs_type == program_types.uint:
         return uint_operators[operator]
     elif lhs_type == program_types.bytestring:
         return bytestring_operators[operator]
