@@ -1,18 +1,115 @@
 import ts
 
 enum Type
-    named_type(ts.MaybeString, String)
+    quantified(String) |
+    named_type(ts.MaybeString, String, List(Type)) |
+    tuple(List(Type))
+end
+
+define parse_tuple_type(tokens : List(lex.Token), exp : Type) -> (Type, List(lex.Token)) do
+    expressions := [exp];
+    do
+        exp, tokens := parse_type(tokens);
+        expressions := expressions.append(exp);
+
+        s, tokens := ts.assert_is_symbol(tokens);
+        if (s == ",")
+        elsif (s == ")")
+            return (tuple(expressions), tokens);
+        else
+            throw void;
+        end
+    while (true)
+end
+
+define parse_bracketed_type(tokens : List(lex.Token)) -> (Type, List(lex.Token)) do
+    tokens := ts.assert_symbol(tokens, "(");
+    exp, tokens := parse_type(tokens);
+    s, tokens := ts.assert_is_symbol(tokens);
+    if (s == ",")
+        return parse_tuple_type(tokens, exp);
+    elsif (s == ")")
+        return (exp, tokens);
+    else
+        throw void;
+    end
+end
+
+define parse_argument_list(tokens : List(lex.Token)) -> (List(Type), List(lex.Token)) do
+    tokens := ts.assert_symbol(tokens, "(");
+    arguments := [] : (List(Type));
+
+    s := ts.peek_symbol(tokens);
+    match (s)
+        just_string(s1) do
+            if (s1 == ")")
+                return (arguments, tokens.drop(1));
+            end
+        end
+        nothing_string do
+        end
+    end
+
+    exp, tokens := parse_type(tokens);
+    arguments := arguments.append(exp);
+    do
+        s2, tokens := ts.assert_is_symbol(tokens);
+        if (s2 == ",")
+            exp, tokens := parse_type(tokens);
+            arguments := arguments.append(exp);
+        elsif (s2 == ")")
+            return (arguments, tokens);
+        else
+            throw void;
+        end
+    while (true)
+end
+
+define parse_optional_argument_list(tokens : List(lex.Token)) -> (List(Type), List(lex.Token)) do
+    s := ts.peek_symbol(tokens);
+    match (s)
+        just_string(s1) do
+            if (s1 == "(")
+                return parse_argument_list(tokens);
+            end
+        end
+        nothing_string do
+        end
+    end
+    return ([] : (List(Type)), tokens);
 end
 
 define parse_type(tokens : List(lex.Token)) -> (type.Type, List(lex.Token)) do
     match (tokens.index(0))
-        lower_name(module) do
-            tokens := ts.assert_symbol(tokens.drop(1), ".");
-            name, tokens := ts.assert_is_upper_name(tokens);
-            return (named_type(ts.just_string(module), name), tokens);
+        symbol(s) do
+            if (s == "(")
+                return parse_bracketed_type(tokens);
+            else
+                throw void;
+            end
+        end
+        lower_name(name) do
+            tokens := tokens.drop(1);
+            s := ts.peek_symbol(tokens);
+            match (s)
+                just_string(s1) do
+                    if (s1 == ".")
+                        tokens := tokens.drop(1);
+                        t, tokens := ts.assert_is_upper_name(tokens);
+                        args, tokens := parse_optional_argument_list(tokens);
+                        return (named_type(ts.just_string(name), t, args), tokens);
+                    else
+                        return (quantified(name), tokens);
+                    end
+                end
+                nothing_string do
+                    return (quantified(name), tokens);
+                end
+            end
         end
         upper_name(name) do
-            return (named_type(ts.nothing_string(), name), tokens.drop(1));
+            args, tokens := parse_optional_argument_list(tokens.drop(1));
+            return (named_type(ts.nothing_string(), name, args), tokens);
         end
     end
 end

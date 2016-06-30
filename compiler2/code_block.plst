@@ -12,12 +12,13 @@ enum Clause
 end
 
 enum Statement
-    assignment(String, expr.Expression) |
+    assignment(List(String), expr.Expression) |
     if_(expr.Expression, Block, IfTail) |
     do_while(Block, expr.Expression) |
     while_(expr.Expression, Block) |
     for_(String, expr.Expression, Block) |
-    match_(expr.Expression, List(Clause))
+    match_(expr.Expression, List(Clause)) |
+    exp_(expr.Expression)
 end
 
 enum Terminator
@@ -118,6 +119,35 @@ define parse_throw(tokens : List(lex.Token)) -> (Terminator, List(lex.Token)) do
     return (throw_(exp), tokens);
 end
 
+define parse_assignment(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
+    name, tokens1 := ts.assert_is_lower_name(tokens);
+    s, tokens1 := ts.assert_is_symbol(tokens1);
+    if (s == ",")
+        tokens := tokens1;
+        variables := [name];
+        do
+            name, tokens := ts.assert_is_lower_name(tokens);
+            s, tokens := ts.assert_is_symbol(tokens);
+            if (s == ",")
+            elsif (s == ":=")
+                exp, tokens := expr.parse_expression(tokens);
+                tokens := ts.assert_symbol(tokens, ";");
+                return (assignment([name], exp), tokens);
+            else
+                throw void;
+            end
+        while (true)
+    elsif (s == ":=")
+        tokens := tokens1;
+        exp, tokens := expr.parse_expression(tokens);
+        tokens := ts.assert_symbol(tokens, ";");
+        return (assignment([name], exp), tokens);
+    else
+        exp, tokens := expr.parse_expression(tokens);
+        return (exp_(exp), tokens);
+    end
+end
+
 define parse_code_block(tokens : List(lex.Token)) -> (Block, List(lex.Token)) do
     statements := [] : (List(Statement));
     do
@@ -145,12 +175,29 @@ define parse_code_block(tokens : List(lex.Token)) -> (Block, List(lex.Token)) do
                 elsif (k1 == "throw")
                     terminator, tokens := parse_throw(tokens);
                     return (block(statements, terminator), tokens);
-                else
+                elsif (k1 == "end")
                     return (block(statements, no_terminator()), tokens);
+                elsif (k1 == "else")
+                    return (block(statements, no_terminator()), tokens);
+                else
+                    exp, tokens := expr.parse_expression(tokens);
+                    tokens := ts.assert_symbol(tokens, ";");
+                    statements := statements.append(exp_(exp));
                 end
             end
             nothing_string do
-                return (block(statements, no_terminator()), tokens);
+                name := ts.peek_lower_name(tokens);
+                match (name)
+                    just_string(name1) do
+                        statement, tokens := parse_assignment(tokens);
+                        statements := statements.append(statement);
+                    end
+                    nothing_string do
+                        exp, tokens := expr.parse_expression(tokens);
+                        tokens := ts.assert_symbol(tokens, ";");
+                        statements := statements.append(exp_(exp));
+                    end
+                end
             end
         end
     while (true)

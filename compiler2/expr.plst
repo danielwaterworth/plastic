@@ -34,7 +34,8 @@ enum Expression
     annotated(Expression, type.Type) |
     sys_call(String, List(Expression)) |
     operation(String, List(Expression)) |
-    yield_(Expression)
+    yield_(Expression) |
+    attr_lookup(String)
 end
 
 define parse_tuple_literal(tokens : List(lex.Token), exp : Expression) -> (Expression, List(lex.Token)) do
@@ -201,6 +202,9 @@ define parse_term(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
         end
         char(c) do
             return (char_literal(c), tokens.drop(1));
+        end
+        property(p) do
+            return (attr_lookup(p), tokens.drop(1));
         end
     end
 end

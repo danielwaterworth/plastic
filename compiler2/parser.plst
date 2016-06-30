@@ -13,6 +13,7 @@ enum Function
 end
 
 enum ServiceDecl
+    constructor_(String, List((String, type.Type)), code_block.Block) |
     attr_(String, type.Type) |
     private_(List(Function)) |
     implements_(type.Type, List(Function))
@@ -58,20 +59,32 @@ end
 
 define parse_parameter_list(tokens : List(lex.Token)) -> (List((String, type.Type)), List(lex.Token)) do
     tokens := ts.assert_symbol(tokens, "(");
+
     parameters := [] : (List((String, type.Type)));
-    do
-        token := tokens.index(0);
-        match (token)
-            lower_name(name) do
-                name, t, tokens := parse_parameter(tokens);
-                parameters := parameters.append((name, t));
-            end
-            symbol(s) do
-                tokens := ts.assert_symbol(tokens, ")");
-                return (parameters, tokens);
+    s1 := ts.peek_symbol(tokens);
+    match (s1)
+        nothing_string do
+        end
+        just_string(s2) do
+            if (s2 == ")")
+                return (parameters, tokens.drop(1));
             end
         end
-    while(true)
+    end
+
+    name, t, tokens := parse_parameter(tokens);
+    parameters := parameters.append((name, t));
+    do
+        s3, tokens := ts.assert_is_symbol(tokens);
+        if (s3 == ")")
+            return (parameters, tokens);
+        elsif (s3 == ",")
+            name, t, tokens := parse_parameter(tokens);
+            parameters := parameters.append((name, t));
+        else
+            throw void;
+        end
+    while (true)
     throw void;
 end
 
@@ -164,6 +177,15 @@ define parse_attr(tokens : List(lex.Token)) -> (ServiceDecl, List(lex.Token)) do
     return (attr_(name, t), tokens);
 end
 
+define parse_constructor(tokens : List(lex.Token)) -> (ServiceDecl, List(lex.Token)) do
+    tokens := ts.assert_keyword(tokens, "constructor");
+    name, tokens := ts.assert_is_lower_name(tokens);
+    parameters, tokens := parse_parameter_list(tokens);
+    block, tokens := code_block.parse_code_block(tokens);
+    tokens := ts.assert_keyword(tokens, "end");
+    return (constructor_(name, parameters, block), tokens);
+end
+
 define parse_private(tokens : List(lex.Token)) -> (ServiceDecl, List(lex.Token)) do
     tokens := ts.assert_keyword(tokens, "private");
     decls := [] : (List(Function));
@@ -206,9 +228,11 @@ end
 define parse_service_decls(tokens : List(lex.Token)) -> (List(ServiceDecl), List(lex.Token)) do
     decls := [] : (List(ServiceDecl));
     do
-        k, tokens := ts.assert_is_keyword(tokens);
+        k, tokens1 := ts.assert_is_keyword(tokens);
         if (k == "attr")
             decl, tokens := parse_attr(tokens);
+        elsif (k == "constructor")
+            decl, tokens := parse_constructor(tokens);
         elsif (k == "private")
             decl, tokens := parse_private(tokens);
         elsif (k == "implements")
@@ -283,8 +307,8 @@ service Test(
                 throw void;
             end
             fd := @f.open(args.index(1), 0);
-            source := @f.read(fd, 4096).decode_utf8();
-            if (source.length() == 4096)
+            source := @f.read(fd, 40960).decode_utf8();
+            if (source.length() == 40960)
                 throw void;
             end
             @f.close(fd);
