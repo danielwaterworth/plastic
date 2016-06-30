@@ -1,27 +1,24 @@
 import iter
-import lex
 import json
 
-enum Expression
-    bool_literal(Bool) |
-    variable(String) |
-    tuple_literal(List(Expression))
-end
+import lex
+import ts
+import expr
 
 enum IfTail
     end_ |
     else_(Block) |
-    elsif_(Expression, Block, IfTail)
+    elsif_(expr.Expression, Block, IfTail)
 end
 
 enum Statement
-    assignment(String, Expression) |
-    if_(Expression, Block, IfTail)
+    assignment(String, expr.Expression) |
+    if_(expr.Expression, Block, IfTail)
 end
 
 enum Terminator
-    return_(Expression) |
-    throw_(Expression) |
+    return_(expr.Expression) |
+    throw_(expr.Expression) |
     no_terminator
 end
 
@@ -44,118 +41,25 @@ enum TopLevel
     coroutine_(String, List((String, Type)), Type, Type, Block)
 end
 
-enum MaybeString
-    just_string(String) |
-    nothing_string
-end
-
 enum Type
-    named_type(MaybeString, String)
-end
-
-define assert(b : Bool) -> Void do
-    if (not b)
-        throw void;
-    end
-    return void;
-end
-
-define assert_is_keyword(tokens : List(lex.Token)) -> (String, List(lex.Token)) do
-    match (tokens.index(0))
-        keyword(k) do
-            return (k, tokens.drop(1));
-        end
-    end
-    throw void;
-end
-
-define assert_keyword(tokens : List(lex.Token), k : String) -> List(lex.Token) do
-    key, tokens := assert_is_keyword(tokens);
-    assert(key == k);
-    return tokens;
-end
-
-define assert_is_symbol(tokens : List(lex.Token)) -> (String, List(lex.Token)) do
-    match (tokens.index(0))
-        symbol(k) do
-            return (k, tokens.drop(1));
-        end
-    end
-    throw void;
-end
-
-define assert_symbol(tokens : List(lex.Token), k : String) -> List(lex.Token) do
-    key, tokens := assert_is_symbol(tokens);
-    assert(key == k);
-    return tokens;
-end
-
-define assert_is_lower_name(tokens : List(lex.Token)) -> (String, List(lex.Token)) do
-    match (tokens.index(0))
-        lower_name(k) do
-            return (k, tokens.drop(1));
-        end
-    end
-    throw void;
-end
-
-define assert_lower_name(tokens : List(lex.Token), k : String) -> List(lex.Token) do
-    key, tokens := assert_is_lower_name(tokens);
-    assert(key == k);
-    return tokens;
-end
-
-define assert_is_upper_name(tokens : List(lex.Token)) -> (String, List(lex.Token)) do
-    match (tokens.index(0))
-        upper_name(k) do
-            return (k, tokens.drop(1));
-        end
-    end
-    throw void;
-end
-
-define assert_upper_name(tokens : List(lex.Token), k : String) -> List(lex.Token) do
-    key, tokens := assert_is_upper_name(tokens);
-    assert(key == k);
-    return tokens;
+    named_type(ts.MaybeString, String)
 end
 
 define parse_imports(tokens : List(lex.Token)) -> (List(String), List(lex.Token)) do
     imports := [] : (List(String));
     do
         if (tokens.length() > 0)
-            match (tokens.index(0))
-                keyword(k) do
-                    if (k == "import")
-                        match(tokens.index(1))
-                            lower_name(mod) do
-                                tokens := tokens.drop(2);
-                                imports := imports.append(mod);
-                            end
-                        end
+            k := ts.peek_keyword(tokens);
+            match (k)
+                just_string(k1) do
+                    if (k1 == "import")
+                        name, tokens := ts.assert_is_lower_name(tokens.drop(1));
+                        imports := imports.append(name);
                     else
                         return (imports, tokens);
                     end
                 end
-                symbol(s) do
-                    return (imports, tokens);
-                end
-                char(c) do
-                    return (imports, tokens);
-                end
-                lower_name(n) do
-                    return (imports, tokens);
-                end
-                number(n) do
-                    return (imports, tokens);
-                end
-                property(p) do
-                    return (imports, tokens);
-                end
-                string(s) do
-                    return (imports, tokens);
-                end
-                upper_name(u) do
+                nothing_string do
                     return (imports, tokens);
                 end
             end
@@ -167,25 +71,25 @@ end
 define parse_type(tokens : List(lex.Token)) -> (Type, List(lex.Token)) do
     match (tokens.index(0))
         lower_name(module) do
-            tokens := assert_symbol(tokens.drop(1), ".");
-            name, tokens := assert_is_upper_name(tokens);
-            return (named_type(just_string(module), name), tokens);
+            tokens := ts.assert_symbol(tokens.drop(1), ".");
+            name, tokens := ts.assert_is_upper_name(tokens);
+            return (named_type(ts.just_string(module), name), tokens);
         end
         upper_name(name) do
-            return (named_type(nothing_string(), name), tokens.drop(1));
+            return (named_type(ts.nothing_string(), name), tokens.drop(1));
         end
     end
 end
 
 define parse_parameter(tokens : List(lex.Token)) -> (String, Type, List(lex.Token)) do
-    name, tokens := assert_is_lower_name(tokens);
-    tokens := assert_symbol(tokens, ":");
+    name, tokens := ts.assert_is_lower_name(tokens);
+    tokens := ts.assert_symbol(tokens, ":");
     type, tokens := parse_type(tokens);
     return (name, type, tokens);
 end
 
 define parse_parameter_list(tokens : List(lex.Token)) -> (List((String, Type)), List(lex.Token)) do
-    tokens := assert_symbol(tokens, "(");
+    tokens := ts.assert_symbol(tokens, "(");
     parameters := [] : (List((String, Type)));
     do
         token := tokens.index(0);
@@ -195,7 +99,7 @@ define parse_parameter_list(tokens : List(lex.Token)) -> (List((String, Type)), 
                 parameters := parameters.append((name, type));
             end
             symbol(s) do
-                tokens := assert_symbol(tokens, ")");
+                tokens := ts.assert_symbol(tokens, ")");
                 return (parameters, tokens);
             end
         end
@@ -203,66 +107,33 @@ define parse_parameter_list(tokens : List(lex.Token)) -> (List((String, Type)), 
     throw void;
 end
 
-define parse_tuple_literal_tail(tokens : List(lex.Token)) -> (List(Expression), List(lex.Token)) do
-    throw void;
-end
-
-define parse_bracketed_expression(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
-    tokens := assert_symbol(tokens, "(");
-    expr, tokens := parse_expression(tokens);
-    s, tokens := assert_is_symbol(tokens);
-    if (s == ",")
-        exprs, tokens := parse_tuple_literal_tail(tokens);
-        return (tuple_literal([expr] + exprs), tokens);
-    elsif (s == ")")
-        return (expr, tokens);
-    end
-    throw void;
-end
-
-define parse_expression(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
-    match (tokens.index(0))
-        keyword(k) do
-            if (k == "true")
-                return (bool_literal(true), tokens.drop(1));
-            end
-        end
-        symbol(s) do
-            if (s == "(")
-                return parse_bracketed_expression(tokens);
-            end
-        end
-    end
-    throw void;
-end
-
 define parse_if_tail(tokens : List(lex.Token)) -> (IfTail, List(lex.Token)) do
-    k, tokens := assert_is_keyword(tokens);
+    k, tokens := ts.assert_is_keyword(tokens);
     if (k == "end")
         return (end_(), tokens);
     elsif (k == "else")
         block, tokens := parse_code_block(tokens);
-        tokens := assert_keyword(tokens, "end");
+        tokens := ts.assert_keyword(tokens, "end");
         return (else_(block), tokens);
     elsif (k == "elsif")
-        tokens := assert_symbol(tokens, "(");
-        expr, tokens := parse_expression(tokens);
-        tokens := assert_symbol(tokens, ")");
+        tokens := ts.assert_symbol(tokens, "(");
+        exp, tokens := expr.parse_expression(tokens);
+        tokens := ts.assert_symbol(tokens, ")");
         block, tokens := parse_code_block(tokens);
         tail, tokens := parse_if_tail(tokens);
-        return (elsif_(expr, block, tail), tokens);
+        return (elsif_(exp, block, tail), tokens);
     end
     throw void;
 end
 
 define parse_if(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
-    tokens := assert_keyword(tokens, "if");
-    tokens := assert_symbol(tokens, "(");
-    expr, tokens := parse_expression(tokens);
-    tokens := assert_symbol(tokens, ")");
+    tokens := ts.assert_keyword(tokens, "if");
+    tokens := ts.assert_symbol(tokens, "(");
+    exp, tokens := expr.parse_expression(tokens);
+    tokens := ts.assert_symbol(tokens, ")");
     block, tokens := parse_code_block(tokens);
     tail, tokens := parse_if_tail(tokens);
-    return (if_(expr, block, tail), tokens);
+    return (if_(exp, block, tail), tokens);
 end
 
 define parse_do(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
@@ -284,46 +155,29 @@ end
 define parse_code_block(tokens : List(lex.Token)) -> (Block, List(lex.Token)) do
     statements := [] : (List(Statement));
     do
-        match (tokens.index(0))
-            keyword(k) do
-                if (k == "if")
+        k := ts.peek_keyword(tokens);
+        match (k)
+            just_string(k1) do
+                if (k1 == "if")
                     statement, tokens := parse_if(tokens);
                     statements := statements.append(statement);
-                elsif (k == "do")
+                elsif (k1 == "do")
                     statement, tokens := parse_do(tokens);
                     statements := statements.append(statement);
-                elsif (k == "while")
+                elsif (k1 == "while")
                     statement, tokens := parse_while(tokens);
                     statements := statements.append(statement);
-                elsif (k == "for")
+                elsif (k1 == "for")
                     statement, tokens := parse_for(tokens);
                     statements := statements.append(statement);
-                elsif (k == "match")
+                elsif (k1 == "match")
                     statement, tokens := parse_match(tokens);
                     statements := statements.append(statement);
                 else
                     return (block(statements, no_terminator()), tokens);
                 end
             end
-            symbol(s) do
-                return (block(statements, no_terminator()), tokens);
-            end
-            char(c) do
-                return (block(statements, no_terminator()), tokens);
-            end
-            lower_name(n) do
-                return (block(statements, no_terminator()), tokens);
-            end
-            number(n) do
-                return (block(statements, no_terminator()), tokens);
-            end
-            property(p) do
-                return (block(statements, no_terminator()), tokens);
-            end
-            string(s) do
-                return (block(statements, no_terminator()), tokens);
-            end
-            upper_name(u) do
+            nothing_string do
                 return (block(statements, no_terminator()), tokens);
             end
         end
@@ -332,48 +186,48 @@ define parse_code_block(tokens : List(lex.Token)) -> (Block, List(lex.Token)) do
 end
 
 define parse_function(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
-    tokens := assert_keyword(tokens, "define");
-    name, tokens := assert_is_lower_name(tokens);
+    tokens := ts.assert_keyword(tokens, "define");
+    name, tokens := ts.assert_is_lower_name(tokens);
     parameter_list, tokens := parse_parameter_list(tokens);
-    tokens := assert_symbol(tokens, "->");
+    tokens := ts.assert_symbol(tokens, "->");
     return_type, tokens := parse_type(tokens);
-    tokens := assert_keyword(tokens, "do");
+    tokens := ts.assert_keyword(tokens, "do");
     code_block, tokens := parse_code_block(tokens);
-    tokens := assert_keyword(tokens, "end");
+    tokens := ts.assert_keyword(tokens, "end");
     return (function_(name, parameter_list, return_type, code_block), tokens);
 end
 
 define parse_coroutine(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
-    tokens := assert_keyword(tokens, "coroutine");
-    name, tokens := assert_is_lower_name(tokens);
+    tokens := ts.assert_keyword(tokens, "coroutine");
+    name, tokens := ts.assert_is_lower_name(tokens);
     parameter_list, tokens := parse_parameter_list(tokens);
     receive_type, tokens := parse_type(tokens);
-    tokens := assert_symbol(tokens, "->");
+    tokens := ts.assert_symbol(tokens, "->");
     yield_type, tokens := parse_type(tokens);
-    tokens := assert_keyword(tokens, "do");
+    tokens := ts.assert_keyword(tokens, "do");
     code_block, tokens := parse_code_block(tokens);
-    tokens := assert_keyword(tokens, "end");
+    tokens := ts.assert_keyword(tokens, "end");
     return (coroutine_(name, parameter_list, receive_type, yield_type, code_block), tokens);
 end
 
 define parse_enum(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
-    tokens := assert_keyword(tokens, "enum");
+    tokens := ts.assert_keyword(tokens, "enum");
     throw void;
 end
 
 define parse_record(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
-    tokens := assert_keyword(tokens, "record");
+    tokens := ts.assert_keyword(tokens, "record");
     throw void;
 end
 
 define parse_interface(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
-    tokens := assert_keyword(tokens, "interface");
+    tokens := ts.assert_keyword(tokens, "interface");
     throw void;
 end
 
 define parse_dependency(tokens : List(lex.Token)) -> (String, Type, List(lex.Token)) do
-    name, tokens := assert_is_lower_name(tokens);
-    tokens := assert_symbol(tokens, ":");
+    name, tokens := ts.assert_is_lower_name(tokens);
+    tokens := ts.assert_symbol(tokens, ":");
     type, tokens := parse_type(tokens);
     return (name, type, tokens);
 end
@@ -387,18 +241,18 @@ define parse_service_decls(tokens : List(lex.Token)) -> (List(ServiceDecl), List
 end
 
 define parse_service(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
-    tokens := assert_keyword(tokens, "service");
-    name, tokens := assert_is_upper_name(tokens);
+    tokens := ts.assert_keyword(tokens, "service");
+    name, tokens := ts.assert_is_upper_name(tokens);
     dependencies, tokens := parse_dependencies(tokens);
     decls, tokens := parse_service_decls(tokens);
-    tokens := assert_keyword(tokens, "end");
+    tokens := ts.assert_keyword(tokens, "end");
     return (service_(name, dependencies, decls), tokens);
 end
 
 define parse_entry(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
-    tokens := assert_keyword(tokens, "entry");
+    tokens := ts.assert_keyword(tokens, "entry");
     code_block, tokens := parse_code_block(tokens);
-    tokens := assert_keyword(tokens, "end");
+    tokens := ts.assert_keyword(tokens, "end");
     return (entry_(code_block), tokens);
 end
 
@@ -460,7 +314,7 @@ service Test(
             tokens := lex.lex(source);
             debug("lexed");
             imports, decls := parse(tokens);
-            debug("parsed");
+            debug(("parsed", decls));
             return true;
         end
     end

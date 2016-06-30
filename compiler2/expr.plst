@@ -1,0 +1,216 @@
+import lex
+import ts
+
+enum BinOperator
+    and_ |
+    or_ |
+    add |
+    sub |
+    mul |
+    div |
+    lt |
+    le |
+    gt |
+    ge |
+    eq |
+    ne
+end
+
+enum Expression
+    bool_literal(Bool) |
+    num_literal(UInt) |
+    char_literal(Char) |
+    list_literal(List(Expression)) |
+    tuple_literal(List(Expression)) |
+    void_literal |
+    variable(String) |
+    type_name(String) |
+    record_access(Expression, String) |
+    type_access(Expression, String) |
+    call(Expression, List(Expression)) |
+    bin_op(Expression, BinOperator, Expression) |
+    not_(Expression) |
+    yield_(Expression)
+end
+
+define parse_tuple_literal_tail(tokens : List(lex.Token)) -> (List(Expression), List(lex.Token)) do
+    throw void;
+end
+
+define parse_bracketed_expression(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
+    tokens := ts.assert_symbol(tokens, "(");
+    expr, tokens := parse_expression(tokens);
+    s, tokens := ts.assert_is_symbol(tokens);
+    if (s == ",")
+        exprs, tokens := parse_tuple_literal_tail(tokens);
+        return (tuple_literal([expr] + exprs), tokens);
+    elsif (s == ")")
+        return (expr, tokens);
+    end
+    throw void;
+end
+
+define parse_list_literal(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
+    tokens := ts.assert_symbol(tokens, "[");
+    throw void;
+end
+
+define parse_term(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
+    match (tokens.index(0))
+        symbol(s) do
+            if (s == "(")
+                return parse_bracketed_expression(tokens);
+            elsif (s == "[")
+                return parse_list_literal(tokens);
+            end
+        end
+        keyword(k) do
+            if (k == "true")
+                return (bool_literal(true), tokens.drop(1));
+            elsif (k == "false")
+                return (bool_literal(false), tokens.drop(1));
+            end
+        end
+        number(n) do
+            return (num_literal(n), tokens.drop(1));
+        end
+        char(c) do
+            return (char_literal(c), tokens.drop(1));
+        end
+    end
+end
+
+define parse_expression_1(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
+    output, tokens := parse_term(tokens);
+    do
+        s := ts.peek_symbol(tokens);
+        match (s)
+            just_string(s1) do
+                if (s1 == "*")
+                    next, tokens := parse_term(tokens.drop(1));
+                    output := bin_op(output, mul(), next);
+                elsif (s1 == "/")
+                    next, tokens := parse_term(tokens.drop(1));
+                    output := bin_op(output, div(), next);
+                else
+                    return (output, tokens);
+                end
+            end
+            nothing_string do
+                return (output, tokens);
+            end
+        end
+    while (true)
+end
+
+define parse_expression_2(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
+    output, tokens := parse_expression_1(tokens);
+    do
+        s := ts.peek_symbol(tokens);
+        match (s)
+            just_string(s1) do
+                if (s1 == "+")
+                    next, tokens := parse_expression_1(tokens.drop(1));
+                    output := bin_op(output, add(), next);
+                elsif (s1 == "-")
+                    next, tokens := parse_expression_1(tokens.drop(1));
+                    output := bin_op(output, sub(), next);
+                else
+                    return (output, tokens);
+                end
+            end
+            nothing_string do
+                return (output, tokens);
+            end
+        end
+    while (true)
+end
+
+define parse_expression_3(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
+    output, tokens := parse_expression_2(tokens);
+    s := ts.peek_symbol(tokens);
+    match (s)
+        just_string(s1) do
+            if (s1 == "<")
+                next, tokens := parse_expression_2(tokens.drop(1));
+                output := bin_op(output, lt(), next);
+            elsif (s1 == "<=")
+                next, tokens := parse_expression_2(tokens.drop(1));
+                output := bin_op(output, le(), next);
+            elsif (s1 == ">")
+                next, tokens := parse_expression_2(tokens.drop(1));
+                output := bin_op(output, gt(), next);
+            elsif (s1 == ">=")
+                next, tokens := parse_expression_2(tokens.drop(1));
+                output := bin_op(output, ge(), next);
+            elsif (s1 == "==")
+                next, tokens := parse_expression_2(tokens.drop(1));
+                output := bin_op(output, eq(), next);
+            elsif (s1 == "!=")
+                next, tokens := parse_expression_2(tokens.drop(1));
+                output := bin_op(output, ne(), next);
+            end
+            return (output, tokens);
+        end
+        nothing_string do
+            return (output, tokens);
+        end
+    end
+end
+
+define parse_expression_4(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
+    k := ts.peek_keyword(tokens);
+    match (k)
+        just_string(k1) do
+            if (k1 == "not")
+                exp, tokens := parse_expression_4(tokens.drop(1));
+                return (not_(exp), tokens);
+            else
+                return parse_expression_3(tokens);
+            end
+        end
+        nothing_string do
+            return parse_expression_3(tokens);
+        end
+    end
+end
+
+define parse_expression_5(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
+    output, tokens := parse_expression_4(tokens);
+    do
+        s := ts.peek_keyword(tokens);
+        match (s)
+            just_string(s1) do
+                if (s1 == "and")
+                    next, tokens := parse_expression_4(tokens.drop(1));
+                    output := bin_op(output, and_(), next);
+                else
+                    return (output, tokens);
+                end
+            end
+            nothing_string do
+                return (output, tokens);
+            end
+        end
+    while (true)
+end
+
+define parse_expression(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
+    output, tokens := parse_expression_5(tokens);
+    do
+        s := ts.peek_keyword(tokens);
+        match (s)
+            just_string(s1) do
+                if (s1 == "or")
+                    next, tokens := parse_expression_5(tokens.drop(1));
+                    output := bin_op(output, or_(), next);
+                else
+                    return (output, tokens);
+                end
+            end
+            nothing_string do
+                return (output, tokens);
+            end
+        end
+    while (true)
+end
