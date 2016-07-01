@@ -188,9 +188,9 @@ define parse_term(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
             elsif (k == "false")
                 return (bool_literal(false), tokens.drop(1));
             elsif (k == "sys")
-                return parse_sys_call(tokens.drop(1));
+                return parse_sys_call(tokens);
             elsif (k == "op")
-                return parse_operator(tokens.drop(1));
+                return parse_operator(tokens);
             elsif (k == "yield")
                 return parse_yield(tokens.drop(1));
             else
