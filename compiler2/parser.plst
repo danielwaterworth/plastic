@@ -231,16 +231,21 @@ define parse_service_decls(tokens : List(lex.Token)) -> (List(ServiceDecl), List
         k, tokens1 := ts.assert_is_keyword(tokens);
         if (k == "attr")
             decl, tokens := parse_attr(tokens);
+            decls := decls.append(decl);
         elsif (k == "constructor")
             decl, tokens := parse_constructor(tokens);
+            decls := decls.append(decl);
         elsif (k == "private")
             decl, tokens := parse_private(tokens);
+            decls := decls.append(decl);
         elsif (k == "implements")
             decl, tokens := parse_implements(tokens);
+            decls := decls.append(decl);
+        elsif (k == "end")
+            return (decls, tokens);
         else
             throw void;
         end
-        decls := decls.append(decl);
     while (true)
 end
 
