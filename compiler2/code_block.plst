@@ -129,17 +129,50 @@ define parse_throw(tokens : List(lex.Token)) -> (Terminator, List(lex.Token)) do
     return (throw_(exp), tokens);
 end
 
-define parse_destructure(tokens : List(lex.Token)) -> (MaybeDestructure, List(lex.Token)) do
-    name := ts.peek_lower_name(tokens);
-    match (name)
-        just_string(name1) do
+define parse_maybe_destructure_atom(tokens : List(lex.Token)) -> (MaybeDestructure, List(lex.Token)) do
+    match (tokens.index(0))
+        property(p) do
+            return (just_destructure(property_destructor(p)), tokens.drop(1));
         end
-        nothing_string do
+        lower_name(n) do
+            return (just_destructure(name_destructure(n)), tokens.drop(1));
+        end
+        keyword(s) do
+        end
+        symbol(s) do
+        end
+        char(c) do
+        end
+        number(n) do
+        end
+        string(s) do
+        end
+        upper_name(u) do
+        end
+    end
+    return (nothing_destructure(), tokens);
+end
+
+define parse_destructure_atom(tokens : List(lex.Token)) -> (Destructure, List(lex.Token)) do
+    d, tokens := parse_maybe_destructure_atom(tokens);
+    match (d)
+        just_destructure(d1) do
+            return (d1, tokens);
+        end
+    end
+end
+
+define parse_destructure(tokens : List(lex.Token)) -> (MaybeDestructure, List(lex.Token)) do
+    d, tokens1 := parse_maybe_destructure_atom(tokens);
+    match (d)
+        just_destructure(d1) do
+        end
+        nothing_destructure do
             return (nothing_destructure(), tokens);
         end
     end
 
-    s := ts.peek_symbol(tokens.drop(1));
+    s := ts.peek_symbol(tokens1);
     match (s)
         just_string(s1) do
         end
@@ -149,11 +182,11 @@ define parse_destructure(tokens : List(lex.Token)) -> (MaybeDestructure, List(le
     end
 
     if (s1 == ",")
-        tokens := tokens.drop(2);
-        variables := [name_destructure(name1)];
+        tokens := tokens1.drop(1);
+        variables := [d1];
         do
-            name1, tokens := ts.assert_is_lower_name(tokens);
-            variables := variables.append(name_destructure(name1));
+            d1, tokens := parse_destructure_atom(tokens);
+            variables := variables.append(d1);
             s1, tokens := ts.assert_is_symbol(tokens);
             if (s1 == ",")
             elsif (s1 == ":=")
@@ -163,7 +196,7 @@ define parse_destructure(tokens : List(lex.Token)) -> (MaybeDestructure, List(le
             end
         while (true)
     elsif (s1 == ":=")
-        return (just_destructure(name_destructure(name1)), tokens.drop(2));
+        return (just_destructure(d1), tokens.drop(2));
     else
         return (nothing_destructure(), tokens);
     end
