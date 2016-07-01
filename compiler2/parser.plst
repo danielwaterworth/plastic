@@ -23,6 +23,7 @@ enum TopLevel
     record_ |
     enum_(String, List(String), List((String, List(type.Type)))) |
     service_(String, List((String, type.Type)), List(ServiceDecl)) |
+    interface_(String, List(String), List((String, List(type.Type), type.Type))) |
     entry_(code_block.Block) |
     fun_(Function)
 end
@@ -195,11 +196,52 @@ define parse_enum(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
     return (enum_(name, parameters, constructors), tokens);
 end
 
+define parse_signature(tokens : List(lex.Token)) -> ((String, List(type.Type), type.Type), List(lex.Token)) do
+    name, tokens := ts.assert_is_lower_name(tokens);
+    types, tokens := type.parse_argument_list(tokens);
+    tokens := ts.assert_symbol(tokens, "->");
+    return_type, tokens := type.parse_type(tokens);
+    tokens := ts.assert_symbol(tokens, ";");
+    return ((name, types, return_type), tokens);
+end
+
+define parse_signatures(tokens : List(lex.Token)) -> (List((String, List(type.Type), type.Type)), List(lex.Token)) do
+    output := [] : (List((String, List(type.Type), type.Type)));
+
+    s := ts.peek_keyword(tokens);
+    match (s)
+        just_string(s1) do
+            if (s1 == "end")
+                return (output, tokens.drop(1));
+            end
+        end
+        nothing_string do
+        end
+    end
+
+    do
+        cons, tokens := parse_signature(tokens);
+        s := ts.peek_keyword(tokens);
+        match (s)
+            just_string(s1) do
+                if (s1 == "end")
+                    return (output, tokens);
+                end
+            end
+            nothing_string do
+            end
+        end
+        tokens := tokens.drop(1);
+    while (true)
+end
+
 define parse_interface(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
     tokens := ts.assert_keyword(tokens, "interface");
     name, tokens := ts.assert_is_upper_name(tokens);
     parameters, tokens := parse_optional_type_parameter_list(tokens);
-    throw void;
+    signatures, tokens := parse_signatures(tokens);
+    tokens := ts.assert_keyword(tokens, "end");
+    return (interface_(name, parameters, signatures), tokens);
 end
 
 define parse_attr(tokens : List(lex.Token)) -> (ServiceDecl, List(lex.Token)) do
