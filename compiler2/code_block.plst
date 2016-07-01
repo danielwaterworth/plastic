@@ -15,7 +15,6 @@ enum Statement
     assignment(List(String), expr.Expression) |
     if_(expr.Expression, Block, IfTail) |
     do_while(Block, expr.Expression) |
-    while_(expr.Expression, Block) |
     for_(String, expr.Expression, Block) |
     match_(expr.Expression, List(Clause)) |
     exp_(expr.Expression)
@@ -70,16 +69,6 @@ define parse_do_while(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) 
     return (do_while(block, exp), tokens);
 end
 
-define parse_while(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
-    tokens := ts.assert_keyword(tokens, "while");
-    tokens := ts.assert_symbol(tokens, "(");
-    exp, tokens := expr.parse_expression(tokens);
-    tokens := ts.assert_symbol(tokens, ")");
-    block, tokens := parse_code_block(tokens);
-    tokens := ts.assert_keyword(tokens, "end");
-    return (while_(exp, block), tokens);
-end
-
 define parse_for(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
     tokens := ts.assert_keyword(tokens, "for");
     name, tokens := ts.assert_is_lower_name(tokens);
@@ -107,6 +96,16 @@ end
 
 define parse_return(tokens : List(lex.Token)) -> (Terminator, List(lex.Token)) do
     tokens := ts.assert_keyword(tokens, "return");
+    s := ts.peek_symbol(tokens);
+    match (s)
+        just_string(s1) do
+            if (s1 == ";")
+                return (return_(expr.void_literal()), tokens.drop(1));
+            end
+        end
+        nothing_string do
+        end
+    end
     exp, tokens := expr.parse_expression(tokens);
     tokens := ts.assert_symbol(tokens, ";");
     return (return_(exp), tokens);
@@ -144,6 +143,7 @@ define parse_assignment(tokens : List(lex.Token)) -> (Statement, List(lex.Token)
         return (assignment([name], exp), tokens);
     else
         exp, tokens := expr.parse_expression(tokens);
+        tokens := ts.assert_symbol(tokens, ";");
         return (exp_(exp), tokens);
     end
 end
@@ -160,9 +160,6 @@ define parse_code_block(tokens : List(lex.Token)) -> (Block, List(lex.Token)) do
                 elsif (k1 == "do")
                     statement, tokens := parse_do_while(tokens);
                     statements := statements.append(statement);
-                elsif (k1 == "while")
-                    statement, tokens := parse_while(tokens);
-                    statements := statements.append(statement);
                 elsif (k1 == "for")
                     statement, tokens := parse_for(tokens);
                     statements := statements.append(statement);
@@ -175,9 +172,13 @@ define parse_code_block(tokens : List(lex.Token)) -> (Block, List(lex.Token)) do
                 elsif (k1 == "throw")
                     terminator, tokens := parse_throw(tokens);
                     return (block(statements, terminator), tokens);
+                elsif (k1 == "while")
+                    return (block(statements, no_terminator()), tokens);
                 elsif (k1 == "end")
                     return (block(statements, no_terminator()), tokens);
                 elsif (k1 == "else")
+                    return (block(statements, no_terminator()), tokens);
+                elsif (k1 == "elsif")
                     return (block(statements, no_terminator()), tokens);
                 else
                     exp, tokens := expr.parse_expression(tokens);

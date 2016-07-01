@@ -21,6 +21,7 @@ enum Expression
     bool_literal(Bool) |
     num_literal(UInt) |
     char_literal(Char) |
+    string_literal(String) |
     list_literal(List(Expression)) |
     tuple_literal(List(Expression)) |
     void_literal |
@@ -89,7 +90,7 @@ define parse_list_literal(tokens : List(lex.Token)) -> (Expression, List(lex.Tok
         if (s2 == ",")
             exp, tokens := parse_expression(tokens);
             expressions := expressions.append(exp);
-        elsif (s2 == ")")
+        elsif (s2 == "]")
             return (list_literal(expressions), tokens);
         else
             throw void;
@@ -187,18 +188,23 @@ define parse_term(tokens : List(lex.Token)) -> (Expression, List(lex.Token)) do
                 return (bool_literal(true), tokens.drop(1));
             elsif (k == "false")
                 return (bool_literal(false), tokens.drop(1));
+            elsif (k == "void")
+                return (void_literal(), tokens.drop(1));
             elsif (k == "sys")
                 return parse_sys_call(tokens);
             elsif (k == "op")
                 return parse_operator(tokens);
             elsif (k == "yield")
-                return parse_yield(tokens.drop(1));
+                return parse_yield(tokens);
             else
                 throw void;
             end
         end
         number(n) do
             return (num_literal(n), tokens.drop(1));
+        end
+        string(s) do
+            return (string_literal(s), tokens.drop(1));
         end
         char(c) do
             return (char_literal(c), tokens.drop(1));
