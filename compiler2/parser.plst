@@ -148,15 +148,49 @@ define parse_optional_type_parameter_list(tokens : List(lex.Token)) -> (List(Str
     return ([] : (List(String)), tokens);
 end
 
-define parse_constructors(tokens : List(lex.Token)) -> (List((String, List(type.Type))), List(lex.Token)) do
-    throw void;
+define parse_enum_constructor(tokens : List(lex.Token)) -> ((String, List(type.Type)), List(lex.Token)) do
+    name, tokens := ts.assert_is_lower_name(tokens);
+    types, tokens := type.parse_optional_argument_list(tokens);
+    return ((name, types), tokens);
+end
+
+define parse_enum_constructors(tokens : List(lex.Token)) -> (List((String, List(type.Type))), List(lex.Token)) do
+    output := [] : (List((String, List(type.Type))));
+
+    s := ts.peek_keyword(tokens);
+    match (s)
+        just_string(s1) do
+            if (s1 == "end")
+                return (output, tokens.drop(1));
+            end
+        end
+        nothing_string do
+        end
+    end
+
+    do
+        cons, tokens := parse_enum_constructor(tokens);
+        s := ts.peek_symbol(tokens);
+        match (s)
+            just_string(s1) do
+                if (s1 == "|")
+                else
+                    throw void;
+                end
+            end
+            nothing_string do
+                return (output, tokens);
+            end
+        end
+        tokens := tokens.drop(1);
+    while (true)
 end
 
 define parse_enum(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
     tokens := ts.assert_keyword(tokens, "enum");
     name, tokens := ts.assert_is_upper_name(tokens);
     parameters, tokens := parse_optional_type_parameter_list(tokens);
-    constructors, tokens := parse_constructors(tokens);
+    constructors, tokens := parse_enum_constructors(tokens);
     tokens := ts.assert_keyword(tokens, "end");
     return (enum_(name, parameters, constructors), tokens);
 end
