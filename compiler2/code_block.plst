@@ -11,8 +11,19 @@ enum Clause
     clause(String, List(String), Block)
 end
 
+enum Destructure
+    name_destructure(String) |
+    property_destructor(String) |
+    tuple_destructure(List(Destructure))
+end
+
+enum MaybeDestructure
+    just_destructure(Destructure) |
+    nothing_destructure
+end
+
 enum Statement
-    assignment(List(String), expr.Expression) |
+    assignment(Destructure, expr.Expression) |
     if_(expr.Expression, Block, IfTail) |
     do_while(Block, expr.Expression) |
     for_(String, expr.Expression, Block) |
@@ -118,34 +129,60 @@ define parse_throw(tokens : List(lex.Token)) -> (Terminator, List(lex.Token)) do
     return (throw_(exp), tokens);
 end
 
-define parse_assignment(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
-    name, tokens1 := ts.assert_is_lower_name(tokens);
-    s, tokens1 := ts.assert_is_symbol(tokens1);
-    if (s == ",")
-        tokens := tokens1;
-        variables := [name];
+define parse_destructure(tokens : List(lex.Token)) -> (MaybeDestructure, List(lex.Token)) do
+    name := ts.peek_lower_name(tokens);
+    match (name)
+        just_string(name1) do
+        end
+        nothing_string do
+            return (nothing_destructure(), tokens);
+        end
+    end
+
+    s := ts.peek_symbol(tokens.drop(1));
+    match (s)
+        just_string(s1) do
+        end
+        nothing_string do
+            return (nothing_destructure(), tokens);
+        end
+    end
+
+    if (s1 == ",")
+        tokens := tokens.drop(2);
+        variables := [name_destructure(name1)];
         do
-            name, tokens := ts.assert_is_lower_name(tokens);
-            s, tokens := ts.assert_is_symbol(tokens);
-            if (s == ",")
-            elsif (s == ":=")
-                exp, tokens := expr.parse_expression(tokens);
-                tokens := ts.assert_symbol(tokens, ";");
-                return (assignment([name], exp), tokens);
+            name1, tokens := ts.assert_is_lower_name(tokens);
+            variables := variables.append(name_destructure(name1));
+            s1, tokens := ts.assert_is_symbol(tokens);
+            if (s1 == ",")
+            elsif (s1 == ":=")
+                return (just_destructure(tuple_destructure(variables)), tokens);
             else
                 throw void;
             end
         while (true)
-    elsif (s == ":=")
-        tokens := tokens1;
-        exp, tokens := expr.parse_expression(tokens);
-        tokens := ts.assert_symbol(tokens, ";");
-        return (assignment([name], exp), tokens);
+    elsif (s1 == ":=")
+        return (just_destructure(name_destructure(name1)), tokens.drop(2));
     else
-        exp, tokens := expr.parse_expression(tokens);
-        tokens := ts.assert_symbol(tokens, ";");
-        return (exp_(exp), tokens);
+        return (nothing_destructure(), tokens);
     end
+end
+
+define parse_other_statement(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
+    d, tokens1 := parse_destructure(tokens);
+    match (d)
+        just_destructure(d1) do
+            exp, tokens := expr.parse_expression(tokens1);
+            tokens := ts.assert_symbol(tokens, ";");
+            return (assignment(d1, exp), tokens);
+        end
+        nothing_destructure do
+        end
+    end
+    exp, tokens := expr.parse_expression(tokens);
+    tokens := ts.assert_symbol(tokens, ";");
+    return (exp_(exp), tokens);
 end
 
 define parse_code_block(tokens : List(lex.Token)) -> (Block, List(lex.Token)) do
@@ -181,24 +218,13 @@ define parse_code_block(tokens : List(lex.Token)) -> (Block, List(lex.Token)) do
                 elsif (k1 == "elsif")
                     return (block(statements, no_terminator()), tokens);
                 else
-                    exp, tokens := expr.parse_expression(tokens);
-                    tokens := ts.assert_symbol(tokens, ";");
-                    statements := statements.append(exp_(exp));
+                    statement, tokens := parse_other_statement(tokens);
+                    statements := statements.append(statement);
                 end
             end
             nothing_string do
-                name := ts.peek_lower_name(tokens);
-                match (name)
-                    just_string(name1) do
-                        statement, tokens := parse_assignment(tokens);
-                        statements := statements.append(statement);
-                    end
-                    nothing_string do
-                        exp, tokens := expr.parse_expression(tokens);
-                        tokens := ts.assert_symbol(tokens, ";");
-                        statements := statements.append(exp_(exp));
-                    end
-                end
+                statement, tokens := parse_other_statement(tokens);
+                statements := statements.append(statement);
             end
         end
     while (true)
