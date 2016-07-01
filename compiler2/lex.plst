@@ -120,7 +120,48 @@ define skip_whitespace(source : String) -> String do
 end
 
 define lex_char(source : String) -> (Token, String) do
-    throw void;
+    c, source := next(source);
+    if (c == '\'')
+        throw void;
+    elsif (c == '\\')
+        c, source := next(source);
+        if (c == 'u')
+            throw void;
+        elsif (c == 'U')
+            throw void;
+        else
+            close, source := next(source);
+            if (not (close == '\''))
+                throw void;
+            end
+            if (c == 'a')
+                return (char('\a'), source);
+            elsif (c == 'b')
+                return (char('\b'), source);
+            elsif (c == 'f')
+                return (char('\f'), source);
+            elsif (c == 'n')
+               return (char('\n'), source);
+            elsif (c == 'r')
+                return (char('\r'), source);
+            elsif (c == 't')
+                return (char('\t'), source);
+            elsif (c == 'v')
+                return (char('\v'), source);
+            elsif (c == '\\')
+                return (char('\\'), source);
+            elsif (c == '\'')
+                return (char('\''), source);
+            end
+            throw void;
+        end
+    else
+        close, source := next(source);
+        if (not (close == '\''))
+            throw void;
+        end
+        return (char(c), source);
+    end
 end
 
 define lex_property(source : String) -> (Token, String) do

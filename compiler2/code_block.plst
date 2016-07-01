@@ -91,8 +91,68 @@ define parse_for(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
     return (for_(name, exp, block), tokens);
 end
 
-define parse_match_clauses(tokens : List(lex.Token)) -> (List(Clause), List(lex.Token)) do
+define parse_parameter_list(tokens : List(lex.Token)) -> (List(String), List(lex.Token)) do
+    tokens := ts.assert_symbol(tokens, "(");
+    parameters := [] : (List(String));
+    do
+        token := tokens.index(0);
+        match (token)
+            lower_name(name) do
+                name, tokens := ts.assert_is_lower_name(tokens);
+                parameters := parameters.append(name);
+            end
+            symbol(s) do
+                tokens := ts.assert_symbol(tokens, ")");
+                return (parameters, tokens);
+            end
+        end
+    while(true)
     throw void;
+end
+
+define parse_optional_parameter_list(tokens : List(lex.Token)) -> (List(String), List(lex.Token)) do
+    s := ts.peek_symbol(tokens);
+
+    match (s)
+        just_string(s1) do
+            if (s1 == "(")
+                return parse_parameter_list(tokens);
+            end
+        end
+        nothing_string do
+        end
+    end
+
+    return ([] : (List(String)), tokens);
+end
+
+define parse_match_clause(tokens : List(lex.Token)) -> (Clause, List(lex.Token)) do
+    name, tokens := ts.assert_is_lower_name(tokens);
+    parameters, tokens := parse_optional_parameter_list(tokens);
+    tokens := ts.assert_keyword(tokens, "do");
+    block, tokens := parse_code_block(tokens);
+    tokens := ts.assert_keyword(tokens, "end");
+    return (clause(name, parameters, block), tokens);
+end
+
+define parse_match_clauses(tokens : List(lex.Token)) -> (List(Clause), List(lex.Token)) do
+    clauses := [] : (List(Clause));
+    do
+        key := ts.peek_keyword(tokens);
+        match (key)
+            just_string(key1) do
+                if (key1 == "end")
+                    return (clauses, tokens);
+                end
+                throw void;
+            end
+            nothing_string do
+            end
+        end
+
+        clause, tokens := parse_match_clause(tokens);
+        clauses := clauses.append(clause);
+    while (true)
 end
 
 define parse_match(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do

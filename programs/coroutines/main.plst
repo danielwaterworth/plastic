@@ -1,5 +1,5 @@
 coroutine foo() Void -> Char do
-    yield 'a';
+    yield('a');
     return;
 end
 
