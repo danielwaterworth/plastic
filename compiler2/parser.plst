@@ -1,11 +1,12 @@
-import iter
-import json
-
 import lex
 import ts
 import type
 import expr
 import code_block
+
+enum Module
+    module(List(String), List(TopLevel))
+end
 
 enum Function
     function_(String, List((String, type.Type)), type.Type, code_block.Block) |
@@ -208,6 +209,7 @@ end
 define parse_signatures(tokens : List(lex.Token)) -> (List((String, List(type.Type), type.Type)), List(lex.Token)) do
     output := [] : (List((String, List(type.Type), type.Type)));
 
+
     s := ts.peek_keyword(tokens);
     match (s)
         just_string(s1) do
@@ -231,7 +233,6 @@ define parse_signatures(tokens : List(lex.Token)) -> (List((String, List(type.Ty
             nothing_string do
             end
         end
-        tokens := tokens.drop(1);
     while (true)
 end
 
@@ -341,12 +342,12 @@ define parse_entry(tokens : List(lex.Token)) -> (TopLevel, List(lex.Token)) do
     return (entry_(block), tokens);
 end
 
-define parse(tokens : List(lex.Token)) -> (List(String), List(TopLevel)) do
+define parse(tokens : List(lex.Token)) -> Module do
     imports, tokens := parse_imports(tokens);
     decls := [] : (List(TopLevel));
     do
         if (tokens.length() == 0)
-            return (imports, decls);
+            return module(imports, decls);
         end
 
         token := tokens.index(0);
@@ -373,35 +374,4 @@ define parse(tokens : List(lex.Token)) -> (List(String), List(TopLevel)) do
             end
         end
     while (true)
-end
-
-service Test(
-            f : file.FileOps
-        )
-    constructor new()
-    end
-
-    implements EntryPoint
-        define main(args : List(ByteString)) -> Bool do
-            if (args.length() < 2)
-                debug("expected filename");
-                throw void;
-            end
-            fd := @f.open(args.index(1), 0);
-            source := @f.read(fd, 40960).decode_utf8();
-            if (source.length() == 40960)
-                throw void;
-            end
-            @f.close(fd);
-            tokens := lex.lex(source);
-            imports, decls := parse(tokens);
-            debug(decls);
-            return true;
-        end
-    end
-end
-
-entry
-    f := file.SysFileOps().new();
-    return Test(f).new();
 end

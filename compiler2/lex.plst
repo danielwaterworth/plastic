@@ -1,6 +1,4 @@
 import iter
-import file
-import json
 
 enum Token
     keyword(String) |
@@ -180,14 +178,18 @@ define lex_string(source : String) -> (Token, String) do
     i := 0;
     original := source;
     do
-        c := source.head();
-        if (c == '"')
-            return (string(original.take(i)), source.drop(1));
-        elsif (c == '\\')
-            throw void;
-        end
-        source := source.tail();
+        c, source := next(source);
         i := i + 1;
+        if (c == '"')
+            return (string(original.take(i-1)), source);
+        elsif (c == '\\')
+            c, source := next(source);
+            if (c == '\\')
+            elsif (c == '"')
+            else
+            end
+            
+        end
     while (true)
     throw void;
 end
@@ -288,43 +290,4 @@ define lex(source : String) -> List(Token) do
         source := skip_whitespace(source);
     while (source.length() != 0)
     return tokens;
-end
-
-define token_to_json(token : Token) -> json.JSON do
-    match (token)
-        keyword(k) do
-            return json.j_string(k);
-        end
-        symbol(s) do
-            return json.j_string(s);
-        end
-        lower_name(name) do
-            return json.j_array(json.j_cons_array(json.j_string("lower_name"), json.j_cons_array(json.j_string(name), json.j_empty_array())));
-        end
-        string(s) do
-            return json.j_array(json.j_cons_array(json.j_string("string"), json.j_cons_array(json.j_string(s), json.j_empty_array())));
-        end
-        number(n) do
-            return json.j_array(json.j_cons_array(json.j_string("number"), json.j_cons_array(json.j_string(n.to_string()), json.j_empty_array())));
-        end
-        property(name) do
-            return json.j_array(json.j_cons_array(json.j_string("property"), json.j_cons_array(json.j_string(name), json.j_empty_array())));
-        end
-        upper_name(name) do
-            return json.j_array(json.j_cons_array(json.j_string("upper_name"), json.j_cons_array(json.j_string(name), json.j_empty_array())));
-        end
-        char(c) do
-            return json.j_array(json.j_cons_array(json.j_string("char"), json.j_cons_array(json.j_string(c.to_string()), json.j_empty_array())));
-        end
-    end
-    throw void;
-end
-
-define tokens_to_json(tokens : List(Token)) -> json.JSON do
-    tokens := tokens.reverse();
-    output := json.j_empty_array();
-    for token in iter.l(tokens) do
-        output := json.j_cons_array(token_to_json(token), output);
-    end
-    return json.j_array(output);
 end

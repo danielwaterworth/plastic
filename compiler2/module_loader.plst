@@ -1,0 +1,30 @@
+import file
+import lex
+import parser
+import printer
+
+interface ModuleLoader
+    load(String) -> parser.Module;
+end
+
+service FileModuleLoader(
+            f : file.FileOps,
+            p : printer.Printer
+        )
+    constructor new()
+    end
+
+    implements ModuleLoader
+        define load(module : String) -> parser.Module do
+            @p.print("loading: " + module);
+            fd := @f.open((module + ".plst").encode_utf8(), 0);
+            source := @f.read(fd, 40960).decode_utf8();
+            if (source.length() == 40960)
+                throw void;
+            end
+            @f.close(fd);
+            tokens := lex.lex(source);
+            return parser.parse(tokens);
+        end
+    end
+end

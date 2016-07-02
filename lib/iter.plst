@@ -1,4 +1,7 @@
 coroutine range(n : UInt) Void -> UInt do
+    if (n == 0)
+        return void;
+    end
     i := 0;
     do
         yield(i);

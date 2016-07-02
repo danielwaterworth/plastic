@@ -82,3 +82,12 @@ def call(self, arguments):
     assert isinstance(n, data.UInt)
     assert len(l.elements) >= n.n
     return [DList(l.elements[n.n:])]
+
+@operator('list.pop')
+def call(self, arguments):
+    assert len(arguments) == 1
+    l = arguments[0]
+    assert isinstance(l, DList)
+    l = list(l.elements)
+    v = l.pop()
+    return [DList([DList(l), v])]

@@ -140,18 +140,23 @@ class List(Type):
     def constructor_method_signature(self, types, name):
         assert len(types) == 1
         t = types[0]
+        l = Instantiation(list, [t])
         if name == 'length':
             return ([], uint)
         elif name == 'index':
             return ([uint], t)
         elif name == 'append':
-            return ([t], Instantiation(list, [t]))
+            return ([t], l)
+        elif name == 'extend':
+            return ([l], l)
         elif name == 'reverse':
-            return ([], Instantiation(list, [t]))
+            return ([], l)
         elif name == 'drop':
-            return ([uint], Instantiation(list, [t]))
+            return ([uint], l)
+        elif name == 'pop':
+            return ([], Instantiation(tuple, [l, t]))
         else:
-            raise KeyError("on such method on list: %s" % name)
+            raise KeyError("no such method on list: %s" % name)
 
     def method(self, basic_block, object_variable, name, arguments):
         if name == 'length':
@@ -160,10 +165,14 @@ class List(Type):
             return basic_block.operation('list.index', [object_variable] + arguments)
         elif name == 'append':
             return basic_block.operation('list.append', [object_variable] + arguments)
+        elif name == 'extend':
+            return basic_block.operation('list.extend', [object_variable] + arguments)
         elif name == 'reverse':
             return basic_block.operation('list.reverse', [object_variable])
         elif name == 'drop':
             return basic_block.operation('list.drop', [object_variable] + arguments)
+        elif name == 'pop':
+            return basic_block.operation('list.pop', [object_variable])
 
 list = List()
 
