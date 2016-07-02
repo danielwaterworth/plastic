@@ -1,89 +1,101 @@
-from rpython.rlib.jit import JitDriver
+from rpython.rlib.jit import JitDriver, hint, unroll_safe
 import bytecode
 import data
 import operators
 import pdb
 
+@unroll_safe
 def activation_record(function, arguments):
     assert function.num_arguments == len(arguments)
-    values = arguments + [data.Invalid() for i in xrange(function.n_values)]
+    values = arguments + [data.invalid for i in xrange(function.n_values)]
     last_block_index = 0
     current_block_index = 0
     pc = 0
-    return (values, function, last_block_index, current_block_index, pc)
+    return ActivationFrame(values, function, last_block_index, current_block_index, pc)
 
-class ActivationRecord(object):
-    def __init__(self, record):
-        self.values, self.function, self.last_block_index, self.current_block_index, self.pc = record
+def resolve_variable(values, var):
+    value = values[var]
+    assert not isinstance(value, data.Invalid)
+    values[var] = data.invalid
+    return value
 
-    @property
-    def record(self):
-        return (self.values, self.function, self.last_block_index, self.current_block_index, self.pc)
+@unroll_safe
+def resolve_variable_list(values, variables):
+    return [resolve_variable(values, var) for var in variables]
 
-    def resolve_variable(self, var):
-        value = self.values[var]
-        assert not isinstance(value, data.Invalid)
-        self.values[var] = data.Invalid()
-        return value
+def next_instruction(function, current_block_index, pc):
+    current_block = function.get_block(current_block_index)
+    if current_block.num_instructions() <= pc:
+        return None
+    else:
+        return current_block.get_instruction(pc)
 
-    def resolve_variable_list(self, variables):
-        return [self.resolve_variable(var) for var in variables]
+def terminator(function, current_block_index):
+    current_block = function.get_block(current_block_index)
+    return current_block.terminator
 
-    def retire(self, value):
-        self.values[self.next_value] = value
-        self.pc += 1
+def retire(values, function, current_block_index, pc, value):
+    next_value = function.get_block_value_offset(current_block_index) + pc
+    values[next_value] = value
+    return (pc + 1)
 
-    def retire_multiple(self, values):
-        assert len(values) >= 1
-        self.retire(values[0])
-        for value in values[1:]:
-            instr = self.next_instruction()
-            assert isinstance(instr, bytecode.Unpack)
-            self.retire(value)
+@unroll_safe
+def retire_multiple(values, function, current_block_index, pc, v):
+    assert len(v) >= 1
+    pc = retire(values, function, current_block_index, pc, v[0])
+    for value in v[1:]:
+        instr = next_instruction(function, current_block_index, pc)
+        assert isinstance(instr, bytecode.Unpack)
+        pc = retire(values, function, current_block_index, pc, value)
+    return pc
 
-    def copy(self):
-        value = self.next_value - 1
-        assert value >= 0
-        return self.values[value].copy()
+def copy(values, function, current_block_index, pc):
+    next_value = function.get_block_value_offset(current_block_index) + pc
+    value = next_value - 1
+    assert value >= 0
+    return values[value].copy()
 
-    def next_instruction(self):
-        if len(self.current_block.instructions) <= self.pc:
-            return None
-        else:
-            return self.current_block.instructions[self.pc]
+def goto(function, current_block_index, last_block_index, block):
+    assert block < function.num_blocks()
 
-    def terminator(self):
-        return self.current_block.terminator
+    last_block_index = current_block_index
+    current_block_index = block
 
-    def goto(self, block):
-        assert block < len(self.function.blocks)
+    pc = 0
+    return (last_block_index, current_block_index, pc)
 
-        self.last_block_index = self.current_block_index
-        self.current_block_index = block
-
-        self.pc = 0
-
-    @property
-    def current_block(self):
-        return self.function.blocks[self.current_block_index]
-
-    @property
-    def next_value(self):
-        return (self.function.block_value_offsets[self.current_block_index] + self.pc)
+class ActivationFrame(object):
+    def __init__(self, values, function, last_block_index, current_block_index, pc):
+        self.values = values
+        self.function = function
+        self.last_block_index = last_block_index
+        self.current_block_index = current_block_index
+        self.pc = pc
 
 class Coroutine(data.Data):
     def __init__(self):
         self.stack = []
         self.done = False
-        self.var = data.Void()
+        self.var = data.void
 
     def print_backtrace(self):
         print ''
         print 'backtrace:'
         for frame in self.stack:
-            frame1 = ActivationRecord(frame)
-            print '  %s:%d' % (frame1.function.name, frame1.next_value)
+            values = frame.values
+            function = frame.function
+            last_block_index = frame.last_block_index
+            current_block_index = frame.current_block_index
+            pc = frame.pc
+            next_value = function.block_value_offsets[current_block_index] + pc
+            print '  %s:%d' % (function.name, next_value)
         print ''
+
+def get_location(current_block_index, last_block_index, pc, function, program, sys_caller):
+    name = function.name
+    value = function.get_block_value_offset(current_block_index) + pc
+    instruction = str(next_instruction(function, current_block_index, pc))
+    return "%s  :  %s  :  %s" % (name, value, instruction)
 
 jitdriver = JitDriver(
                     greens=[
@@ -99,25 +111,32 @@ jitdriver = JitDriver(
                         'coroutine_stack',
                         'memory',
                         'values',
-                    ]
+                    ],
+                    get_printable_location=get_location
                 )
 
 def execute(sys_caller, program, arguments):
     coroutine_stack = []
-    memory = [data.Void()] * 1024**2
+    memory = [data.invalid] * 1024**2
 
     for function_name, function in program.functions.iteritems():
         block_value_offsets = []
         n_values = 0
         for block in function.blocks:
             block_value_offsets.append(function.num_arguments + n_values)
-            n_values += len(block.instructions)
+            n_values += block.num_instructions()
 
         function.n_values = n_values
         function.block_value_offsets = block_value_offsets
 
     coroutine = Coroutine()
-    values, function, last_block_index, current_block_index, pc = activation_record(program.functions['$main'], arguments)
+
+    frame = activation_record(program.functions['$main'], arguments)
+    values = frame.values
+    function = frame.function
+    last_block_index = frame.last_block_index
+    current_block_index = frame.current_block_index
+    pc = frame.pc
     while True:
         jitdriver.jit_merge_point(
                 current_block_index=current_block_index,
@@ -131,163 +150,172 @@ def execute(sys_caller, program, arguments):
                 memory=memory,
                 values=values,
             )
-        current_frame = ActivationRecord((values, function, last_block_index, current_block_index, pc))
-        instr = current_frame.next_instruction()
+        instr = next_instruction(function, current_block_index, pc)
         if instr:
             if isinstance(instr, bytecode.Phi):
-                current_frame.retire(current_frame.resolve_variable(instr.inputs[current_frame.last_block_index]))
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                value = resolve_variable(values, instr.get_input(last_block_index))
+                pc = retire(values, function, current_block_index, pc, value)
             elif isinstance(instr, bytecode.Copy):
-                current_frame.retire(current_frame.copy())
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                value = copy(values, function, current_block_index, pc)
+                pc = retire(values, function, current_block_index, pc, value)
             elif isinstance(instr, bytecode.Move):
-                current_frame.retire(current_frame.resolve_variable(instr.variable))
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                value = resolve_variable(values, instr.variable)
+                pc = retire(values, function, current_block_index, pc, value)
             elif isinstance(instr, bytecode.Operation):
-                arguments = current_frame.resolve_variable_list(instr.arguments)
+                arguments = resolve_variable_list(values, instr.arguments)
                 if instr.operator == 'is_done':
-                    assert len(arguments) == 1
+                    assert len(instr.arguments) == 1
                     c = arguments[0]
                     assert isinstance(c, Coroutine)
-                    current_frame.retire(data.Bool(c.done))
+                    value = data.Bool(c.done)
+                    pc = retire(values, function, current_block_index, pc, value)
                 else:
-                    current_frame.retire_multiple(operators.operation(instr.operator, arguments))
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                    operator = operators.operator(instr.operator)
+                    v = operator.call(arguments)
+                    pc = retire_multiple(values, function, current_block_index, pc, v)
             elif isinstance(instr, bytecode.SysCall):
-                arguments = current_frame.resolve_variable_list(instr.arguments)
-                current_frame.retire_multiple(sys_caller.sys_call(instr.function, arguments))
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                arguments = resolve_variable_list(values, instr.arguments)
+                v = sys_caller.sys_call(instr.function, arguments)
+                pc = retire_multiple(values, function, current_block_index, pc, v)
             elif isinstance(instr, bytecode.FunctionCall):
-                arguments = current_frame.resolve_variable_list(instr.arguments)
-                coroutine.stack.append(current_frame.record)
-                current_frame = ActivationRecord(activation_record(program.functions[instr.function], arguments))
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                arguments = resolve_variable_list(values, instr.arguments)
+                coroutine.stack.append(ActivationFrame(values, function, last_block_index, current_block_index, pc))
+                frame = activation_record(program.get_function(instr.function), arguments)
+                values = frame.values
+                function = frame.function
+                last_block_index = frame.last_block_index
+                current_block_index = frame.current_block_index
+                pc = frame.pc
             elif isinstance(instr, bytecode.NewCoroutine):
-                arguments = current_frame.resolve_variable_list(instr.arguments)
-                function = program.functions[instr.function]
+                arguments = resolve_variable_list(values, instr.arguments)
+                f = program.get_function(instr.function)
                 c = Coroutine()
-                c.stack.append(activation_record(function, arguments))
-                current_frame.retire(c)
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                c.stack.append(activation_record(f, arguments))
+                pc = retire(values, function, current_block_index, pc, c)
             elif isinstance(instr, bytecode.Debug):
-                value = current_frame.resolve_variable(instr.value)
+                value = resolve_variable(values, instr.value)
                 print value.debug()
-                current_frame.retire(data.Void())
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                pc = retire(values, function, current_block_index, pc, data.void)
             elif isinstance(instr, bytecode.ConstantBool):
-                current_frame.retire(data.Bool(instr.value))
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                pc = retire(values, function, current_block_index, pc, data.Bool(instr.value))
             elif isinstance(instr, bytecode.ConstantByte):
-                current_frame.retire(data.Byte(instr.value))
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                pc = retire(values, function, current_block_index, pc, data.Byte(instr.value))
             elif isinstance(instr, bytecode.ConstantChar):
-                current_frame.retire(data.Char(instr.value))
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                pc = retire(values, function, current_block_index, pc, data.Char(instr.value))
             elif isinstance(instr, bytecode.ConstantByteString):
-                current_frame.retire(data.ByteString(instr.value))
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                pc = retire(values, function, current_block_index, pc, data.ByteString(instr.value))
             elif isinstance(instr, bytecode.ConstantString):
-                current_frame.retire(data.String(instr.value))
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                pc = retire(values, function, current_block_index, pc, data.String(instr.value))
             elif isinstance(instr, bytecode.ConstantInt):
-                current_frame.retire(data.Int(instr.value))
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                pc = retire(values, function, current_block_index, pc, data.Int(instr.value))
             elif isinstance(instr, bytecode.ConstantUInt):
-                current_frame.retire(data.UInt(instr.value))
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                pc = retire(values, function, current_block_index, pc, data.UInt(instr.value))
             elif isinstance(instr, bytecode.ConstantDouble):
-                current_frame.retire(data.Double(instr.value))
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                pc = retire(values, function, current_block_index, pc, data.Double(instr.value))
             elif isinstance(instr, bytecode.Void):
-                current_frame.retire(data.Void())
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                pc = retire(values, function, current_block_index, pc, data.void)
             elif isinstance(instr, bytecode.Load):
-                address = current_frame.resolve_variable(instr.address)
+                address = resolve_variable(values, instr.address)
                 assert isinstance(address, data.UInt)
                 dat = memory[address.n]
-                current_frame.retire(dat)
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                pc = retire(values, function, current_block_index, pc, dat)
             elif isinstance(instr, bytecode.Store):
-                address = current_frame.resolve_variable(instr.address)
-                value = current_frame.resolve_variable(instr.variable)
+                address = resolve_variable(values, instr.address)
+                value = resolve_variable(values, instr.variable)
                 assert isinstance(address, data.UInt)
                 memory[address.n] = value
-                current_frame.retire(data.Void())
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                pc = retire(values, function, current_block_index, pc, data.void)
             elif isinstance(instr, bytecode.Get):
-                current_frame.retire(coroutine.var)
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                pc = retire(values, function, current_block_index, pc, coroutine.var)
             elif isinstance(instr, bytecode.Put):
-                coroutine.var = current_frame.resolve_variable(instr.variable)
-                current_frame.retire(data.Void())
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                coroutine.var = resolve_variable(values, instr.variable)
+                pc = retire(values, function, current_block_index, pc, data.void)
             elif isinstance(instr, bytecode.RunCoroutine):
-                c = current_frame.resolve_variable(instr.coroutine)
+                c = resolve_variable(values, instr.coroutine)
                 assert isinstance(c, Coroutine)
-                coroutine.stack.append(current_frame.record)
+                coroutine.stack.append(ActivationFrame(values, function, last_block_index, current_block_index, pc))
                 coroutine_stack.append(coroutine)
                 coroutine = c
-                current_frame = ActivationRecord(coroutine.stack.pop())
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                frame = coroutine.stack.pop()
+                values = frame.values
+                function = frame.function
+                last_block_index = frame.last_block_index
+                current_block_index = frame.current_block_index
+                pc = frame.pc
             elif isinstance(instr, bytecode.Yield):
-                value = current_frame.resolve_variable(instr.value)
+                value = resolve_variable(values, instr.value)
                 if coroutine_stack:
-                    coroutine.stack.append(current_frame.record)
+                    coroutine.stack.append(ActivationFrame(values, function, last_block_index, current_block_index, pc))
                     coroutine = coroutine_stack.pop()
-                    current_frame = ActivationRecord(coroutine.stack.pop())
-                    current_frame.retire(value)
+                    frame = coroutine.stack.pop()
+                    values = frame.values
+                    function = frame.function
+                    last_block_index = frame.last_block_index
+                    current_block_index = frame.current_block_index
+                    pc = frame.pc
+                    pc = retire(values, function, current_block_index, pc, value)
                 else:
                     raise Exception('yielded from top level coroutine')
-                values, function, last_block_index, current_block_index, pc = current_frame.record
             elif isinstance(instr, bytecode.Resume):
-                c = current_frame.resolve_variable(instr.coroutine)
+                c = resolve_variable(values, instr.coroutine)
                 assert isinstance(c, Coroutine)
-                value = current_frame.resolve_variable(instr.value)
+                value = resolve_variable(values, instr.value)
 
-                coroutine.stack.append(current_frame.record)
+                coroutine.stack.append(ActivationFrame(values, function, last_block_index, current_block_index, pc))
                 coroutine_stack.append(coroutine)
                 coroutine = c
-                current_frame = ActivationRecord(coroutine.stack.pop())
-                current_frame.retire(value)
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                frame = coroutine.stack.pop()
+                values = frame.values
+                function = frame.function
+                last_block_index = frame.last_block_index
+                current_block_index = frame.current_block_index
+                pc = frame.pc
+                pc = retire(values, function, current_block_index, pc, value)
             else:
                 raise NotImplementedError('missing instruction implementation')
         else:
-            term = current_frame.terminator()
+            term = terminator(function, current_block_index)
             if isinstance(term, bytecode.Return):
-                values = current_frame.resolve_variable_list(term.variables)
+                v = resolve_variable_list(values, term.variables)
 
                 if coroutine.stack:
-                    current_frame = ActivationRecord(coroutine.stack.pop())
-                    current_frame.retire_multiple(values)
+                    frame = coroutine.stack.pop()
+                    values = frame.values
+                    function = frame.function
+                    last_block_index = frame.last_block_index
+                    current_block_index = frame.current_block_index
+                    pc = frame.pc
+                    pc = retire_multiple(values, function, current_block_index, pc, v)
                 else:
-                    assert len(values) == 1
+                    assert len(v) == 1
                     coroutine.done = True
 
                     if coroutine_stack:
                         coroutine = coroutine_stack.pop()
-                        current_frame = ActivationRecord(coroutine.stack.pop())
-                        current_frame.retire(values[0])
+                        frame = coroutine.stack.pop()
+                        values = frame.values
+                        function = frame.function
+                        last_block_index = frame.last_block_index
+                        current_block_index = frame.current_block_index
+                        pc = frame.pc
+                        pc = retire(values, function, current_block_index, pc, v[0])
                     else:
                         return 0
-                values, function, last_block_index, current_block_index, pc = current_frame.record
             elif isinstance(term, bytecode.Goto):
-                current_frame.goto(term.block_index)
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                last_block_index, current_block_index, pc = goto(function, current_block_index, last_block_index, term.block_index)
             elif isinstance(term, bytecode.Conditional):
-                v = current_frame.resolve_variable(term.condition_variable)
+                v = resolve_variable(values, term.condition_variable)
                 assert isinstance(v, data.Bool)
                 if v.b:
-                    current_frame.goto(term.true_block)
+                    last_block_index, current_block_index, pc = goto(function, current_block_index, last_block_index, term.true_block)
                 else:
-                    current_frame.goto(term.false_block)
-                values, function, last_block_index, current_block_index, pc = current_frame.record
+                    last_block_index, current_block_index, pc = goto(function, current_block_index, last_block_index, term.false_block)
             elif isinstance(term, bytecode.CatchFireAndDie):
                 coroutine.print_backtrace()
                 raise Exception('catching fire and dying')
             elif isinstance(term, bytecode.Throw):
                 coroutine.print_backtrace()
-                exception = current_frame.resolve_variable(term.exception)
+                exception = resolve_variable(values, term.exception)
                 print exception
                 raise Exception('throw')
             else:

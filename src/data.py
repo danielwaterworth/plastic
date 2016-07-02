@@ -112,7 +112,9 @@ class Int(Data):
         return compute_hash(self.n)
 
 class UInt(Data):
+    _immutable_fields_ = ['n']
     def __init__(self, n):
+        assert n >= 0
         self.n = n
 
     def persist(self, fd):
@@ -182,6 +184,8 @@ class Invalid(Data):
     def __repr__(self):
         return 'invalid'
 
+invalid = Invalid()
+
 class Void(Data):
     def write_out(self, basic_block):
         return basic_block.void()
@@ -195,6 +199,8 @@ class Void(Data):
 
     def __repr__(self):
         return 'void'
+
+void = Void()
 
 class Byte(Data):
     def __init__(self, b):

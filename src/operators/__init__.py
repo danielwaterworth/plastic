@@ -11,5 +11,8 @@ import operators.string
 import operators.list
 import operators.hashmap
 
-def operation(operator, arguments):
-    return data.operators[operator].call(arguments)
+from rpython.rlib.jit import purefunction
+
+@purefunction
+def operator(operator):
+    return data.operators[operator]
