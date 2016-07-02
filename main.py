@@ -54,8 +54,7 @@ def entry_point(argv):
     arguments = [operators.list.DList([data.ByteString(arg) for arg in argv])]
 
     try:
-        ex = executor.Executor(sys_caller, constructor.get_program(), arguments)
-        ex.run()
+        ex = executor.execute(sys_caller, constructor.get_program(), arguments)
     finally:
         if trace_fd:
             trace_fd.close()
@@ -64,6 +63,10 @@ def entry_point(argv):
 
 def target(*args):
     return entry_point, None
+
+def jitpolicy(driver):
+    from rpython.jit.codewriter.policy import JitPolicy
+    return JitPolicy()
 
 if __name__ == "__main__":
     import sys
