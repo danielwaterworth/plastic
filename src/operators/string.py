@@ -1,4 +1,5 @@
 import data
+import operators.list
 from data import operator
 
 @operator('string.length')
@@ -61,3 +62,20 @@ def call(self, arguments):
     assert isinstance(x, data.String)
     return [data.ByteString(x.v.encode('utf-8'))]
 
+@operator('string.pack')
+def call(self, arguments):
+    assert len(arguments) == 1
+    x = arguments[0]
+    assert isinstance(x, operators.list.DList)
+    chars = []
+    for c in x.elements:
+        assert isinstance(c, data.Char)
+        chars.append(c.b)
+    return [data.String(u''.join(chars))]
+
+@operator('string.unpack')
+def call(self, arguments):
+    assert len(arguments) == 1
+    x = arguments[0]
+    assert isinstance(x, data.String)
+    return [operators.list.DList([data.Char(c) for c in x.v])]

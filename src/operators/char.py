@@ -47,3 +47,10 @@ def call(self, arguments):
     x = arguments[0]
     assert isinstance(x, data.Char)
     return [data.Bool(x.b in spaces)]
+
+@operator('char.from_uint')
+def call(self, arguments):
+    assert len(arguments) == 1
+    x = arguments[0]
+    assert isinstance(x, data.UInt)
+    return [data.Char(unichr(x.n))]
