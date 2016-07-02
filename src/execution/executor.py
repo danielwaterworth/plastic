@@ -63,9 +63,8 @@ class ActivationRecord(object):
         return (self.function.block_value_offsets[self.current_block_index] + self.pc)
 
 class Coroutine(data.Data):
-    def __init__(self, function, arguments):
+    def __init__(self):
         self.stack = []
-        self.current_frame = ActivationRecord(function, arguments)
         self.done = False
         self.var = data.Void()
 
@@ -92,8 +91,8 @@ def execute(sys_caller, program, arguments):
         function.n_values = n_values
         function.block_value_offsets = block_value_offsets
 
-    coroutine = Coroutine(program.functions['$main'], arguments)
-    current_frame = coroutine.current_frame
+    coroutine = Coroutine()
+    current_frame = ActivationRecord(program.functions['$main'], arguments)
     while True:
         jitdriver.jit_merge_point(
                 coroutine_stack=coroutine_stack,
@@ -127,11 +126,11 @@ def execute(sys_caller, program, arguments):
                 arguments = current_frame.resolve_variable_list(instr.arguments)
                 coroutine.stack.append(current_frame)
                 current_frame = ActivationRecord(program.functions[instr.function], arguments)
-                coroutine.current_frame = current_frame
             elif isinstance(instr, bytecode.NewCoroutine):
                 arguments = current_frame.resolve_variable_list(instr.arguments)
                 function = program.functions[instr.function]
-                c = Coroutine(function, arguments)
+                c = Coroutine()
+                c.stack.append(ActivationRecord(function, arguments))
                 current_frame.retire(c)
             elif isinstance(instr, bytecode.Debug):
                 value = current_frame.resolve_variable(instr.value)
@@ -174,14 +173,16 @@ def execute(sys_caller, program, arguments):
             elif isinstance(instr, bytecode.RunCoroutine):
                 c = current_frame.resolve_variable(instr.coroutine)
                 assert isinstance(c, Coroutine)
+                coroutine.stack.append(current_frame)
                 coroutine_stack.append(coroutine)
                 coroutine = c
-                current_frame = coroutine.current_frame
+                current_frame = coroutine.stack.pop()
             elif isinstance(instr, bytecode.Yield):
                 value = current_frame.resolve_variable(instr.value)
                 if coroutine_stack:
+                    coroutine.stack.append(current_frame)
                     coroutine = coroutine_stack.pop()
-                    current_frame = coroutine.current_frame
+                    current_frame = coroutine.stack.pop()
                     current_frame.retire(value)
                 else:
                     raise Exception('yielded from top level coroutine')
@@ -190,25 +191,20 @@ def execute(sys_caller, program, arguments):
                 assert isinstance(c, Coroutine)
                 value = current_frame.resolve_variable(instr.value)
 
+                coroutine.stack.append(current_frame)
                 coroutine_stack.append(coroutine)
                 coroutine = c
-                current_frame = coroutine.current_frame
+                current_frame = coroutine.stack.pop()
                 current_frame.retire(value)
             else:
                 raise NotImplementedError('missing instruction implementation')
         else:
             term = current_frame.terminator()
             if isinstance(term, bytecode.Return):
-                frame = current_frame
+                values = current_frame.resolve_variable_list(term.variables)
 
-                try:
-                    coroutine.current_frame = coroutine.stack.pop()
-                except IndexError:
-                    coroutine.current_frame = None
-                current_frame = coroutine.current_frame
-
-                values = frame.resolve_variable_list(term.variables)
-                if current_frame:
+                if coroutine.stack:
+                    current_frame = coroutine.stack.pop()
                     current_frame.retire_multiple(values)
                 else:
                     assert len(values) == 1
@@ -216,7 +212,7 @@ def execute(sys_caller, program, arguments):
 
                     if coroutine_stack:
                         coroutine = coroutine_stack.pop()
-                        current_frame = coroutine.current_frame
+                        current_frame = coroutine.stack.pop()
                         current_frame.retire(values[0])
                     else:
                         return 0
