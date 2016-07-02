@@ -33,12 +33,12 @@ def entry_point(argv):
     if mode == 'exec':
         program = argv[2]
         argv = argv[2:]
-        sys_caller = sys_calls.Perform()
+        sys_caller = sys_calls.Perform(program)
     elif mode == 'trace' and len(argv) >= 4:
         program = argv[3]
         trace_fd = open(argv[2], 'w')
         argv = argv[3:]
-        sys_caller = sys_calls.TraceProxy(sys_calls.Perform(), trace_fd)
+        sys_caller = sys_calls.TraceProxy(sys_calls.Perform(program), trace_fd)
     elif mode == 'replay' and len(argv) >= 4:
         program = argv[3]
         argv = argv[3:]

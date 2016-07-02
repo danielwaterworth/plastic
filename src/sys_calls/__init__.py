@@ -12,8 +12,15 @@ class SysCallInterface(object):
         raise NotImplementedError()
 
 class Perform(SysCallInterface):
+    def __init__(self, program):
+        self.program = program
+
     def sys_call(self, name, arguments):
-        return data.sys_calls[name].call(arguments)
+        if name == 'bytecode_file':
+            assert len(arguments) == 0
+            return [data.ByteString(self.program)]
+        else:
+            return data.sys_calls[name].call(arguments)
 
 class TraceProxy(SysCallInterface):
     def __init__(self, target, fd):

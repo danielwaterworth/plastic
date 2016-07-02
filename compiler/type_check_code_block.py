@@ -111,6 +111,8 @@ sys_call_signatures = {
     'file_read': ([file, uint], bytestring),
     'file_write': ([file, bytestring], void),
     'file_close': ([file], void),
+
+    'bytecode_file': ([], bytestring),
 }
 
 op_call_signatures = {

@@ -1,10 +1,21 @@
+import iter
 import file
 import lex
 import parser
 import printer
 
 interface ModuleLoader
-    load(String) -> parser.Module;
+    load(String) -> List((String, parser.Module));
+end
+
+define has_module(module : String, modules : List((String, a))) -> Bool do
+    for m in iter.l(modules) do
+        m1, m2 := m;
+        if (m1 == module)
+            return true;
+        end
+    end
+    return false;
 end
 
 service FileModuleLoader(
@@ -15,7 +26,30 @@ service FileModuleLoader(
     end
 
     implements ModuleLoader
-        define load(module : String) -> parser.Module do
+        define load(module : String) -> List((String, parser.Module)) do
+            to_load := [module];
+            loaded := [] : (List((String, parser.Module)));
+            do
+                to_load, module_name := to_load.pop();
+                if (not has_module(module_name, loaded))
+                    m := self.load_module(module_name);
+                    match (m)
+                        module(imports, decls) do
+                        end
+                    end
+                    loaded := loaded.append((module_name, m));
+                    to_load := to_load.extend(imports);
+                end
+            while (to_load.length() > 0)
+
+            return loaded;
+        end
+    end
+
+    private
+        define load_module(module : String) -> parser.Module do
+            file := sys bytecode_file();
+
             @p.print("loading: " + module);
             fd := @f.open((module + ".plst").encode_utf8(), 0);
             source := @f.read(fd, 40960).decode_utf8();

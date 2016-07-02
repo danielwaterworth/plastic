@@ -1,17 +1,6 @@
 import parser
 import module_loader
-import iter
 import printer
-
-define has_module(module : String, modules : List((String, a))) -> Bool do
-    for m in iter.l(modules) do
-        m1, m2 := m;
-        if (m1 == module)
-            return true;
-        end
-    end
-    return false;
-end
 
 service Main(
             m : module_loader.ModuleLoader
@@ -26,20 +15,7 @@ service Main(
                 throw void;
             end
 
-            to_load := [args.index(1).decode_utf8()];
-            loaded := [] : (List((String, parser.Module)));
-            do
-                to_load, module_name := to_load.pop();
-                if (not has_module(module_name, loaded))
-                    m := @m.load(module_name);
-                    match (m)
-                        module(imports, decls) do
-                        end
-                    end
-                    loaded := loaded.append((module_name, m));
-                    to_load := to_load.extend(imports);
-                end
-            while (to_load.length() > 0)
+            @m.load(args.index(1).decode_utf8());
 
             return true;
         end
