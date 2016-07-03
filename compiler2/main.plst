@@ -35,8 +35,12 @@ service Main(
             end
             dir, module := rsplit(filename, '/');
 
-            @m.load(dir, module);
+            loaded_modules := @m.load(dir, module);
 
+            for x in iter.l(loaded_modules) do
+                name, mod := x;
+                debug(name);
+            end
             return true;
         end
     end

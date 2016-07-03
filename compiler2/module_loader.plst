@@ -44,6 +44,28 @@ define has_module(module : List(String), modules : List((List(String), a))) -> B
     return false;
 end
 
+define has_any_module(a : List(List(String)), b : List((List(String), a))) -> Bool do
+    for module in iter.l(a) do
+        if (has_module(module, b))
+            return true;
+        end
+    end
+    return false;
+end
+
+define remove(module : List(String), modules : List((List(String), a))) -> List((List(String), a)) do
+    output := [] : (List((List(String), a)));
+
+    for m in iter.l(modules) do
+        name, mod := m;
+        if (not module_eq(name, module))
+            output := output.append(m);
+        end
+    end
+
+    return output;
+end
+
 service FileModuleLoader(
             f : file.FileOps,
             p : printer.Printer
@@ -68,7 +90,33 @@ service FileModuleLoader(
                 end
             while (to_load.length() > 0)
 
-            return loaded;
+            for m in iter.l(loaded) do
+                name, mod := m;
+            end
+
+            ordered := [] : (List((List(String), parsing.parser.Module)));
+            do
+                added := false;
+                for m in iter.l(loaded) do
+                    name, mod := m;
+                    match (mod)
+                        module(imports, decls) do
+                        end
+                    end
+
+                    if (not has_any_module(imports, loaded))
+                        added := true;
+                        ordered := ordered.append(m);
+                        loaded := remove(name, loaded);
+                    end
+                end
+                if (not added)
+                    debug("recursive module imports");
+                    throw void;
+                end
+            while (loaded.length() > 0)
+
+            return ordered;
         end
     end
 
