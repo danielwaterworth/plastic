@@ -14,7 +14,7 @@ service Main(
                 throw void;
             end
 
-            @m.load(args.index(1).decode_utf8());
+            @m.load([args.index(1).decode_utf8()]);
 
             return true;
         end

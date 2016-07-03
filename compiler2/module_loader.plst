@@ -5,13 +5,39 @@ import parsing.parser
 import printer
 
 interface ModuleLoader
-    load(String) -> List((String, parsing.parser.Module));
+    load(List(String)) -> List((List(String), parsing.parser.Module));
 end
 
-define has_module(module : String, modules : List((String, a))) -> Bool do
+define join(l : List(String), inter : String) -> String do
+    if (l.length() == 0)
+        return "";
+    end
+
+    output := l.index(0);
+    for x in iter.l(l.drop(1)) do
+        output := output + inter + x;
+    end
+
+    return output;
+end
+
+define module_eq(a : List(String), b : List(String)) -> Bool do
+    if (a.length() != b.length())
+        return false;
+    end
+    for i in iter.zip(iter.l(a), iter.l(b)) do
+        x, y := i;
+        if (x != y)
+            return false;
+        end
+    end
+    return true;
+end
+
+define has_module(module : List(String), modules : List((List(String), a))) -> Bool do
     for m in iter.l(modules) do
         m1, m2 := m;
-        if (m1 == module)
+        if (module_eq(m1, module))
             return true;
         end
     end
@@ -26,9 +52,9 @@ service FileModuleLoader(
     end
 
     implements ModuleLoader
-        define load(module : String) -> List((String, parsing.parser.Module)) do
+        define load(module : List(String)) -> List((List(String), parsing.parser.Module)) do
             to_load := [module];
-            loaded := [] : (List((String, parsing.parser.Module)));
+            loaded := [] : (List((List(String), parsing.parser.Module)));
             do
                 to_load, module_name := to_load.pop();
                 if (not has_module(module_name, loaded))
@@ -47,9 +73,10 @@ service FileModuleLoader(
     end
 
     private
-        define load_module(module : String) -> parsing.parser.Module do
-            @p.print("loading: " + module);
-            fd := @f.open((module + ".plst").encode_utf8(), 0);
+        define load_module(module : List(String)) -> parsing.parser.Module do
+            module_name := join(module, ".");
+            @p.print("loading: " + module_name);
+            fd := @f.open((join(module, "/") + ".plst").encode_utf8(), 0);
             source := @f.read(fd, 40960).decode_utf8();
             if (source.length() == 40960)
                 throw void;

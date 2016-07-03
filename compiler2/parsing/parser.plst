@@ -5,7 +5,7 @@ import parsing.expr
 import parsing.code_block
 
 enum Module
-    module(List(String), List(TopLevel))
+    module(List(List(String)), List(TopLevel))
 end
 
 enum Function
@@ -29,15 +29,15 @@ enum TopLevel
     fun_(Function)
 end
 
-define parse_imports(tokens : List(parsing.lex.Token)) -> (List(String), List(parsing.lex.Token)) do
-    imports := [] : (List(String));
+define parse_imports(tokens : List(parsing.lex.Token)) -> (List(List(String)), List(parsing.lex.Token)) do
+    imports := [] : (List(List(String)));
     do
         if (tokens.length() > 0)
             k := parsing.ts.peek_keyword(tokens);
             match (k)
                 just_string(k1) do
                     if (k1 == "import")
-                        name, tokens := parsing.ts.assert_is_lower_name(tokens.drop(1));
+                        name, tokens := parsing.type.parse_module_name(tokens.drop(1));
                         imports := imports.append(name);
                     else
                         return (imports, tokens);

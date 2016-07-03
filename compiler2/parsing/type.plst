@@ -3,7 +3,7 @@ import parsing.ts
 
 enum Type
     quantified(String) |
-    named_type(parsing.ts.MaybeString, String, List(Type)) |
+    named_type(List(String), String, List(Type)) |
     tuple(List(Type))
 end
 
@@ -80,6 +80,35 @@ define parse_optional_argument_list(tokens : List(parsing.lex.Token)) -> (List(T
     return ([] : (List(Type)), tokens);
 end
 
+define parse_module_name(tokens : List(parsing.lex.Token)) -> (List(String), List(parsing.lex.Token)) do
+    name, tokens := parsing.ts.assert_is_lower_name(tokens);
+    module_name := [name];
+    do
+        s := parsing.ts.peek_symbol(tokens);
+        match (s)
+            just_string(s1) do
+                if (s1 == ".")
+                    n := parsing.ts.peek_symbol(tokens.drop(1));
+                    match (n)
+                        just_string(n1) do
+                            tokens := tokens.drop(2);
+                            module_name := module_name.append(n1);
+                        end
+                        nothing_string do
+                            return (module_name, tokens);
+                        end
+                    end
+                else
+                    return (module_name, tokens);
+                end
+            end
+            nothing_string do
+                return (module_name, tokens);
+            end
+        end
+    while (true)
+end
+
 define parse_type(tokens : List(parsing.lex.Token)) -> (Type, List(parsing.lex.Token)) do
     match (tokens.index(0))
         symbol(s) do
@@ -95,10 +124,11 @@ define parse_type(tokens : List(parsing.lex.Token)) -> (Type, List(parsing.lex.T
             match (s)
                 just_string(s1) do
                     if (s1 == ".")
-                        tokens := tokens.drop(1);
+                        module_name, tokens := parse_module_name(tokens.drop(1));
+                        module_name := [name] + module_name;
                         t, tokens := parsing.ts.assert_is_upper_name(tokens);
                         args, tokens := parse_optional_argument_list(tokens);
-                        return (named_type(parsing.ts.just_string(name), t, args), tokens);
+                        return (named_type(module_name, t, args), tokens);
                     else
                         return (quantified(name), tokens);
                     end
@@ -110,7 +140,7 @@ define parse_type(tokens : List(parsing.lex.Token)) -> (Type, List(parsing.lex.T
         end
         upper_name(name) do
             args, tokens := parse_optional_argument_list(tokens.drop(1));
-            return (named_type(parsing.ts.nothing_string(), name, args), tokens);
+            return (named_type([] : (List(String)), name, args), tokens);
         end
     end
 end

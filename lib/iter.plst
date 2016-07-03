@@ -17,6 +17,18 @@ coroutine l(items : List(a)) Void -> a do
     return void;
 end
 
-define first(items : List(a)) -> a do
-    return items.index(0);
+coroutine zip(a : Coroutine(Void, x), b : Coroutine(Void, y)) Void -> (x, y) do
+    x := run(a);
+    y := run(b);
+
+    do
+        if (is_done(a) or is_done(b))
+            return void;
+        else
+            yield((x, y));
+        end
+        x := resume(a, void);
+        y := resume(b, void);
+    while (true)
+    return void;
 end

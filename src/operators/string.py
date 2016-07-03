@@ -55,6 +55,13 @@ def call(self, arguments):
     assert isinstance(y, data.String)
     return [data.Bool(x.v == y.v)]
 
+@operator('string.ne')
+def call(self, arguments):
+    x, y = arguments
+    assert isinstance(x, data.String)
+    assert isinstance(y, data.String)
+    return [data.Bool(x.v != y.v)]
+
 @operator('string.encode_utf8')
 def call(self, arguments):
     assert len(arguments) == 1

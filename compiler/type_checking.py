@@ -18,7 +18,8 @@ primitives = {
     'Socket': socket,
     'File': file,
     'EntryPoint': entry_point,
-    'List': program_types.list
+    'List': program_types.list,
+    'Coroutine': program_types.coroutine
 }
 
 def type_check_module(module_interfaces, module_name, module_decl):
