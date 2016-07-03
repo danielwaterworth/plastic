@@ -5,7 +5,7 @@ import parsing.parser
 import printer
 
 interface ModuleLoader
-    load(List(String)) -> List((List(String), parsing.parser.Module));
+    load(String, String) -> List((List(String), parsing.parser.Module));
 end
 
 define join(l : List(String), inter : String) -> String do
@@ -52,13 +52,13 @@ service FileModuleLoader(
     end
 
     implements ModuleLoader
-        define load(module : List(String)) -> List((List(String), parsing.parser.Module)) do
-            to_load := [module];
+        define load(dir : String, module : String) -> List((List(String), parsing.parser.Module)) do
+            to_load := [[module]];
             loaded := [] : (List((List(String), parsing.parser.Module)));
             do
                 to_load, module_name := to_load.pop();
                 if (not has_module(module_name, loaded))
-                    m := self.load_module(module_name);
+                    m := self.load_module(dir, module_name);
                     match (m)
                         module(imports, decls) do
                         end
@@ -73,10 +73,10 @@ service FileModuleLoader(
     end
 
     private
-        define load_module(module : List(String)) -> parsing.parser.Module do
+        define load_module(dir : String, module : List(String)) -> parsing.parser.Module do
             module_name := join(module, ".");
             @p.print("loading: " + module_name);
-            fd := @f.open((join(module, "/") + ".plst").encode_utf8(), 0);
+            fd := @f.open((join([dir] + module, "/") + ".plst").encode_utf8(), 0);
             source := @f.read(fd, 40960).decode_utf8();
             if (source.length() == 40960)
                 throw void;

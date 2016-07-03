@@ -205,7 +205,7 @@ bytestring_operators = {
 
 string_operators = {
     '==': 'string.eq',
-    '!=': 'string.eq',
+    '!=': 'string.ne',
     '+': 'string.concat'
 }
 

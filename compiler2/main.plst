@@ -1,5 +1,18 @@
 import module_loader
 import printer
+import iter
+
+define rsplit(s : String, c : Char) -> (String, String) do
+    unpacked := s.unpack();
+
+    for i in iter.range(s.length()) do
+        i := s.length() - i - 1;
+        if (unpacked.index(i) == c)
+            return (s.take(i), s.drop(i+1));
+        end
+    end
+    throw void;
+end
 
 service Main(
             m : module_loader.ModuleLoader
@@ -14,7 +27,15 @@ service Main(
                 throw void;
             end
 
-            @m.load([args.index(1).decode_utf8()]);
+            filename := args.index(1).decode_utf8();
+            filename, ending := rsplit(filename, '.');
+            if (ending != "plst")
+                debug("expected plst file");
+                throw void;
+            end
+            dir, module := rsplit(filename, '/');
+
+            @m.load(dir, module);
 
             return true;
         end

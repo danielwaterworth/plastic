@@ -282,4 +282,5 @@ string_methods.update({
     'take': (([uint], string), 'string.take'),
     'encode_utf8': (([], bytestring), 'string.encode_utf8'),
     'length': (([], uint), 'string.length'),
+    'unpack': (([], Instantiation(list, [char])), 'string.unpack'),
 })
