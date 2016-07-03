@@ -3,6 +3,9 @@ interface FileOps
     read(File, UInt) -> ByteString;
     write(File, ByteString) -> Void;
     close(File) -> Void;
+
+    # Temporary until we have proper exceptions
+    exists(ByteString) -> Bool;
 end
 
 service SysFileOps()
@@ -24,6 +27,10 @@ service SysFileOps()
 
         define close(file : File) -> Void do
             return sys file_close(file);
+        end
+
+        define exists(name : ByteString) -> Bool do
+            return sys file_exists(name);
         end
     end
 end

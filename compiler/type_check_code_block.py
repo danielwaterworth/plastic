@@ -111,6 +111,7 @@ sys_call_signatures = {
     'file_read': ([file, uint], bytestring),
     'file_write': ([file, bytestring], void),
     'file_close': ([file], void),
+    'file_exists': ([bytestring], bool),
 
     'bytecode_file': ([], bytestring),
 }

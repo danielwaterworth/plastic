@@ -76,6 +76,10 @@ service FileModuleLoader(
         define load_module(dir : String, module : List(String)) -> parsing.parser.Module do
             module_name := join(module, ".");
             @p.print("loading: " + module_name);
+            lib := @f.exists((join(["./lib"] + module, "/") + ".plst").encode_utf8());
+            if (lib)
+                dir := "./lib";
+            end
             fd := @f.open((join([dir] + module, "/") + ".plst").encode_utf8(), 0);
             source := @f.read(fd, 40960).decode_utf8();
             if (source.length() == 40960)

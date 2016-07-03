@@ -1,4 +1,5 @@
 import os
+import os.path
 import data
 from rpython.rlib.rarithmetic import intmask
 from data import sys_call
@@ -6,6 +7,13 @@ from data import sys_call
 class File(data.Data):
     def __init__(self, fd):
         self.fd = fd
+
+@sys_call('file_exists')
+def call(self, arguments):
+    assert len(arguments) == 1
+    filename = arguments[0]
+    assert isinstance(filename, data.ByteString)
+    return [data.Bool(os.path.isfile(filename.v))]
 
 @sys_call('file_open')
 def call(self, arguments):
