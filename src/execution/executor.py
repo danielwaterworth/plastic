@@ -311,9 +311,11 @@ def execute(sys_caller, program, arguments):
                 else:
                     last_block_index, current_block_index, pc = goto(function, current_block_index, last_block_index, term.false_block)
             elif isinstance(term, bytecode.CatchFireAndDie):
+                coroutine.stack.append(ActivationFrame(values, function, last_block_index, current_block_index, pc))
                 coroutine.print_backtrace()
                 raise Exception('catching fire and dying')
             elif isinstance(term, bytecode.Throw):
+                coroutine.stack.append(ActivationFrame(values, function, last_block_index, current_block_index, pc))
                 coroutine.print_backtrace()
                 exception = resolve_variable(values, term.exception)
                 print exception

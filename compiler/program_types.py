@@ -153,6 +153,8 @@ class List(Type):
             return ([], l)
         elif name == 'drop':
             return ([uint], l)
+        elif name == 'take':
+            return ([uint], l)
         elif name == 'pop':
             return ([], Instantiation(tuple, [l, t]))
         else:
@@ -171,6 +173,8 @@ class List(Type):
             return basic_block.operation('list.reverse', [object_variable])
         elif name == 'drop':
             return basic_block.operation('list.drop', [object_variable] + arguments)
+        elif name == 'take':
+            return basic_block.operation('list.take', [object_variable] + arguments)
         elif name == 'pop':
             return basic_block.operation('list.pop', [object_variable])
 

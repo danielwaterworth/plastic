@@ -103,8 +103,12 @@ define parse_parameter_list(tokens : List(parsing.lex.Token)) -> (List(String), 
                 parameters := parameters.append(name);
             end
             symbol(s) do
-                tokens := parsing.ts.assert_symbol(tokens, ")");
-                return (parameters, tokens);
+                if (s == ",")
+                    tokens := tokens.drop(1);
+                else
+                    tokens := parsing.ts.assert_symbol(tokens, ")");
+                    return (parameters, tokens);
+                end
             end
         end
     while(true)

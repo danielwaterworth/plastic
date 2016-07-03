@@ -88,7 +88,7 @@ define parse_module_name(tokens : List(parsing.lex.Token)) -> (List(String), Lis
         match (s)
             just_string(s1) do
                 if (s1 == ".")
-                    n := parsing.ts.peek_symbol(tokens.drop(1));
+                    n := parsing.ts.peek_lower_name(tokens.drop(1));
                     match (n)
                         just_string(n1) do
                             tokens := tokens.drop(2);
@@ -124,11 +124,21 @@ define parse_type(tokens : List(parsing.lex.Token)) -> (Type, List(parsing.lex.T
             match (s)
                 just_string(s1) do
                     if (s1 == ".")
-                        module_name, tokens := parse_module_name(tokens.drop(1));
-                        module_name := [name] + module_name;
-                        t, tokens := parsing.ts.assert_is_upper_name(tokens);
-                        args, tokens := parse_optional_argument_list(tokens);
-                        return (named_type(module_name, t, args), tokens);
+                        tokens := tokens.drop(1);
+                        match (tokens.index(0))
+                            upper_name(t) do
+                                args, tokens := parse_optional_argument_list(tokens.drop(1));
+                                return (named_type([name], t, args), tokens);
+                            end
+                            lower_name(name) do
+                                module_name, tokens := parse_module_name(tokens);
+                                module_name := [name] + module_name;
+                                tokens := parsing.ts.assert_symbol(tokens, ".");
+                                t, tokens := parsing.ts.assert_is_upper_name(tokens);
+                                args, tokens := parse_optional_argument_list(tokens);
+                                return (named_type(module_name, t, args), tokens);
+                            end
+                        end
                     else
                         return (quantified(name), tokens);
                     end

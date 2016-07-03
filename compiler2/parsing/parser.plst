@@ -32,20 +32,18 @@ end
 define parse_imports(tokens : List(parsing.lex.Token)) -> (List(List(String)), List(parsing.lex.Token)) do
     imports := [] : (List(List(String)));
     do
-        if (tokens.length() > 0)
-            k := parsing.ts.peek_keyword(tokens);
-            match (k)
-                just_string(k1) do
-                    if (k1 == "import")
-                        name, tokens := parsing.type.parse_module_name(tokens.drop(1));
-                        imports := imports.append(name);
-                    else
-                        return (imports, tokens);
-                    end
-                end
-                nothing_string do
+        k := parsing.ts.peek_keyword(tokens);
+        match (k)
+            just_string(k1) do
+                if (k1 == "import")
+                    name, tokens := parsing.type.parse_module_name(tokens.drop(1));
+                    imports := imports.append(name);
+                else
                     return (imports, tokens);
                 end
+            end
+            nothing_string do
+                return (imports, tokens);
             end
         end
     while (true)
@@ -368,6 +366,7 @@ define parse(tokens : List(parsing.lex.Token)) -> Module do
                 elsif (key == "entry")
                     decl, tokens := parse_entry(tokens);
                 else
+                    debug(("unknown toplevel keyword", key));
                     throw void;
                 end
                 decls := decls.append(decl);
