@@ -1,0 +1,377 @@
+import parsing.lex
+import parsing.ts
+import parsing.type
+import parsing.expr
+import parsing.code_block
+
+enum Module
+    module(List(String), List(TopLevel))
+end
+
+enum Function
+    function_(String, List((String, parsing.type.Type)), parsing.type.Type, parsing.code_block.Block) |
+    coroutine_(String, List((String, parsing.type.Type)), parsing.type.Type, parsing.type.Type, parsing.code_block.Block)
+end
+
+enum ServiceDecl
+    constructor_(String, List((String, parsing.type.Type)), parsing.code_block.Block) |
+    attr_(String, parsing.type.Type) |
+    private_(List(Function)) |
+    implements_(parsing.type.Type, List(Function))
+end
+
+enum TopLevel
+    record_ |
+    enum_(String, List(String), List((String, List(parsing.type.Type)))) |
+    service_(String, List((String, parsing.type.Type)), List(ServiceDecl)) |
+    interface_(String, List(String), List((String, List(parsing.type.Type), parsing.type.Type))) |
+    entry_(parsing.code_block.Block) |
+    fun_(Function)
+end
+
+define parse_imports(tokens : List(parsing.lex.Token)) -> (List(String), List(parsing.lex.Token)) do
+    imports := [] : (List(String));
+    do
+        if (tokens.length() > 0)
+            k := parsing.ts.peek_keyword(tokens);
+            match (k)
+                just_string(k1) do
+                    if (k1 == "import")
+                        name, tokens := parsing.ts.assert_is_lower_name(tokens.drop(1));
+                        imports := imports.append(name);
+                    else
+                        return (imports, tokens);
+                    end
+                end
+                nothing_string do
+                    return (imports, tokens);
+                end
+            end
+        end
+    while (true)
+    throw void;
+end
+
+define parse_parameter(tokens : List(parsing.lex.Token)) -> (String, parsing.type.Type, List(parsing.lex.Token)) do
+    name, tokens := parsing.ts.assert_is_lower_name(tokens);
+    tokens := parsing.ts.assert_symbol(tokens, ":");
+    t, tokens := parsing.type.parse_type(tokens);
+    return (name, t, tokens);
+end
+
+define parse_parameter_list(tokens : List(parsing.lex.Token)) -> (List((String, parsing.type.Type)), List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_symbol(tokens, "(");
+
+    parameters := [] : (List((String, parsing.type.Type)));
+    s1 := parsing.ts.peek_symbol(tokens);
+    match (s1)
+        nothing_string do
+        end
+        just_string(s2) do
+            if (s2 == ")")
+                return (parameters, tokens.drop(1));
+            end
+        end
+    end
+
+    name, t, tokens := parse_parameter(tokens);
+    parameters := parameters.append((name, t));
+    do
+        s3, tokens := parsing.ts.assert_is_symbol(tokens);
+        if (s3 == ")")
+            return (parameters, tokens);
+        elsif (s3 == ",")
+            name, t, tokens := parse_parameter(tokens);
+            parameters := parameters.append((name, t));
+        else
+            throw void;
+        end
+    while (true)
+    throw void;
+end
+
+define parse_function(tokens : List(parsing.lex.Token)) -> (Function, List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_keyword(tokens, "define");
+    name, tokens := parsing.ts.assert_is_lower_name(tokens);
+    parameter_list, tokens := parse_parameter_list(tokens);
+    tokens := parsing.ts.assert_symbol(tokens, "->");
+    return_type, tokens := parsing.type.parse_type(tokens);
+    tokens := parsing.ts.assert_keyword(tokens, "do");
+    block, tokens := parsing.code_block.parse_code_block(tokens);
+    tokens := parsing.ts.assert_keyword(tokens, "end");
+    return (function_(name, parameter_list, return_type, block), tokens);
+end
+
+define parse_coroutine(tokens : List(parsing.lex.Token)) -> (Function, List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_keyword(tokens, "coroutine");
+    name, tokens := parsing.ts.assert_is_lower_name(tokens);
+    parameter_list, tokens := parse_parameter_list(tokens);
+    receive_type, tokens := parsing.type.parse_type(tokens);
+    tokens := parsing.ts.assert_symbol(tokens, "->");
+    yield_type, tokens := parsing.type.parse_type(tokens);
+    tokens := parsing.ts.assert_keyword(tokens, "do");
+    block, tokens := parsing.code_block.parse_code_block(tokens);
+    tokens := parsing.ts.assert_keyword(tokens, "end");
+    return (coroutine_(name, parameter_list, receive_type, yield_type, block), tokens);
+end
+
+define parse_type_parameter_list(tokens : List(parsing.lex.Token)) -> (List(String), List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_symbol(tokens, "(");
+    parameters := [] : (List(String));
+    do
+        token := tokens.index(0);
+        match (token)
+            lower_name(name) do
+                name, tokens := parsing.ts.assert_is_lower_name(tokens);
+                parameters := parameters.append(name);
+            end
+            symbol(s) do
+                tokens := parsing.ts.assert_symbol(tokens, ")");
+                return (parameters, tokens);
+            end
+        end
+    while(true)
+    throw void;
+end
+
+define parse_optional_type_parameter_list(tokens : List(parsing.lex.Token)) -> (List(String), List(parsing.lex.Token)) do
+    s := parsing.ts.peek_symbol(tokens);
+
+    match (s)
+        just_string(s1) do
+            if (s1 == "(")
+                return parse_type_parameter_list(tokens);
+            end
+        end
+        nothing_string do
+        end
+    end
+
+    return ([] : (List(String)), tokens);
+end
+
+define parse_enum_constructor(tokens : List(parsing.lex.Token)) -> ((String, List(parsing.type.Type)), List(parsing.lex.Token)) do
+    name, tokens := parsing.ts.assert_is_lower_name(tokens);
+    types, tokens := parsing.type.parse_optional_argument_list(tokens);
+    return ((name, types), tokens);
+end
+
+define parse_enum_constructors(tokens : List(parsing.lex.Token)) -> (List((String, List(parsing.type.Type))), List(parsing.lex.Token)) do
+    output := [] : (List((String, List(parsing.type.Type))));
+
+    s := parsing.ts.peek_keyword(tokens);
+    match (s)
+        just_string(s1) do
+            if (s1 == "end")
+                return (output, tokens.drop(1));
+            end
+        end
+        nothing_string do
+        end
+    end
+
+    do
+        cons, tokens := parse_enum_constructor(tokens);
+        s := parsing.ts.peek_symbol(tokens);
+        match (s)
+            just_string(s1) do
+                if (s1 == "|")
+                else
+                    throw void;
+                end
+            end
+            nothing_string do
+                return (output, tokens);
+            end
+        end
+        tokens := tokens.drop(1);
+    while (true)
+end
+
+define parse_enum(tokens : List(parsing.lex.Token)) -> (TopLevel, List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_keyword(tokens, "enum");
+    name, tokens := parsing.ts.assert_is_upper_name(tokens);
+    parameters, tokens := parse_optional_type_parameter_list(tokens);
+    constructors, tokens := parse_enum_constructors(tokens);
+    tokens := parsing.ts.assert_keyword(tokens, "end");
+    return (enum_(name, parameters, constructors), tokens);
+end
+
+define parse_signature(tokens : List(parsing.lex.Token)) -> ((String, List(parsing.type.Type), parsing.type.Type), List(parsing.lex.Token)) do
+    name, tokens := parsing.ts.assert_is_lower_name(tokens);
+    types, tokens := parsing.type.parse_argument_list(tokens);
+    tokens := parsing.ts.assert_symbol(tokens, "->");
+    return_type, tokens := parsing.type.parse_type(tokens);
+    tokens := parsing.ts.assert_symbol(tokens, ";");
+    return ((name, types, return_type), tokens);
+end
+
+define parse_signatures(tokens : List(parsing.lex.Token)) -> (List((String, List(parsing.type.Type), parsing.type.Type)), List(parsing.lex.Token)) do
+    output := [] : (List((String, List(parsing.type.Type), parsing.type.Type)));
+
+
+    s := parsing.ts.peek_keyword(tokens);
+    match (s)
+        just_string(s1) do
+            if (s1 == "end")
+                return (output, tokens.drop(1));
+            end
+        end
+        nothing_string do
+        end
+    end
+
+    do
+        cons, tokens := parse_signature(tokens);
+        s := parsing.ts.peek_keyword(tokens);
+        match (s)
+            just_string(s1) do
+                if (s1 == "end")
+                    return (output, tokens);
+                end
+            end
+            nothing_string do
+            end
+        end
+    while (true)
+end
+
+define parse_interface(tokens : List(parsing.lex.Token)) -> (TopLevel, List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_keyword(tokens, "interface");
+    name, tokens := parsing.ts.assert_is_upper_name(tokens);
+    parameters, tokens := parse_optional_type_parameter_list(tokens);
+    signatures, tokens := parse_signatures(tokens);
+    tokens := parsing.ts.assert_keyword(tokens, "end");
+    return (interface_(name, parameters, signatures), tokens);
+end
+
+define parse_attr(tokens : List(parsing.lex.Token)) -> (ServiceDecl, List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_keyword(tokens, "attr");
+    name, tokens := parsing.ts.assert_is_lower_name(tokens);
+    tokens := parsing.ts.assert_symbol(tokens, ":");
+    t, tokens := parsing.type.parse_type(tokens);
+    tokens := parsing.ts.assert_symbol(tokens, ";");
+    return (attr_(name, t), tokens);
+end
+
+define parse_constructor(tokens : List(parsing.lex.Token)) -> (ServiceDecl, List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_keyword(tokens, "constructor");
+    name, tokens := parsing.ts.assert_is_lower_name(tokens);
+    parameters, tokens := parse_parameter_list(tokens);
+    block, tokens := parsing.code_block.parse_code_block(tokens);
+    tokens := parsing.ts.assert_keyword(tokens, "end");
+    return (constructor_(name, parameters, block), tokens);
+end
+
+define parse_private(tokens : List(parsing.lex.Token)) -> (ServiceDecl, List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_keyword(tokens, "private");
+    decls := [] : (List(Function));
+    do
+        k := parsing.ts.peek_keyword(tokens);
+        match (k)
+            just_string(k1) do
+                if (k1 == "end")
+                    return (private_(decls), tokens.drop(1));
+                end
+            end
+            nothing_string do
+            end
+        end
+        function, tokens := parse_function(tokens);
+        decls := decls.append(function);
+    while (true)
+end
+
+define parse_implements(tokens : List(parsing.lex.Token)) -> (ServiceDecl, List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_keyword(tokens, "implements");
+    t, tokens := parsing.type.parse_type(tokens);
+    decls := [] : (List(Function));
+    do
+        k := parsing.ts.peek_keyword(tokens);
+        match (k)
+            just_string(k1) do
+                if (k1 == "end")
+                    return (implements_(t, decls), tokens.drop(1));
+                end
+            end
+            nothing_string do
+            end
+        end
+        function, tokens := parse_function(tokens);
+        decls := decls.append(function);
+    while (true)
+end
+
+define parse_service_decls(tokens : List(parsing.lex.Token)) -> (List(ServiceDecl), List(parsing.lex.Token)) do
+    decls := [] : (List(ServiceDecl));
+    do
+        k, tokens1 := parsing.ts.assert_is_keyword(tokens);
+        if (k == "attr")
+            decl, tokens := parse_attr(tokens);
+            decls := decls.append(decl);
+        elsif (k == "constructor")
+            decl, tokens := parse_constructor(tokens);
+            decls := decls.append(decl);
+        elsif (k == "private")
+            decl, tokens := parse_private(tokens);
+            decls := decls.append(decl);
+        elsif (k == "implements")
+            decl, tokens := parse_implements(tokens);
+            decls := decls.append(decl);
+        elsif (k == "end")
+            return (decls, tokens);
+        else
+            throw void;
+        end
+    while (true)
+end
+
+define parse_service(tokens : List(parsing.lex.Token)) -> (TopLevel, List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_keyword(tokens, "service");
+    name, tokens := parsing.ts.assert_is_upper_name(tokens);
+    dependencies, tokens := parse_parameter_list(tokens);
+    decls, tokens := parse_service_decls(tokens);
+    tokens := parsing.ts.assert_keyword(tokens, "end");
+    return (service_(name, dependencies, decls), tokens);
+end
+
+define parse_entry(tokens : List(parsing.lex.Token)) -> (TopLevel, List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_keyword(tokens, "entry");
+    block, tokens := parsing.code_block.parse_code_block(tokens);
+    tokens := parsing.ts.assert_keyword(tokens, "end");
+    return (entry_(block), tokens);
+end
+
+define parse(tokens : List(parsing.lex.Token)) -> Module do
+    imports, tokens := parse_imports(tokens);
+    decls := [] : (List(TopLevel));
+    do
+        if (tokens.length() == 0)
+            return module(imports, decls);
+        end
+
+        token := tokens.index(0);
+        match (token)
+            keyword(key) do
+                if (key == "define")
+                    d, tokens := parse_function(tokens);
+                    decl := fun_(d);
+                elsif (key == "coroutine")
+                    d, tokens := parse_coroutine(tokens);
+                    decl := fun_(d);
+                elsif (key == "enum")
+                    decl, tokens := parse_enum(tokens);
+                elsif (key == "interface")
+                    decl, tokens := parse_interface(tokens);
+                elsif (key == "service")
+                    decl, tokens := parse_service(tokens);
+                elsif (key == "entry")
+                    decl, tokens := parse_entry(tokens);
+                else
+                    throw void;
+                end
+                decls := decls.append(decl);
+            end
+        end
+    while (true)
+end

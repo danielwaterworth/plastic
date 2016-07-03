@@ -1,0 +1,8 @@
+enum Baz
+    plah
+end
+
+define baz() -> Void do
+    debug("foo");
+    return void;
+end

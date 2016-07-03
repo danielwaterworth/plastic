@@ -1,11 +1,11 @@
 import iter
 import file
-import lex
-import parser
+import parsing.lex
+import parsing.parser
 import printer
 
 interface ModuleLoader
-    load(String) -> List((String, parser.Module));
+    load(String) -> List((String, parsing.parser.Module));
 end
 
 define has_module(module : String, modules : List((String, a))) -> Bool do
@@ -26,9 +26,9 @@ service FileModuleLoader(
     end
 
     implements ModuleLoader
-        define load(module : String) -> List((String, parser.Module)) do
+        define load(module : String) -> List((String, parsing.parser.Module)) do
             to_load := [module];
-            loaded := [] : (List((String, parser.Module)));
+            loaded := [] : (List((String, parsing.parser.Module)));
             do
                 to_load, module_name := to_load.pop();
                 if (not has_module(module_name, loaded))
@@ -47,9 +47,7 @@ service FileModuleLoader(
     end
 
     private
-        define load_module(module : String) -> parser.Module do
-            file := sys bytecode_file();
-
+        define load_module(module : String) -> parsing.parser.Module do
             @p.print("loading: " + module);
             fd := @f.open((module + ".plst").encode_utf8(), 0);
             source := @f.read(fd, 40960).decode_utf8();
@@ -57,8 +55,8 @@ service FileModuleLoader(
                 throw void;
             end
             @f.close(fd);
-            tokens := lex.lex(source);
-            return parser.parse(tokens);
+            tokens := parsing.lex.lex(source);
+            return parsing.parser.parse(tokens);
         end
     end
 end

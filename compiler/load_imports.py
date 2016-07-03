@@ -7,6 +7,7 @@ def load_imports(lib_dir, filename):
     name = name[:-5]
 
     def load_module(module_name):
+        module_name = module_name.replace('.', '/')
         try:
             filename = os.path.join(lib_dir, module_name) + '.plst'
             with open(filename, 'r') as fd:

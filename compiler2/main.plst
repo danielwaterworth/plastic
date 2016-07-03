@@ -1,4 +1,3 @@
-import parser
 import module_loader
 import printer
 

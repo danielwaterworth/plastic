@@ -243,6 +243,10 @@ def type_check_code_block(context, code_block):
                 expression.function_name = expression.function.name
                 if isinstance(obj, program.Variable) and obj.name in context.current_module.imports:
                     expression.call = FunctionCall(context.module_interfaces[obj.name])
+                elif isinstance(obj, program.RecordAccess):
+                    assert isinstance(obj.obj, program.Variable)
+                    module_name = "%s.%s" % (obj.obj.name, obj.name)
+                    expression.call = FunctionCall(context.module_interfaces[module_name])
                 elif isinstance(obj, program.Call):
                     if isinstance(obj.function, program.TypeName):
                         expression.call = ServiceConstructorCall(context.current_module, obj.function.name, obj.arguments)

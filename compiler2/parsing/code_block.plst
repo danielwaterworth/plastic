@@ -1,10 +1,11 @@
-import ts
-import expr
+import parsing.lex
+import parsing.ts
+import parsing.expr
 
 enum IfTail
     end_ |
     else_(Block) |
-    elsif_(expr.Expression, Block, IfTail)
+    elsif_(parsing.expr.Expression, Block, IfTail)
 end
 
 enum Clause
@@ -23,17 +24,17 @@ enum MaybeDestructure
 end
 
 enum Statement
-    assignment(Destructure, expr.Expression) |
-    if_(expr.Expression, Block, IfTail) |
-    do_while(Block, expr.Expression) |
-    for_(String, expr.Expression, Block) |
-    match_(expr.Expression, List(Clause)) |
-    exp_(expr.Expression)
+    assignment(Destructure, parsing.expr.Expression) |
+    if_(parsing.expr.Expression, Block, IfTail) |
+    do_while(Block, parsing.expr.Expression) |
+    for_(String, parsing.expr.Expression, Block) |
+    match_(parsing.expr.Expression, List(Clause)) |
+    exp_(parsing.expr.Expression)
 end
 
 enum Terminator
-    return_(expr.Expression) |
-    throw_(expr.Expression) |
+    return_(parsing.expr.Expression) |
+    throw_(parsing.expr.Expression) |
     no_terminator
 end
 
@@ -41,18 +42,18 @@ enum Block
     block(List(Statement), Terminator)
 end
 
-define parse_if_tail(tokens : List(lex.Token)) -> (IfTail, List(lex.Token)) do
-    k, tokens := ts.assert_is_keyword(tokens);
+define parse_if_tail(tokens : List(parsing.lex.Token)) -> (IfTail, List(parsing.lex.Token)) do
+    k, tokens := parsing.ts.assert_is_keyword(tokens);
     if (k == "end")
         return (end_(), tokens);
     elsif (k == "else")
         block, tokens := parse_code_block(tokens);
-        tokens := ts.assert_keyword(tokens, "end");
+        tokens := parsing.ts.assert_keyword(tokens, "end");
         return (else_(block), tokens);
     elsif (k == "elsif")
-        tokens := ts.assert_symbol(tokens, "(");
-        exp, tokens := expr.parse_expression(tokens);
-        tokens := ts.assert_symbol(tokens, ")");
+        tokens := parsing.ts.assert_symbol(tokens, "(");
+        exp, tokens := parsing.expr.parse_expression(tokens);
+        tokens := parsing.ts.assert_symbol(tokens, ")");
         block, tokens := parse_code_block(tokens);
         tail, tokens := parse_if_tail(tokens);
         return (elsif_(exp, block, tail), tokens);
@@ -60,49 +61,49 @@ define parse_if_tail(tokens : List(lex.Token)) -> (IfTail, List(lex.Token)) do
     throw void;
 end
 
-define parse_if(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
-    tokens := ts.assert_keyword(tokens, "if");
-    tokens := ts.assert_symbol(tokens, "(");
-    exp, tokens := expr.parse_expression(tokens);
-    tokens := ts.assert_symbol(tokens, ")");
+define parse_if(tokens : List(parsing.lex.Token)) -> (Statement, List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_keyword(tokens, "if");
+    tokens := parsing.ts.assert_symbol(tokens, "(");
+    exp, tokens := parsing.expr.parse_expression(tokens);
+    tokens := parsing.ts.assert_symbol(tokens, ")");
     block, tokens := parse_code_block(tokens);
     tail, tokens := parse_if_tail(tokens);
     return (if_(exp, block, tail), tokens);
 end
 
-define parse_do_while(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
-    tokens := ts.assert_keyword(tokens, "do");
+define parse_do_while(tokens : List(parsing.lex.Token)) -> (Statement, List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_keyword(tokens, "do");
     block, tokens := parse_code_block(tokens);
-    tokens := ts.assert_keyword(tokens, "while");
-    tokens := ts.assert_symbol(tokens, "(");
-    exp, tokens := expr.parse_expression(tokens);
-    tokens := ts.assert_symbol(tokens, ")");
+    tokens := parsing.ts.assert_keyword(tokens, "while");
+    tokens := parsing.ts.assert_symbol(tokens, "(");
+    exp, tokens := parsing.expr.parse_expression(tokens);
+    tokens := parsing.ts.assert_symbol(tokens, ")");
     return (do_while(block, exp), tokens);
 end
 
-define parse_for(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
-    tokens := ts.assert_keyword(tokens, "for");
-    name, tokens := ts.assert_is_lower_name(tokens);
-    tokens := ts.assert_keyword(tokens, "in");
-    exp, tokens := expr.parse_expression(tokens);
-    tokens := ts.assert_keyword(tokens, "do");
+define parse_for(tokens : List(parsing.lex.Token)) -> (Statement, List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_keyword(tokens, "for");
+    name, tokens := parsing.ts.assert_is_lower_name(tokens);
+    tokens := parsing.ts.assert_keyword(tokens, "in");
+    exp, tokens := parsing.expr.parse_expression(tokens);
+    tokens := parsing.ts.assert_keyword(tokens, "do");
     block, tokens := parse_code_block(tokens);
-    tokens := ts.assert_keyword(tokens, "end");
+    tokens := parsing.ts.assert_keyword(tokens, "end");
     return (for_(name, exp, block), tokens);
 end
 
-define parse_parameter_list(tokens : List(lex.Token)) -> (List(String), List(lex.Token)) do
-    tokens := ts.assert_symbol(tokens, "(");
+define parse_parameter_list(tokens : List(parsing.lex.Token)) -> (List(String), List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_symbol(tokens, "(");
     parameters := [] : (List(String));
     do
         token := tokens.index(0);
         match (token)
             lower_name(name) do
-                name, tokens := ts.assert_is_lower_name(tokens);
+                name, tokens := parsing.ts.assert_is_lower_name(tokens);
                 parameters := parameters.append(name);
             end
             symbol(s) do
-                tokens := ts.assert_symbol(tokens, ")");
+                tokens := parsing.ts.assert_symbol(tokens, ")");
                 return (parameters, tokens);
             end
         end
@@ -110,8 +111,8 @@ define parse_parameter_list(tokens : List(lex.Token)) -> (List(String), List(lex
     throw void;
 end
 
-define parse_optional_parameter_list(tokens : List(lex.Token)) -> (List(String), List(lex.Token)) do
-    s := ts.peek_symbol(tokens);
+define parse_optional_parameter_list(tokens : List(parsing.lex.Token)) -> (List(String), List(parsing.lex.Token)) do
+    s := parsing.ts.peek_symbol(tokens);
 
     match (s)
         just_string(s1) do
@@ -126,19 +127,19 @@ define parse_optional_parameter_list(tokens : List(lex.Token)) -> (List(String),
     return ([] : (List(String)), tokens);
 end
 
-define parse_match_clause(tokens : List(lex.Token)) -> (Clause, List(lex.Token)) do
-    name, tokens := ts.assert_is_lower_name(tokens);
+define parse_match_clause(tokens : List(parsing.lex.Token)) -> (Clause, List(parsing.lex.Token)) do
+    name, tokens := parsing.ts.assert_is_lower_name(tokens);
     parameters, tokens := parse_optional_parameter_list(tokens);
-    tokens := ts.assert_keyword(tokens, "do");
+    tokens := parsing.ts.assert_keyword(tokens, "do");
     block, tokens := parse_code_block(tokens);
-    tokens := ts.assert_keyword(tokens, "end");
+    tokens := parsing.ts.assert_keyword(tokens, "end");
     return (clause(name, parameters, block), tokens);
 end
 
-define parse_match_clauses(tokens : List(lex.Token)) -> (List(Clause), List(lex.Token)) do
+define parse_match_clauses(tokens : List(parsing.lex.Token)) -> (List(Clause), List(parsing.lex.Token)) do
     clauses := [] : (List(Clause));
     do
-        key := ts.peek_keyword(tokens);
+        key := parsing.ts.peek_keyword(tokens);
         match (key)
             just_string(key1) do
                 if (key1 == "end")
@@ -155,41 +156,41 @@ define parse_match_clauses(tokens : List(lex.Token)) -> (List(Clause), List(lex.
     while (true)
 end
 
-define parse_match(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
-    tokens := ts.assert_keyword(tokens, "match");
-    tokens := ts.assert_symbol(tokens, "(");
-    exp, tokens := expr.parse_expression(tokens);
-    tokens := ts.assert_symbol(tokens, ")");
+define parse_match(tokens : List(parsing.lex.Token)) -> (Statement, List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_keyword(tokens, "match");
+    tokens := parsing.ts.assert_symbol(tokens, "(");
+    exp, tokens := parsing.expr.parse_expression(tokens);
+    tokens := parsing.ts.assert_symbol(tokens, ")");
     clauses, tokens := parse_match_clauses(tokens);
-    tokens := ts.assert_keyword(tokens, "end");
+    tokens := parsing.ts.assert_keyword(tokens, "end");
     return (match_(exp, clauses), tokens);
 end
 
-define parse_return(tokens : List(lex.Token)) -> (Terminator, List(lex.Token)) do
-    tokens := ts.assert_keyword(tokens, "return");
-    s := ts.peek_symbol(tokens);
+define parse_return(tokens : List(parsing.lex.Token)) -> (Terminator, List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_keyword(tokens, "return");
+    s := parsing.ts.peek_symbol(tokens);
     match (s)
         just_string(s1) do
             if (s1 == ";")
-                return (return_(expr.void_literal()), tokens.drop(1));
+                return (return_(parsing.expr.void_literal()), tokens.drop(1));
             end
         end
         nothing_string do
         end
     end
-    exp, tokens := expr.parse_expression(tokens);
-    tokens := ts.assert_symbol(tokens, ";");
+    exp, tokens := parsing.expr.parse_expression(tokens);
+    tokens := parsing.ts.assert_symbol(tokens, ";");
     return (return_(exp), tokens);
 end
 
-define parse_throw(tokens : List(lex.Token)) -> (Terminator, List(lex.Token)) do
-    tokens := ts.assert_keyword(tokens, "throw");
-    exp, tokens := expr.parse_expression(tokens);
-    tokens := ts.assert_symbol(tokens, ";");
+define parse_throw(tokens : List(parsing.lex.Token)) -> (Terminator, List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_keyword(tokens, "throw");
+    exp, tokens := parsing.expr.parse_expression(tokens);
+    tokens := parsing.ts.assert_symbol(tokens, ";");
     return (throw_(exp), tokens);
 end
 
-define parse_maybe_destructure_atom(tokens : List(lex.Token)) -> (MaybeDestructure, List(lex.Token)) do
+define parse_maybe_destructure_atom(tokens : List(parsing.lex.Token)) -> (MaybeDestructure, List(parsing.lex.Token)) do
     match (tokens.index(0))
         property(p) do
             return (just_destructure(property_destructor(p)), tokens.drop(1));
@@ -213,7 +214,7 @@ define parse_maybe_destructure_atom(tokens : List(lex.Token)) -> (MaybeDestructu
     return (nothing_destructure(), tokens);
 end
 
-define parse_destructure_atom(tokens : List(lex.Token)) -> (Destructure, List(lex.Token)) do
+define parse_destructure_atom(tokens : List(parsing.lex.Token)) -> (Destructure, List(parsing.lex.Token)) do
     d, tokens := parse_maybe_destructure_atom(tokens);
     match (d)
         just_destructure(d1) do
@@ -222,7 +223,7 @@ define parse_destructure_atom(tokens : List(lex.Token)) -> (Destructure, List(le
     end
 end
 
-define parse_destructure(tokens : List(lex.Token)) -> (MaybeDestructure, List(lex.Token)) do
+define parse_destructure(tokens : List(parsing.lex.Token)) -> (MaybeDestructure, List(parsing.lex.Token)) do
     d, tokens1 := parse_maybe_destructure_atom(tokens);
     match (d)
         just_destructure(d1) do
@@ -232,7 +233,7 @@ define parse_destructure(tokens : List(lex.Token)) -> (MaybeDestructure, List(le
         end
     end
 
-    s := ts.peek_symbol(tokens1);
+    s := parsing.ts.peek_symbol(tokens1);
     match (s)
         just_string(s1) do
         end
@@ -247,7 +248,7 @@ define parse_destructure(tokens : List(lex.Token)) -> (MaybeDestructure, List(le
         do
             d1, tokens := parse_destructure_atom(tokens);
             variables := variables.append(d1);
-            s1, tokens := ts.assert_is_symbol(tokens);
+            s1, tokens := parsing.ts.assert_is_symbol(tokens);
             if (s1 == ",")
             elsif (s1 == ":=")
                 return (just_destructure(tuple_destructure(variables)), tokens);
@@ -262,26 +263,26 @@ define parse_destructure(tokens : List(lex.Token)) -> (MaybeDestructure, List(le
     end
 end
 
-define parse_other_statement(tokens : List(lex.Token)) -> (Statement, List(lex.Token)) do
+define parse_other_statement(tokens : List(parsing.lex.Token)) -> (Statement, List(parsing.lex.Token)) do
     d, tokens1 := parse_destructure(tokens);
     match (d)
         just_destructure(d1) do
-            exp, tokens := expr.parse_expression(tokens1);
-            tokens := ts.assert_symbol(tokens, ";");
+            exp, tokens := parsing.expr.parse_expression(tokens1);
+            tokens := parsing.ts.assert_symbol(tokens, ";");
             return (assignment(d1, exp), tokens);
         end
         nothing_destructure do
         end
     end
-    exp, tokens := expr.parse_expression(tokens);
-    tokens := ts.assert_symbol(tokens, ";");
+    exp, tokens := parsing.expr.parse_expression(tokens);
+    tokens := parsing.ts.assert_symbol(tokens, ";");
     return (exp_(exp), tokens);
 end
 
-define parse_code_block(tokens : List(lex.Token)) -> (Block, List(lex.Token)) do
+define parse_code_block(tokens : List(parsing.lex.Token)) -> (Block, List(parsing.lex.Token)) do
     statements := [] : (List(Statement));
     do
-        k := ts.peek_keyword(tokens);
+        k := parsing.ts.peek_keyword(tokens);
         match (k)
             just_string(k1) do
                 if (k1 == "if")

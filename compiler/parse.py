@@ -18,8 +18,16 @@ def p_imports(p):
     p[0] = p[1]
 
 def p_import(p):
-    '''import_decl : IMPORT LOWER_NAME'''
+    '''import_decl : IMPORT module_name'''
     p[0] = p[2]
+
+def p_module_name_initial(p):
+    '''module_name : LOWER_NAME'''
+    p[0] = p[1]
+
+def p_module_name(p):
+    '''module_name : module_name DOT LOWER_NAME'''
+    p[0] = p[1] + '.' + p[3]
 
 def p_top_level_decls_empty(p):
     '''top_level_decls : empty'''
@@ -231,7 +239,7 @@ def p_type_named(p):
     p[0] = program_types.NamedType(None, p[1])
 
 def p_type_named_qualified(p):
-    '''named_type : LOWER_NAME DOT UPPER_NAME'''
+    '''named_type : module_name DOT UPPER_NAME'''
     p[0] = program_types.NamedType(p[1], p[3])
 
 def p_empty_type_list(p):

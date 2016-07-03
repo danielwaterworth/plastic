@@ -1,4 +1,4 @@
-import lex
+import parsing.lex
 
 enum MaybeString
     just_string(String) |
@@ -12,7 +12,7 @@ define assert(b : Bool) -> Void do
     return void;
 end
 
-define assert_is_keyword(tokens : List(lex.Token)) -> (String, List(lex.Token)) do
+define assert_is_keyword(tokens : List(parsing.lex.Token)) -> (String, List(parsing.lex.Token)) do
     match (tokens.index(0))
         keyword(k) do
             return (k, tokens.drop(1));
@@ -21,13 +21,13 @@ define assert_is_keyword(tokens : List(lex.Token)) -> (String, List(lex.Token)) 
     throw void;
 end
 
-define assert_keyword(tokens : List(lex.Token), k : String) -> List(lex.Token) do
+define assert_keyword(tokens : List(parsing.lex.Token), k : String) -> List(parsing.lex.Token) do
     key, tokens := assert_is_keyword(tokens);
     assert(key == k);
     return tokens;
 end
 
-define assert_is_symbol(tokens : List(lex.Token)) -> (String, List(lex.Token)) do
+define assert_is_symbol(tokens : List(parsing.lex.Token)) -> (String, List(parsing.lex.Token)) do
     match (tokens.index(0))
         symbol(k) do
             return (k, tokens.drop(1));
@@ -36,13 +36,13 @@ define assert_is_symbol(tokens : List(lex.Token)) -> (String, List(lex.Token)) d
     throw void;
 end
 
-define assert_symbol(tokens : List(lex.Token), k : String) -> List(lex.Token) do
+define assert_symbol(tokens : List(parsing.lex.Token), k : String) -> List(parsing.lex.Token) do
     key, tokens := assert_is_symbol(tokens);
     assert(key == k);
     return tokens;
 end
 
-define assert_is_lower_name(tokens : List(lex.Token)) -> (String, List(lex.Token)) do
+define assert_is_lower_name(tokens : List(parsing.lex.Token)) -> (String, List(parsing.lex.Token)) do
     match (tokens.index(0))
         lower_name(k) do
             return (k, tokens.drop(1));
@@ -51,7 +51,7 @@ define assert_is_lower_name(tokens : List(lex.Token)) -> (String, List(lex.Token
     throw void;
 end
 
-define assert_is_upper_name(tokens : List(lex.Token)) -> (String, List(lex.Token)) do
+define assert_is_upper_name(tokens : List(parsing.lex.Token)) -> (String, List(parsing.lex.Token)) do
     match (tokens.index(0))
         upper_name(k) do
             return (k, tokens.drop(1));
@@ -60,7 +60,7 @@ define assert_is_upper_name(tokens : List(lex.Token)) -> (String, List(lex.Token
     throw void;
 end
 
-define peek_symbol(tokens : List(lex.Token)) -> MaybeString do
+define peek_symbol(tokens : List(parsing.lex.Token)) -> MaybeString do
     match (tokens.index(0))
         symbol(s) do
             return just_string(s);
@@ -89,7 +89,7 @@ define peek_symbol(tokens : List(lex.Token)) -> MaybeString do
     end
 end
 
-define peek_keyword(tokens : List(lex.Token)) -> MaybeString do
+define peek_keyword(tokens : List(parsing.lex.Token)) -> MaybeString do
     match (tokens.index(0))
         keyword(s) do
             return just_string(s);
@@ -118,7 +118,7 @@ define peek_keyword(tokens : List(lex.Token)) -> MaybeString do
     end
 end
 
-define peek_lower_name(tokens : List(lex.Token)) -> MaybeString do
+define peek_lower_name(tokens : List(parsing.lex.Token)) -> MaybeString do
     match (tokens.index(0))
         lower_name(n) do
             return just_string(n);

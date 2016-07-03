@@ -1,0 +1,31 @@
+import foo.bar
+
+enum Foo
+    foo_(foo.bar.Baz)
+end
+
+define test(b : foo.bar.Baz) -> Void do
+    return void;
+end
+
+service Test()
+    constructor new()
+    end
+
+    implements EntryPoint
+        define main(args : List(ByteString)) -> Bool do
+            foo.bar.baz();
+            foo_(foo.bar.plah());
+            match (foo.bar.plah())
+                plah do
+                end
+            end
+            test(foo.bar.plah());
+            return false;
+        end
+    end
+end
+
+entry
+    return Test().new();
+end

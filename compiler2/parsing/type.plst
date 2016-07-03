@@ -1,18 +1,19 @@
-import ts
+import parsing.lex
+import parsing.ts
 
 enum Type
     quantified(String) |
-    named_type(ts.MaybeString, String, List(Type)) |
+    named_type(parsing.ts.MaybeString, String, List(Type)) |
     tuple(List(Type))
 end
 
-define parse_tuple_type(tokens : List(lex.Token), exp : Type) -> (Type, List(lex.Token)) do
+define parse_tuple_type(tokens : List(parsing.lex.Token), exp : Type) -> (Type, List(parsing.lex.Token)) do
     expressions := [exp];
     do
         exp, tokens := parse_type(tokens);
         expressions := expressions.append(exp);
 
-        s, tokens := ts.assert_is_symbol(tokens);
+        s, tokens := parsing.ts.assert_is_symbol(tokens);
         if (s == ",")
         elsif (s == ")")
             return (tuple(expressions), tokens);
@@ -22,10 +23,10 @@ define parse_tuple_type(tokens : List(lex.Token), exp : Type) -> (Type, List(lex
     while (true)
 end
 
-define parse_bracketed_type(tokens : List(lex.Token)) -> (Type, List(lex.Token)) do
-    tokens := ts.assert_symbol(tokens, "(");
+define parse_bracketed_type(tokens : List(parsing.lex.Token)) -> (Type, List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_symbol(tokens, "(");
     exp, tokens := parse_type(tokens);
-    s, tokens := ts.assert_is_symbol(tokens);
+    s, tokens := parsing.ts.assert_is_symbol(tokens);
     if (s == ",")
         return parse_tuple_type(tokens, exp);
     elsif (s == ")")
@@ -35,11 +36,11 @@ define parse_bracketed_type(tokens : List(lex.Token)) -> (Type, List(lex.Token))
     end
 end
 
-define parse_argument_list(tokens : List(lex.Token)) -> (List(Type), List(lex.Token)) do
-    tokens := ts.assert_symbol(tokens, "(");
+define parse_argument_list(tokens : List(parsing.lex.Token)) -> (List(Type), List(parsing.lex.Token)) do
+    tokens := parsing.ts.assert_symbol(tokens, "(");
     arguments := [] : (List(Type));
 
-    s := ts.peek_symbol(tokens);
+    s := parsing.ts.peek_symbol(tokens);
     match (s)
         just_string(s1) do
             if (s1 == ")")
@@ -53,7 +54,7 @@ define parse_argument_list(tokens : List(lex.Token)) -> (List(Type), List(lex.To
     exp, tokens := parse_type(tokens);
     arguments := arguments.append(exp);
     do
-        s2, tokens := ts.assert_is_symbol(tokens);
+        s2, tokens := parsing.ts.assert_is_symbol(tokens);
         if (s2 == ",")
             exp, tokens := parse_type(tokens);
             arguments := arguments.append(exp);
@@ -65,8 +66,8 @@ define parse_argument_list(tokens : List(lex.Token)) -> (List(Type), List(lex.To
     while (true)
 end
 
-define parse_optional_argument_list(tokens : List(lex.Token)) -> (List(Type), List(lex.Token)) do
-    s := ts.peek_symbol(tokens);
+define parse_optional_argument_list(tokens : List(parsing.lex.Token)) -> (List(Type), List(parsing.lex.Token)) do
+    s := parsing.ts.peek_symbol(tokens);
     match (s)
         just_string(s1) do
             if (s1 == "(")
@@ -79,7 +80,7 @@ define parse_optional_argument_list(tokens : List(lex.Token)) -> (List(Type), Li
     return ([] : (List(Type)), tokens);
 end
 
-define parse_type(tokens : List(lex.Token)) -> (type.Type, List(lex.Token)) do
+define parse_type(tokens : List(parsing.lex.Token)) -> (Type, List(parsing.lex.Token)) do
     match (tokens.index(0))
         symbol(s) do
             if (s == "(")
@@ -90,14 +91,14 @@ define parse_type(tokens : List(lex.Token)) -> (type.Type, List(lex.Token)) do
         end
         lower_name(name) do
             tokens := tokens.drop(1);
-            s := ts.peek_symbol(tokens);
+            s := parsing.ts.peek_symbol(tokens);
             match (s)
                 just_string(s1) do
                     if (s1 == ".")
                         tokens := tokens.drop(1);
-                        t, tokens := ts.assert_is_upper_name(tokens);
+                        t, tokens := parsing.ts.assert_is_upper_name(tokens);
                         args, tokens := parse_optional_argument_list(tokens);
-                        return (named_type(ts.just_string(name), t, args), tokens);
+                        return (named_type(parsing.ts.just_string(name), t, args), tokens);
                     else
                         return (quantified(name), tokens);
                     end
@@ -109,7 +110,7 @@ define parse_type(tokens : List(lex.Token)) -> (type.Type, List(lex.Token)) do
         end
         upper_name(name) do
             args, tokens := parse_optional_argument_list(tokens.drop(1));
-            return (named_type(ts.nothing_string(), name, args), tokens);
+            return (named_type(parsing.ts.nothing_string(), name, args), tokens);
         end
     end
 end
