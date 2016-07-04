@@ -1,0 +1,41 @@
+import parsing.parser
+import iter
+
+enum TypeInterface1
+    enum_interface1(UInt) |
+    interface_interface1(UInt) |
+    service_interface1
+end
+
+enum ModuleInterface1
+    module_interface1(List((String, TypeInterface1)))
+end
+
+define construct_module_interface1(mod : parsing.parser.Module) -> ModuleInterface1 do
+    match(mod)
+        module(imports, decls) do
+        end
+    end
+
+    type_interfaces := [] : (List((String, TypeInterface1)));
+
+    for decl in iter.l(decls) do
+        match(decl)
+            enum_(name, types, constructors) do
+                type_interfaces := type_interfaces.append((name, enum_interface1(types.length())));
+            end
+            service_(name, dependencies, service_decls) do
+                type_interfaces := type_interfaces.append((name, service_interface1()));
+            end
+            interface_(name, types, signatures) do
+                type_interfaces := type_interfaces.append((name, interface_interface1(types.length())));
+            end
+            entry_(block) do
+            end
+            fun_(f) do
+            end
+        end
+    end
+
+    return module_interface1(type_interfaces);
+end

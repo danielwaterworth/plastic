@@ -1,0 +1,120 @@
+import parsing.expr
+import parsing.code_block
+
+enum TType
+    bool_type |
+    uint_type |
+    char_type |
+    string_type |
+    void_type
+end
+
+enum Context
+    context(List((String, TType)))
+end
+
+define infer_expression(context : Context, expr : parsing.expr.Expression) -> TType do
+    match (expr)
+        bool_literal(b) do
+            return bool_type();
+        end
+        num_literal(n) do
+            return uint_type();
+        end
+        char_literal(c) do
+            return char_type();
+        end
+        string_literal(s) do
+            return string_type();
+        end
+        list_literal(exprs) do
+        end
+        tuple_literal(exprs) do
+        end
+        void_literal do
+            return void_type();
+        end
+        variable(name) do
+        end
+        type_name(name) do
+            throw void;
+        end
+        record_access(expr, name) do
+            throw void;
+        end
+        type_access(expr, name) do
+            throw void;
+        end
+        call(function, arguments) do
+        end
+        bin_op(lhs, operator, rhs) do
+        end
+        not_(expr) do
+        end
+        annotated(expr, t) do
+        end
+        sys_call(name, arguments) do
+        end
+        operation(name, arguments) do
+        end
+        yield_(expr) do
+        end
+        attr_lookup(name) do
+        end
+    end
+end
+
+define check_expression(context : Context, expr : parsing.expr.Expression, expected : TType) -> TType do
+    match (expr)
+        bool_literal(b) do
+            return bool_type();
+        end
+        num_literal(n) do
+            return uint_type();
+        end
+        char_literal(c) do
+            return char_type();
+        end
+        string_literal(s) do
+            return string_type();
+        end
+        list_literal(exprs) do
+        end
+        tuple_literal(exprs) do
+        end
+        void_literal do
+            return void_type();
+        end
+        variable(name) do
+        end
+        type_name(name) do
+            throw void;
+        end
+        record_access(expr, name) do
+            throw void;
+        end
+        type_access(expr, name) do
+            throw void;
+        end
+        call(function, arguments) do
+        end
+        bin_op(lhs, operator, rhs) do
+        end
+        not_(expr) do
+        end
+        annotated(expr, t) do
+        end
+        sys_call(name, arguments) do
+        end
+        operation(name, arguments) do
+        end
+        yield_(expr) do
+        end
+        attr_lookup(name) do
+        end
+    end
+end
+
+define check_statement(context : Context, statement : parsing.code_block.Statement) -> Context do
+    
+end

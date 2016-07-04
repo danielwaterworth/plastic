@@ -1,0 +1,31 @@
+import iter
+import parsing.parser
+import typing.interface1
+
+enum ModuleSignature
+    module_signature
+end
+
+define construct_module_signatures(modules : List((List(String), typing.interface1.ModuleInterface1)), mod : parsing.parser.Module) -> ModuleSignature do
+    match(mod)
+        module(imports, decls) do
+        end
+    end
+
+    for decl in iter.l(decls) do
+        match(decl)
+            enum_(name, types, constructors) do
+            end
+            service_(name, dependencies, service_decls) do
+            end
+            interface_(name, types, signatures) do
+            end
+            entry_(block) do
+            end
+            fun_(f) do
+            end
+        end
+    end
+
+    return module_signature();
+end

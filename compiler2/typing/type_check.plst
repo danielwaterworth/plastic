@@ -1,0 +1,46 @@
+import iter
+import parsing.parser
+import typing.interface1
+import typing.signature
+import typing.code_block
+
+enum ModuleContext
+    module_context(List((List(String), typing.signature.ModuleSignature)), typing.signature.ModuleSignature)
+end
+
+define type_check_function(module_context : ModuleContext, function : parsing.parser.Function) -> Void do
+    return void;
+end
+
+define type_check_entry(module_context : ModuleContext, block : parsing.code_block.Block) -> Void do
+    return void;
+end
+
+define type_check_service(module_context : ModuleContext, dependencies : List((String, parsing.type.Type)), block : parsing.code_block.Block) -> Void do
+    return void;
+end
+
+define type_check_module(module_context : ModuleContext, mod : parsing.parser.Module) -> Void do
+    match(mod)
+        module(imports, decls) do
+        end
+    end
+
+    for decl in iter.l(decls) do
+        match (decl)
+            enum_(name, types, constructors) do
+            end
+            service_(name, dependencies, service_decls) do
+#                type_check_service(module_context, dependencies, service_decls);
+            end
+            interface_(name, types, signatures) do
+            end
+            entry_(block) do
+#                type_check_entry(module_context, block);
+            end
+            fun_(f) do
+#                type_check_function(module_context, f);
+            end
+        end
+    end
+end

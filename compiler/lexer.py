@@ -115,7 +115,7 @@ t_OPEN_PARENS = r'\('
 t_CLOSE_PARENS = r'\)'
 t_OPEN_SQUARE = r'\['
 t_CLOSE_SQUARE = r'\]'
-t_UPPER_NAME = r'[A-Z][a-zA-Z]*'
+t_UPPER_NAME = r'[A-Z][a-zA-Z0-9]*'
 
 def t_LOWER_NAME(t):
     r'[a-z][a-z0-9_]*'
