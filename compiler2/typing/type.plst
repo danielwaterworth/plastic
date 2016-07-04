@@ -1,0 +1,50 @@
+import parsing.type
+
+enum ModuleSignature
+    module_signature
+end
+
+enum ModuleContext
+    module_context(List((List(String), ModuleSignature)), ModuleSignature)
+end
+
+enum TType
+    bool_type |
+    uint_type |
+    char_type |
+    string_type |
+    void_type |
+    quantified(String) |
+    list_type(TType) |
+    coroutine_type(TType, TType)
+end
+
+enum MaybeTType
+    just_ttype(TType) |
+    nothing_ttype
+end
+
+enum Context
+    context(List((String, TType)))
+end
+
+define empty_context() -> Context do
+    return context([] : (List((String, TType))));
+end
+
+define resolve_type(
+            context : ModuleContext,
+            quantifiers : Context,
+            t : parsing.type.Type
+        )
+        -> (Context, TType) do
+    debug("resolve_type");
+end
+
+define template_type(
+            quantifier : Context,
+            t : TType
+        )
+        -> TType do
+    debug("template_type");
+end

@@ -1,133 +1,69 @@
+import iter
 import parsing.expr
 import parsing.code_block
+import typing.type
+import typing.expr
 
-enum TType
-    bool_type |
-    uint_type |
-    char_type |
-    string_type |
-    void_type
+enum TIfTail
+    end_ |
+    else_(TBlock) |
+    elsif_(typing.expr.TExpression, TBlock, TIfTail)
 end
 
-enum Context
-    context(List((String, TType)))
+enum TClause
+    clause(String, List(String), TBlock)
 end
 
-define infer_expression(
-            context : Context,
-            expr : parsing.expr.Expression
-        )
-        -> TType do
-    match (expr)
-        bool_literal(b) do
-            return bool_type();
-        end
-        num_literal(n) do
-            return uint_type();
-        end
-        char_literal(c) do
-            return char_type();
-        end
-        string_literal(s) do
-            return string_type();
-        end
-        list_literal(exprs) do
-        end
-        tuple_literal(exprs) do
-        end
-        void_literal do
-            return void_type();
-        end
-        variable(name) do
-        end
-        type_name(name) do
-            throw void;
-        end
-        record_access(expr, name) do
-            throw void;
-        end
-        type_access(expr, name) do
-            throw void;
-        end
-        call(function, arguments) do
-        end
-        bin_op(lhs, operator, rhs) do
-        end
-        not_(expr) do
-        end
-        annotated(expr, t) do
-        end
-        sys_call(name, arguments) do
-        end
-        operation(name, arguments) do
-        end
-        yield_(expr) do
-        end
-        attr_lookup(name) do
-        end
-    end
+enum TStatement
+    assignment(parsing.code_block.Destructure, typing.expr.TExpression) |
+    if_(typing.expr.TExpression, TBlock, TIfTail) |
+    do_while(TBlock, typing.expr.TExpression) |
+    for_(String, typing.expr.TExpression, TBlock) |
+    match_(typing.expr.TExpression, List(TClause)) |
+    exp_(typing.expr.TExpression)
 end
 
-define check_expression(
-            context : Context,
-            expr : parsing.expr.Expression,
-            expected : TType
-        )
-        -> TType do
-    match (expr)
-        bool_literal(b) do
-            return bool_type();
-        end
-        num_literal(n) do
-            return uint_type();
-        end
-        char_literal(c) do
-            return char_type();
-        end
-        string_literal(s) do
-            return string_type();
-        end
-        list_literal(exprs) do
-        end
-        tuple_literal(exprs) do
-        end
-        void_literal do
-            return void_type();
-        end
-        variable(name) do
-        end
-        type_name(name) do
-            throw void;
-        end
-        record_access(expr, name) do
-            throw void;
-        end
-        type_access(expr, name) do
-            throw void;
-        end
-        call(function, arguments) do
-        end
-        bin_op(lhs, operator, rhs) do
-        end
-        not_(expr) do
-        end
-        annotated(expr, t) do
-        end
-        sys_call(name, arguments) do
-        end
-        operation(name, arguments) do
-        end
-        yield_(expr) do
-        end
-        attr_lookup(name) do
-        end
-    end
+enum TTerminator
+    return_(typing.expr.TExpression) |
+    throw_(typing.expr.TExpression) |
+    no_terminator
+end
+
+enum TBlock
+    t_block(List(TStatement), TTerminator)
 end
 
 define check_statement(
-            context : Context,
+            context : typing.type.Context,
             statement : parsing.code_block.Statement
         )
-        -> Context do
-    
+        -> (typing.type.Context, TStatement) do
+    debug("check_statement");
+end
+
+define check_terminator(
+            context : typing.type.Context,
+            statement : parsing.code_block.Terminator
+        )
+        -> TTerminator do
+    debug("check_terminator");
+end
+
+define check_block(
+            context : typing.type.Context,
+            block : parsing.code_block.Block
+        )
+        -> (typing.type.Context, TBlock) do
+    match (block)
+        block(statements, terminator) do
+            statements1 := [] : (List(TStatement));
+            for statement in iter.l(statements) do
+                context, statement1 := check_statement(context, statement);
+                statements1 := statements1.append(statement1);
+            end
+
+            terminator1 := check_terminator(context, terminator);
+            return (context, t_block(statements1, terminator1));
+        end
+    end
 end

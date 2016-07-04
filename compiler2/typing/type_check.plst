@@ -1,68 +1,121 @@
 import iter
 import parsing.parser
-import typing.interface1
+import typing.type
 import typing.signature
 import typing.code_block
 
-enum ModuleContext
-    module_context(
-        List((List(String), typing.signature.ModuleSignature)),
-        typing.signature.ModuleSignature
-    )
+enum TModule
+    t_module(List(TTopLevel))
+end
+
+enum TFunction
+    t_function_(String, List((String, typing.type.TType)), typing.type.TType, typing.code_block.TBlock) |
+    t_coroutine_(String, List((String, typing.type.TType)), typing.type.TType, typing.type.TType, typing.code_block.TBlock)
+end
+
+enum TServiceDecl
+    t_constructor_(String, List((String, typing.type.TType)), typing.code_block.TBlock) |
+    t_attr_(String, typing.type.TType) |
+    t_private_(List(TFunction)) |
+    t_implements_(typing.type.TType, List(TFunction))
+end
+
+enum TTopLevel
+    t_enum(String, List(String), List((String, List(typing.type.TType)))) |
+    t_service(String, List((String, typing.type.TType)), List(TServiceDecl)) |
+    t_interface(String, List(String), List((String, List(typing.type.TType), typing.type.TType))) |
+    t_entry(typing.code_block.TBlock) |
+    t_fun(TFunction)
 end
 
 define type_check_function(
-            module_context : ModuleContext,
+            module_context : typing.type.ModuleContext,
             function : parsing.parser.Function
         )
-        -> Void do
-    return void;
+        -> TTopLevel do
+    debug("type_check_function");
+    throw void;
 end
 
 define type_check_entry(
-            module_context : ModuleContext,
+            module_context : typing.type.ModuleContext,
             block : parsing.code_block.Block
         )
-        -> Void do
-    return void;
+        -> TTopLevel do
+    debug("type_check_entry");
+    throw void;
+end
+
+define type_check_service_decl(
+            module_context : typing.type.ModuleContext,
+            dependencies : List((String, typing.type.TType)),
+            decl : parsing.parser.ServiceDecl
+        )
+        -> TServiceDecl do
+    debug("type_check_service_decl");
 end
 
 define type_check_service(
-            module_context : ModuleContext,
+            module_context : typing.type.ModuleContext,
+            name : String,
             dependencies : List((String, parsing.type.Type)),
             decls : List(parsing.parser.ServiceDecl)
         )
-        -> Void do
-    return void;
+        -> TTopLevel do
+    dependencies1 := [] : (List((String, typing.type.TType)));
+    for d in iter.l(dependencies) do
+        name, t := d;
+        ctx := typing.type.empty_context();
+        ctx, t1 := typing.type.resolve_type(module_context, ctx, t);
+        dependencies1 := dependencies1.append((name, t1));
+    end
+
+    decls1 := [] : (List(TServiceDecl));
+    for decl in iter.l(decls) do
+        decls1 := decls1.append(type_check_service_decl(module_context, dependencies1, decl));
+    end
+
+    return t_service(name, dependencies1, decls1);
+end
+
+define type_check_top_level(
+            module_context : typing.type.ModuleContext,
+            decl : parsing.parser.TopLevel
+        )
+        -> List(TTopLevel) do
+    match (decl)
+        enum_(name, types, constructors) do
+            return [] : (List(TTopLevel));
+        end
+        service_(name, dependencies, service_decls) do
+            return [type_check_service(module_context, name, dependencies, service_decls)];
+        end
+        interface_(name, types, signatures) do
+            return [] : (List(TTopLevel));
+        end
+        entry_(block) do
+            return [type_check_entry(module_context, block)];
+        end
+        fun_(f) do
+            return [type_check_function(module_context, f)];
+        end
+    end
 end
 
 define type_check_module(
-            module_context : ModuleContext,
+            module_context : typing.type.ModuleContext,
             mod : parsing.parser.Module
         )
-        -> Void do
+        -> TModule do
     match(mod)
         module(imports, decls) do
         end
     end
 
+    output := [] : (List(TTopLevel));
     for decl in iter.l(decls) do
-        match (decl)
-            enum_(name, types, constructors) do
-            end
-            service_(name, dependencies, service_decls) do
-                type_check_service(module_context, dependencies, service_decls);
-            end
-            interface_(name, types, signatures) do
-            end
-            entry_(block) do
-#                type_check_entry(module_context, block);
-            end
-            fun_(f) do
-#                type_check_function(module_context, f);
-            end
-        end
+        output := output.extend(type_check_top_level(module_context, decl));
     end
 
-    return void;
+    return t_module(output);
 end

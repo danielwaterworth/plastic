@@ -1,5 +1,5 @@
-import parsing.parser
+import typing.type_check
 
-define generate_module(mod : parsing.parser.Module) -> Void do
+define generate_module(mod : typing.type_check.TModule) -> Void do
     return void;
 end

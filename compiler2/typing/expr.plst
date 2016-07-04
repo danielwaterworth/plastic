@@ -1,0 +1,92 @@
+import parsing.type
+import parsing.expr
+import typing.type
+
+enum TExpression
+    bool_literal(Bool) |
+    num_literal(UInt) |
+    char_literal(Char) |
+    string_literal(String) |
+    list_literal(List(TExpression)) |
+    tuple_literal(List(TExpression)) |
+    void_literal |
+    variable(String) |
+    type_name(String) |
+    record_access(TExpression, String) |
+    type_access(TExpression, String) |
+    call(TExpression, List(TExpression)) |
+    bin_op(TExpression, parsing.expr.BinOperator, TExpression) |
+    not_(TExpression) |
+    sys_call(String, List(TExpression)) |
+    operation(String, List(TExpression)) |
+    yield_(TExpression) |
+    attr_lookup(String)
+end
+
+define check_expression(
+            context : typing.type.Context,
+            expr : parsing.expr.Expression,
+            expected : typing.type.MaybeTType
+        )
+        -> TExpression do
+    match (expr)
+        bool_literal(b) do
+            debug("bool literal");
+        end
+        num_literal(n) do
+            debug("num literal");
+        end
+        char_literal(c) do
+            debug("char literal");
+        end
+        string_literal(s) do
+            debug("string literal");
+        end
+        list_literal(exprs) do
+            debug("list literal");
+        end
+        tuple_literal(exprs) do
+            debug("tuple literal");
+        end
+        void_literal do
+            debug("void literal");
+        end
+        variable(name) do
+            debug("variable");
+        end
+        type_name(name) do
+            throw void;
+        end
+        record_access(expr, name) do
+            throw void;
+        end
+        type_access(expr, name) do
+            throw void;
+        end
+        call(function, arguments) do
+            debug("call");
+        end
+        bin_op(lhs, operator, rhs) do
+            debug("bin_op");
+        end
+        not_(expr) do
+            debug("not");
+        end
+        annotated(expr, t) do
+            debug("annotated");
+        end
+        sys_call(name, arguments) do
+            debug("sys_call");
+        end
+        operation(name, arguments) do
+            debug("operation");
+        end
+        yield_(expr) do
+            debug("yield");
+        end
+        attr_lookup(name) do
+            debug("attr lookup");
+        end
+    end
+    throw void;
+end

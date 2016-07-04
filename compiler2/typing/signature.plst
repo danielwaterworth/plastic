@@ -1,17 +1,14 @@
 import iter
 import parsing.parser
-import typing.interface1
-
-enum ModuleSignature
-    module_signature
-end
+import typing.type
+import typing.t_interface
 
 define construct_module_signatures(
             modules : List((List(String),
-            typing.interface1.ModuleInterface1)),
+            typing.t_interface.ModuleInterface)),
             mod : parsing.parser.Module
         )
-        -> ModuleSignature do
+        -> typing.type.ModuleSignature do
     match(mod)
         module(imports, decls) do
         end
@@ -32,5 +29,5 @@ define construct_module_signatures(
         end
     end
 
-    return module_signature();
+    return typing.type.module_signature();
 end

@@ -1,7 +1,7 @@
 import iter
 import string
 import module_loader
-import typing.interface1
+import typing.t_interface
 import typing.signature
 import typing.type_check
 import code_gen.generate
@@ -43,28 +43,31 @@ service Main(
 
             loaded_modules := @m.load(dir, module);
 
-            module_interfaces1 := [] : (List((List(String), typing.interface1.ModuleInterface1)));
-            module_interfaces2 := [] : (List((List(String), typing.signature.ModuleSignature)));
+            module_interfaces1 := [] : (List((List(String), typing.t_interface.ModuleInterface)));
+            module_interfaces2 := [] : (List((List(String), typing.type.ModuleSignature)));
             for x in iter.l(loaded_modules) do
                 name, mod := x;
 
                 string_name := string.join(name, ".");
-                @p.print("type checking: " + string_name);
+                @p.print("creating types: " + string_name);
 
-                mod_int1 := typing.interface1.construct_module_interface1(mod);
+                mod_int1 := typing.t_interface.construct_module_interface(mod);
                 module_interfaces1 := module_interfaces1.append((name, mod_int1));
+
+                @p.print("creating signatures: " + string_name);
 
                 mod_int2 := typing.signature.construct_module_signatures(module_interfaces1, mod);
                 module_interfaces2 := module_interfaces2.append((name, mod_int2));
 
-                ctx := typing.type_check.module_context(module_interfaces2, mod_int2);
-                typing.type_check.type_check_module(ctx, mod);
+                @p.print("type checking: " + string_name);
+
+                ctx := typing.type.module_context(module_interfaces2, mod_int2);
+                mod1 := typing.type_check.type_check_module(ctx, mod);
 
                 @p.print("code gen: " + string_name);
 
-                code_gen.generate.generate_module(mod);
+                code_gen.generate.generate_module(mod1);
             end
-
 
             return true;
         end

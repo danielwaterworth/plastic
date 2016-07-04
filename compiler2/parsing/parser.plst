@@ -21,7 +21,6 @@ enum ServiceDecl
 end
 
 enum TopLevel
-    record_ |
     enum_(String, List(String), List((String, List(parsing.type.Type)))) |
     service_(String, List((String, parsing.type.Type)), List(ServiceDecl)) |
     interface_(String, List(String), List((String, List(parsing.type.Type), parsing.type.Type))) |
