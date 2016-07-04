@@ -7,7 +7,11 @@ enum Type
     tuple(List(Type))
 end
 
-define parse_tuple_type(tokens : List(parsing.lex.Token), exp : Type) -> (Type, List(parsing.lex.Token)) do
+define parse_tuple_type(
+            tokens : List(parsing.lex.Token),
+            exp : Type
+        )
+        -> (Type, List(parsing.lex.Token)) do
     expressions := [exp];
     do
         exp, tokens := parse_type(tokens);
@@ -23,7 +27,10 @@ define parse_tuple_type(tokens : List(parsing.lex.Token), exp : Type) -> (Type, 
     while (true)
 end
 
-define parse_bracketed_type(tokens : List(parsing.lex.Token)) -> (Type, List(parsing.lex.Token)) do
+define parse_bracketed_type(
+            tokens : List(parsing.lex.Token)
+        )
+        -> (Type, List(parsing.lex.Token)) do
     tokens := parsing.ts.assert_symbol(tokens, "(");
     exp, tokens := parse_type(tokens);
     s, tokens := parsing.ts.assert_is_symbol(tokens);
@@ -36,7 +43,10 @@ define parse_bracketed_type(tokens : List(parsing.lex.Token)) -> (Type, List(par
     end
 end
 
-define parse_argument_list(tokens : List(parsing.lex.Token)) -> (List(Type), List(parsing.lex.Token)) do
+define parse_argument_list(
+            tokens : List(parsing.lex.Token)
+        )
+        -> (List(Type), List(parsing.lex.Token)) do
     tokens := parsing.ts.assert_symbol(tokens, "(");
     arguments := [] : (List(Type));
 
@@ -66,7 +76,10 @@ define parse_argument_list(tokens : List(parsing.lex.Token)) -> (List(Type), Lis
     while (true)
 end
 
-define parse_optional_argument_list(tokens : List(parsing.lex.Token)) -> (List(Type), List(parsing.lex.Token)) do
+define parse_optional_argument_list(
+            tokens : List(parsing.lex.Token)
+        )
+        -> (List(Type), List(parsing.lex.Token)) do
     s := parsing.ts.peek_symbol(tokens);
     match (s)
         just_string(s1) do
@@ -80,7 +93,10 @@ define parse_optional_argument_list(tokens : List(parsing.lex.Token)) -> (List(T
     return ([] : (List(Type)), tokens);
 end
 
-define parse_module_name(tokens : List(parsing.lex.Token)) -> (List(String), List(parsing.lex.Token)) do
+define parse_module_name(
+            tokens : List(parsing.lex.Token)
+        )
+        -> (List(String), List(parsing.lex.Token)) do
     name, tokens := parsing.ts.assert_is_lower_name(tokens);
     module_name := [name];
     do
@@ -109,7 +125,10 @@ define parse_module_name(tokens : List(parsing.lex.Token)) -> (List(String), Lis
     while (true)
 end
 
-define parse_type(tokens : List(parsing.lex.Token)) -> (Type, List(parsing.lex.Token)) do
+define parse_type(
+            tokens : List(parsing.lex.Token)
+        )
+        -> (Type, List(parsing.lex.Token)) do
     match (tokens.index(0))
         symbol(s) do
             if (s == "(")

@@ -13,7 +13,11 @@ enum Context
     context(List((String, TType)))
 end
 
-define infer_expression(context : Context, expr : parsing.expr.Expression) -> TType do
+define infer_expression(
+            context : Context,
+            expr : parsing.expr.Expression
+        )
+        -> TType do
     match (expr)
         bool_literal(b) do
             return bool_type();
@@ -64,7 +68,12 @@ define infer_expression(context : Context, expr : parsing.expr.Expression) -> TT
     end
 end
 
-define check_expression(context : Context, expr : parsing.expr.Expression, expected : TType) -> TType do
+define check_expression(
+            context : Context,
+            expr : parsing.expr.Expression,
+            expected : TType
+        )
+        -> TType do
     match (expr)
         bool_literal(b) do
             return bool_type();
@@ -115,6 +124,10 @@ define check_expression(context : Context, expr : parsing.expr.Expression, expec
     end
 end
 
-define check_statement(context : Context, statement : parsing.code_block.Statement) -> Context do
+define check_statement(
+            context : Context,
+            statement : parsing.code_block.Statement
+        )
+        -> Context do
     
 end

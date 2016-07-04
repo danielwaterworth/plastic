@@ -11,7 +11,10 @@ enum ModuleInterface1
     module_interface1(List((String, TypeInterface1)))
 end
 
-define construct_module_interface1(mod : parsing.parser.Module) -> ModuleInterface1 do
+define construct_module_interface1(
+            mod : parsing.parser.Module
+        )
+        -> ModuleInterface1 do
     match(mod)
         module(imports, decls) do
         end

@@ -1,9 +1,11 @@
+import iter
+import string
 import module_loader
 import typing.interface1
 import typing.signature
 import typing.type_check
+import code_gen.generate
 import printer
-import iter
 
 define rsplit(s : String, c : Char) -> (String, String) do
     unpacked := s.unpack();
@@ -41,12 +43,13 @@ service Main(
 
             loaded_modules := @m.load(dir, module);
 
-            @p.print("type checking");
-
             module_interfaces1 := [] : (List((List(String), typing.interface1.ModuleInterface1)));
             module_interfaces2 := [] : (List((List(String), typing.signature.ModuleSignature)));
             for x in iter.l(loaded_modules) do
                 name, mod := x;
+
+                string_name := string.join(name, ".");
+                @p.print("type checking: " + string_name);
 
                 mod_int1 := typing.interface1.construct_module_interface1(mod);
                 module_interfaces1 := module_interfaces1.append((name, mod_int1));
@@ -56,9 +59,13 @@ service Main(
 
                 ctx := typing.type_check.module_context(module_interfaces2, mod_int2);
                 typing.type_check.type_check_module(ctx, mod);
+
+                @p.print("code gen: " + string_name);
+
+                code_gen.generate.generate_module(mod);
             end
 
-            debug(module_interfaces2);
+
             return true;
         end
     end

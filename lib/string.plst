@@ -1,0 +1,14 @@
+import iter
+
+define join(l : List(String), inter : String) -> String do
+    if (l.length() == 0)
+        return "";
+    end
+
+    output := l.index(0);
+    for x in iter.l(l.drop(1)) do
+        output := output + inter + x;
+    end
+
+    return output;
+end

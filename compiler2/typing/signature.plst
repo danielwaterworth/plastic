@@ -6,7 +6,12 @@ enum ModuleSignature
     module_signature
 end
 
-define construct_module_signatures(modules : List((List(String), typing.interface1.ModuleInterface1)), mod : parsing.parser.Module) -> ModuleSignature do
+define construct_module_signatures(
+            modules : List((List(String),
+            typing.interface1.ModuleInterface1)),
+            mod : parsing.parser.Module
+        )
+        -> ModuleSignature do
     match(mod)
         module(imports, decls) do
         end

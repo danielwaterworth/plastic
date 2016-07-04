@@ -1,0 +1,5 @@
+import parsing.parser
+
+define generate_module(mod : parsing.parser.Module) -> Void do
+    return void;
+end

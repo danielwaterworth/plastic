@@ -5,22 +5,42 @@ import typing.signature
 import typing.code_block
 
 enum ModuleContext
-    module_context(List((List(String), typing.signature.ModuleSignature)), typing.signature.ModuleSignature)
+    module_context(
+        List((List(String), typing.signature.ModuleSignature)),
+        typing.signature.ModuleSignature
+    )
 end
 
-define type_check_function(module_context : ModuleContext, function : parsing.parser.Function) -> Void do
+define type_check_function(
+            module_context : ModuleContext,
+            function : parsing.parser.Function
+        )
+        -> Void do
     return void;
 end
 
-define type_check_entry(module_context : ModuleContext, block : parsing.code_block.Block) -> Void do
+define type_check_entry(
+            module_context : ModuleContext,
+            block : parsing.code_block.Block
+        )
+        -> Void do
     return void;
 end
 
-define type_check_service(module_context : ModuleContext, dependencies : List((String, parsing.type.Type)), block : parsing.code_block.Block) -> Void do
+define type_check_service(
+            module_context : ModuleContext,
+            dependencies : List((String, parsing.type.Type)),
+            decls : List(parsing.parser.ServiceDecl)
+        )
+        -> Void do
     return void;
 end
 
-define type_check_module(module_context : ModuleContext, mod : parsing.parser.Module) -> Void do
+define type_check_module(
+            module_context : ModuleContext,
+            mod : parsing.parser.Module
+        )
+        -> Void do
     match(mod)
         module(imports, decls) do
         end
@@ -31,7 +51,7 @@ define type_check_module(module_context : ModuleContext, mod : parsing.parser.Mo
             enum_(name, types, constructors) do
             end
             service_(name, dependencies, service_decls) do
-#                type_check_service(module_context, dependencies, service_decls);
+                type_check_service(module_context, dependencies, service_decls);
             end
             interface_(name, types, signatures) do
             end
@@ -43,4 +63,6 @@ define type_check_module(module_context : ModuleContext, mod : parsing.parser.Mo
             end
         end
     end
+
+    return void;
 end
