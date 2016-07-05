@@ -1,11 +1,35 @@
 import parsing.type
 
+enum FunctionSignature
+    function_signature(List(TType), TType)
+end
+
+enum EnumSignature
+    enum_signature(List(String), List((String, List(TType))))
+end
+
+enum InterfaceSignature
+    interface_signature(List(String), List((String, FunctionSignature)))
+end
+
+enum ServiceSignature
+    service_signature
+end
+
 enum ModuleSignature
-    module_signature
+    module_signature(
+        List((String, FunctionSignature)),
+        List((String, EnumSignature)),
+        List((String, InterfaceSignature)),
+        List((String, ServiceSignature))
+    )
 end
 
 enum ModuleContext
-    module_context(List((List(String), ModuleSignature)), ModuleSignature)
+    module_context(
+        List((List(String), ModuleSignature)),
+        ModuleSignature
+    )
 end
 
 enum TType

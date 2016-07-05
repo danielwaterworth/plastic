@@ -203,9 +203,11 @@ define parse_signature(tokens : List(parsing.lex.Token)) -> ((String, List(parsi
     return ((name, types, return_type), tokens);
 end
 
-define parse_signatures(tokens : List(parsing.lex.Token)) -> (List((String, List(parsing.type.Type), parsing.type.Type)), List(parsing.lex.Token)) do
+define parse_signatures(
+            tokens : List(parsing.lex.Token)
+        )
+        -> (List((String, List(parsing.type.Type), parsing.type.Type)), List(parsing.lex.Token)) do
     output := [] : (List((String, List(parsing.type.Type), parsing.type.Type)));
-
 
     s := parsing.ts.peek_keyword(tokens);
     match (s)
@@ -219,7 +221,8 @@ define parse_signatures(tokens : List(parsing.lex.Token)) -> (List((String, List
     end
 
     do
-        cons, tokens := parse_signature(tokens);
+        signature, tokens := parse_signature(tokens);
+        output := output.append(signature);
         s := parsing.ts.peek_keyword(tokens);
         match (s)
             just_string(s1) do
