@@ -46,15 +46,6 @@ define type_check_entry(
     throw void;
 end
 
-define type_check_service_decl(
-            module_context : typing.type.ModuleContext,
-            dependencies : List((String, typing.type.TType)),
-            decl : parsing.parser.ServiceDecl
-        )
-        -> TServiceDecl do
-    debug("type_check_service_decl");
-end
-
 define type_check_service(
             module_context : typing.type.ModuleContext,
             name : String,
@@ -65,17 +56,64 @@ define type_check_service(
     dependencies1 := [] : (List((String, typing.type.TType)));
     for d in iter.l(dependencies) do
         name, t := d;
-        ctx := typing.type.empty_context();
+        ctx := typing.type.empty_type_context();
         ctx, t1 := typing.type.resolve_type(module_context, ctx, t);
         dependencies1 := dependencies1.append((name, t1));
     end
 
-    decls1 := [] : (List(TServiceDecl));
+    attrs := [] : (List((String, typing.type.TType)));
     for decl in iter.l(decls) do
-        decls1 := decls1.append(type_check_service_decl(module_context, dependencies1, decl));
+        match(decl)
+            attr_(name, t) do
+                ctx := typing.type.empty_type_context();
+                ctx, t1 := typing.type.resolve_type(module_context, ctx, t);
+                attrs := attrs.append((name, t1));
+            end
+            constructor_(name, parameters, block) do
+            end
+            implements_(interface_, functions) do
+            end
+            private_(functions) do
+            end
+        end
     end
 
-    return t_service(name, dependencies1, decls1);
+    for decl in iter.l(decls) do
+        match(decl)
+            attr_(name, t) do
+            end
+            constructor_(name, parameters, block) do
+                parameters1 := [] : (List((String, typing.type.TType)));
+                for parameter in iter.l(parameters) do
+                    name, t := parameter;
+                    ctx := typing.type.empty_type_context();
+                    ctx, t1 := typing.type.resolve_type(module_context, ctx, t);
+                    parameters1 := parameters1.append((name, t1));
+                end
+
+                ctx1 :=
+                    typing.type.context(
+                        module_context,
+                        dependencies1,
+                        attrs,
+                        parameters1
+                    );
+                typing.code_block.check_block(ctx1, block);
+            end
+            implements_(interface_, functions) do
+                ctx := typing.type.empty_type_context();
+                ctx, t_interface := typing.type.resolve_type(module_context, ctx, interface_);
+                debug("service implements");
+                throw void;
+            end
+            private_(functions) do
+                debug("service private");
+                throw void;
+            end
+        end
+    end
+
+    throw void;
 end
 
 define type_check_top_level(

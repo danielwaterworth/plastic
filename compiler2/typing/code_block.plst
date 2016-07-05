@@ -43,10 +43,20 @@ end
 
 define check_terminator(
             context : typing.type.Context,
-            statement : parsing.code_block.Terminator
+            terminator : parsing.code_block.Terminator
         )
         -> TTerminator do
-    debug("check_terminator");
+    match (terminator)
+        no_terminator do
+            return no_terminator();
+        end
+        return_(expr) do
+            debug("return");
+        end
+        throw_(expr) do
+            debug("throw");
+        end
+    end
 end
 
 define check_block(

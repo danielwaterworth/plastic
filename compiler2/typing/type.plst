@@ -25,24 +25,49 @@ enum MaybeTType
 end
 
 enum Context
-    context(List((String, TType)))
+    context(
+        ModuleContext,
+        List((String, TType)), # dependencies
+        List((String, TType)), # attrs
+        List((String, TType)) # variables
+    )
 end
 
-define empty_context() -> Context do
-    return context([] : (List((String, TType))));
+enum TypeContext
+    type_context(
+        List((String, TType))
+    )
+end
+
+define empty_type_context() -> TypeContext do
+    return type_context([] : (List((String, TType))));
 end
 
 define resolve_type(
             context : ModuleContext,
-            quantifiers : Context,
+            quantifiers : TypeContext,
             t : parsing.type.Type
         )
-        -> (Context, TType) do
-    debug("resolve_type");
+        -> (TypeContext, TType) do
+    match (t)
+        quantified(name) do
+            debug("resolve_type quantified");
+        end
+        named_type(module, name, parameters) do
+            if (module.length() == 0)
+                debug(("resolve_type local named_type", name, parameters));
+            else
+                debug("resolve_type imported named_type");
+            end
+        end
+        tuple(types) do
+            debug("resolve_type tuple");
+        end
+    end
 end
 
 define template_type(
-            quantifier : Context,
+            quantifier : TypeContext,
             t : TType
         )
         -> TType do
