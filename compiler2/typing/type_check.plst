@@ -13,16 +13,36 @@ enum TFunction
     t_coroutine_(String, List((String, typing.type.TType)), typing.type.TType, typing.type.TType, typing.code_block.TBlock)
 end
 
-enum TServiceDecl
-    t_constructor_(String, List((String, typing.type.TType)), typing.code_block.TBlock) |
-    t_attr_(String, typing.type.TType) |
-    t_private_(List(TFunction)) |
-    t_implements_(typing.type.TType, List(TFunction))
+enum Implements
+    t_implements(
+        typing.type.TType,
+        List((
+            String,
+            List((String, typing.type.TType)),
+            typing.type.TType,
+            typing.code_block.TBlock
+        ))
+    )
+end
+
+enum ServiceConstructor
+    service_constructor(
+        String,
+        List((String, typing.type.TType)),
+        typing.code_block.TBlock
+    )
 end
 
 enum TTopLevel
     t_enum(String, List(String), List((String, List(typing.type.TType)))) |
-    t_service(String, List((String, typing.type.TType)), List(TServiceDecl)) |
+    t_service(
+        String,
+        List((String, typing.type.TType)), # dependencies
+        List((String, typing.type.TType)), # attrs
+        List(ServiceConstructor),
+        List(Implements),
+        List(TFunction)
+    ) |
     t_interface(String, List(String), List((String, List(typing.type.TType), typing.type.TType))) |
     t_entry(typing.code_block.TBlock) |
     t_fun(TFunction)
@@ -33,7 +53,14 @@ define type_check_function(
             function : parsing.parser.Function
         )
         -> TTopLevel do
-    debug("type_check_function");
+    match (function)
+        function_(name, parameters, return_type, body) do
+            debug("type_check_function");
+        end
+        coroutine_(name, parameters, receive_type, yield_type, body) do
+            debug("type_check_function");
+        end
+    end
     throw void;
 end
 
@@ -48,7 +75,7 @@ end
 
 define type_check_service(
             module_context : typing.type.ModuleContext,
-            name : String,
+            service_name : String,
             dependencies : List((String, parsing.type.Type)),
             decls : List(parsing.parser.ServiceDecl)
         )
@@ -78,6 +105,9 @@ define type_check_service(
         end
     end
 
+    constructors := [] : (List(ServiceConstructor));
+    implementations := [] : (List(Implements));
+    private_methods := [] : (List(TFunction));
     for decl in iter.l(decls) do
         match(decl)
             attr_(name, t) do
@@ -98,13 +128,47 @@ define type_check_service(
                         attrs,
                         parameters1
                     );
-                typing.code_block.check_block(ctx1, block);
+                ctx1, block1 := typing.code_block.check_block(ctx1, block);
+                debug("TODO: check that all attributes are set");
+                constructors := constructors.append(service_constructor(name, parameters1, block1));
             end
             implements_(interface_, functions) do
                 ctx := typing.type.empty_type_context();
                 ctx, t_interface := typing.type.resolve_type(module_context, ctx, interface_);
-                debug("service implements");
-                throw void;
+
+                functions1 := [] : (List((String, List((String, typing.type.TType)), typing.type.TType, typing.code_block.TBlock)));
+                for function in iter.l(functions) do
+                    match (function)
+                        function_(name, parameters, return_type, body) do
+                            parameters1 := [] : (List((String, typing.type.TType)));
+                            for parameter in iter.l(parameters) do
+                                name, p := parameter;
+                                ctx, parameter1 := typing.type.resolve_type(module_context, ctx, p);
+                                parameters1 := parameters1.append((name, parameter1));
+                            end
+
+                            ctx, return_type1 := typing.type.resolve_type(module_context, ctx, return_type);
+
+                            body_context :=
+                                typing.type.context(
+                                    module_context,
+                                    dependencies1,
+                                    attrs,
+                                    parameters1
+                                );
+                            body_context, body1 := typing.code_block.check_block(body_context, body);
+                            functions1 := functions1.append((name, parameters1, return_type1, body1));
+                        end
+                        coroutine_(name, parameters, receive_type, yield_type, body) do
+                            debug("coroutine in service implements decl");
+                            throw void;
+                        end
+                    end
+                end
+
+                debug("TODO: assert that all the functions are implemented");
+
+                implementations := implementations.append(t_implements(t_interface, functions1));
             end
             private_(functions) do
                 debug("service private");
@@ -113,7 +177,14 @@ define type_check_service(
         end
     end
 
-    throw void;
+    return t_service(
+        service_name,
+        dependencies1,
+        attrs,
+        constructors,
+        implementations,
+        private_methods
+    );
 end
 
 define type_check_top_level(

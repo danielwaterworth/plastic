@@ -4,14 +4,7 @@ import parsing.ts
 enum Type
     quantified(String) |
     named_type(List(String), String, List(Type)) |
-    tuple(List(Type)) |
-    list_type(Type) |
-    coroutine_type(Type, Type) |
-    bool_type |
-    uint_type |
-    char_type |
-    string_type |
-    void_type
+    tuple(List(Type))
 end
 
 define parse_tuple_type(

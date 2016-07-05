@@ -53,7 +53,6 @@ service Main(
                 module_interface := typing.signature.construct_module_interface(mod);
                 module_interfaces := module_interfaces.append((name, module_interface));
 
-
                 @p.print("creating signatures: " + string_name);
 
                 module_signature := typing.signature.construct_module_signatures(module_interfaces, module_interface, mod);
@@ -61,7 +60,7 @@ service Main(
 
                 @p.print("type checking: " + string_name);
 
-                ctx := typing.type.module_context(module_signatures, module_signature);
+                ctx := typing.type.module_context(module_signatures, module_signature, name);
                 mod1 := typing.type_check.type_check_module(ctx, mod);
 
                 @p.print("code gen: " + string_name);

@@ -50,7 +50,30 @@ define check_type(
             t : parsing.type.Type
         )
         -> typing.type.TType do
-    debug("check type");
+    match (t)
+        quantified(name) do
+            debug("check quantified type");
+        end
+        named_type(module, name, parameters) do
+            if (module.length() == 0)
+                if (name == "String")
+                    return typing.type.string_type();
+                elsif (name == "Void")
+                    return typing.type.void_type();
+                elsif (name == "UInt")
+                    return typing.type.uint_type();
+                else
+                    debug(name);
+                    debug("check named type");
+                end
+            else
+                debug("check imported named type");
+            end
+        end
+        tuple(types) do
+            debug("check tuple type");
+        end
+    end
 end
 
 define construct_interface_signature(
@@ -59,7 +82,7 @@ define construct_interface_signature(
             types : List(String),
             signatures : List((String, List(parsing.type.Type), parsing.type.Type))
         )
-        -> typing.type.InterfaceSignature do
+        -> typing.type.TypeSignature do
     signatures1 := [] : (List((String, typing.type.FunctionSignature)));
     for signature in iter.l(signatures) do
         name, argument_types, return_type := signature;
@@ -75,6 +98,47 @@ define construct_interface_signature(
     return typing.type.interface_signature(types, signatures1);
 end
 
+define construct_service_signature(
+            modules : List((List(String), ModuleInterface)),
+            current_module : ModuleInterface,
+            decls : List(parsing.parser.ServiceDecl)
+        )
+        -> typing.type.TypeSignature do
+    return typing.type.service_signature();
+end
+
+define construct_function_signature(
+            modules : List((List(String), ModuleInterface)),
+            current_module : ModuleInterface,
+            f : parsing.parser.Function
+        )
+        -> (String, typing.type.FunctionSignature) do
+    match (f)
+        function_(name, parameters, return_type, body) do
+            argument_types1 := [] : (List(typing.type.TType));
+            for param in iter.l(parameters) do
+                param_name, arg := param;
+                argument_types1.append(check_type(modules, current_module, arg));
+            end
+
+            return_type1 := check_type(modules, current_module, return_type);
+            return (name, typing.type.function_signature(argument_types1, return_type1));
+        end
+        coroutine_(name, parameters, receive_type, yield_type, body) do
+            argument_types1 := [] : (List(typing.type.TType));
+            for param in iter.l(parameters) do
+                param_name, arg := param;
+                argument_types1.append(check_type(modules, current_module, arg));
+            end
+
+            receive_type1 := check_type(modules, current_module, receive_type);
+            yield_type1 := check_type(modules, current_module, yield_type);
+            return (name, typing.type.coroutine_signature(argument_types1, receive_type1, yield_type1));
+        end
+    end
+    throw void;
+end
+
 define construct_module_signatures(
             modules : List((List(String), ModuleInterface)),
             current_module : ModuleInterface,
@@ -86,27 +150,31 @@ define construct_module_signatures(
         end
     end
 
+    functions := [] : (List((String, typing.type.FunctionSignature)));
+    types := [] : (List((String, typing.type.TypeSignature)));
+
     for decl in iter.l(decls) do
         match(decl)
-            enum_(name, types, constructors) do
+            enum_(name, parameters, constructors) do
                 debug("enum signature");
                 throw void;
             end
             service_(name, dependencies, service_decls) do
-                debug("service signature");
-                throw void;
+                serv := construct_service_signature(modules, current_module, service_decls);
+                types := types.append((name, serv));
             end
-            interface_(name, types, signatures) do
-                construct_interface_signature(modules, current_module, types, signatures);
+            interface_(name, parameters, signatures) do
+                int := construct_interface_signature(modules, current_module, parameters, signatures);
+                types := types.append((name, int));
             end
             entry_(block) do
             end
             fun_(f) do
-                debug("function signature");
-                throw void;
+                fun := construct_function_signature(modules, current_module, f);
+                functions := functions.append(fun);
             end
         end
     end
 
-    throw void;
+    return typing.type.module_signature(functions, types);
 end

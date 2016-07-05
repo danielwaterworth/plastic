@@ -1,6 +1,9 @@
+import iter
 import parsing.type
 import parsing.expr
 import typing.type
+import typing.sys_calls
+import typing.operators
 
 enum TExpression
     bool_literal(Bool) |
@@ -10,17 +13,52 @@ enum TExpression
     list_literal(List(TExpression)) |
     tuple_literal(List(TExpression)) |
     void_literal |
-    variable(String) |
+    variable(String, typing.type.TType) |
     type_name(String) |
     record_access(TExpression, String) |
     type_access(TExpression, String) |
     call(TExpression, List(TExpression)) |
     bin_op(TExpression, parsing.expr.BinOperator, TExpression) |
     not_(TExpression) |
-    sys_call(String, List(TExpression)) |
-    operation(String, List(TExpression)) |
+    sys_call(String, List(TExpression), typing.type.TType) |
+    operation(String, List(TExpression), typing.type.TType) |
     yield_(TExpression) |
     attr_lookup(String)
+end
+
+define check_arguments(
+            context : typing.type.Context,
+            parameters : List(typing.type.TType),
+            arguments : List(parsing.expr.Expression)
+        )
+        -> List(TExpression) do
+    if (arguments.length() != parameters.length())
+        debug("wrong number of arguments");
+        throw void;
+    end
+
+    output := [] : (List(TExpression));
+    for n in iter.zip(iter.l(parameters), iter.l(arguments)) do
+        param, arg := n;
+        output := output.append(check_expression(context, arg, typing.type.just_ttype(param)));
+    end
+    return output;
+end
+
+define unify(
+            t : typing.type.TType,
+            expected : typing.type.MaybeTType
+        )
+        -> Void do
+    match (expected)
+        just_ttype(expected1) do
+            debug("TODO: unify");
+            return void;
+        end
+        nothing_ttype do
+            return void;
+        end
+    end
 end
 
 define check_expression(
@@ -31,16 +69,20 @@ define check_expression(
         -> TExpression do
     match (expr)
         bool_literal(b) do
-            debug("bool literal");
+            unify(typing.type.bool_type(), expected);
+            return void_literal();
         end
         num_literal(n) do
-            debug("num literal");
+            unify(typing.type.uint_type(), expected);
+            return void_literal();
         end
         char_literal(c) do
-            debug("char literal");
+            unify(typing.type.char_type(), expected);
+            return void_literal();
         end
         string_literal(s) do
-            debug("string literal");
+            unify(typing.type.string_type(), expected);
+            return void_literal();
         end
         list_literal(exprs) do
             debug("list literal");
@@ -49,10 +91,13 @@ define check_expression(
             debug("tuple literal");
         end
         void_literal do
-            debug("void literal");
+            unify(typing.type.void_type(), expected);
+            return void_literal();
         end
         variable(name) do
-            debug("variable");
+            t := typing.type.lookup_variable(context, name);
+            unify(t, expected);
+            return variable(name, t);
         end
         type_name(name) do
             throw void;
@@ -76,10 +121,14 @@ define check_expression(
             debug("annotated");
         end
         sys_call(name, arguments) do
-            debug("sys_call");
+            parameters, return_type := typing.sys_calls.sys_call(name);
+            arguments1 := check_arguments(context, parameters, arguments);
+            return sys_call(name, arguments1, return_type);
         end
         operation(name, arguments) do
-            debug("operation");
+            parameters, return_type := typing.operators.operator(name);
+            arguments1 := check_arguments(context, parameters, arguments);
+            return operation(name, arguments1, return_type);
         end
         yield_(expr) do
             debug("yield");

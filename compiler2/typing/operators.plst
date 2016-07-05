@@ -1,0 +1,4 @@
+import typing.type
+
+define operator(name : String) -> (List(typing.type.TType), typing.type.TType) do
+end

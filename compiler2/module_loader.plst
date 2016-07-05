@@ -4,54 +4,27 @@ import file
 import parsing.lex
 import parsing.parser
 import printer
+import module
 
 interface ModuleLoader
     load(String, String) -> List((List(String), parsing.parser.Module));
 end
 
+# Work around for compiler bug
 define module_eq(a : List(String), b : List(String)) -> Bool do
-    if (a.length() != b.length())
-        return false;
-    end
-    for i in iter.zip(iter.l(a), iter.l(b)) do
-        x, y := i;
-        if (x != y)
-            return false;
-        end
-    end
-    return true;
+    return module.eq(a, b);
 end
 
-define has_module(module : List(String), modules : List((List(String), a))) -> Bool do
-    for m in iter.l(modules) do
-        m1, m2 := m;
-        if (module_eq(m1, module))
-            return true;
-        end
-    end
-    return false;
+define has_module(module1 : List(String), modules : List((List(String), a))) -> Bool do
+    return module.has(module1, modules);
 end
 
 define has_any_module(a : List(List(String)), b : List((List(String), a))) -> Bool do
-    for module in iter.l(a) do
-        if (has_module(module, b))
-            return true;
-        end
-    end
-    return false;
+    return module.has_any(a, b);
 end
 
-define remove(module : List(String), modules : List((List(String), a))) -> List((List(String), a)) do
-    output := [] : (List((List(String), a)));
-
-    for m in iter.l(modules) do
-        name, mod := m;
-        if (not module_eq(name, module))
-            output := output.append(m);
-        end
-    end
-
-    return output;
+define remove(module1 : List(String), modules : List((List(String), a))) -> List((List(String), a)) do
+    return module.remove(module1, modules);
 end
 
 service FileModuleLoader(
@@ -62,8 +35,8 @@ service FileModuleLoader(
     end
 
     implements ModuleLoader
-        define load(dir : String, module : String) -> List((List(String), parsing.parser.Module)) do
-            to_load := [[module]];
+        define load(dir : String, module1 : String) -> List((List(String), parsing.parser.Module)) do
+            to_load := [[module1]];
             loaded := [] : (List((List(String), parsing.parser.Module)));
             do
                 to_load, module_name := to_load.pop();
@@ -109,14 +82,14 @@ service FileModuleLoader(
     end
 
     private
-        define load_module(dir : String, module : List(String)) -> parsing.parser.Module do
-            module_name := string.join(module, ".");
+        define load_module(dir : String, module1 : List(String)) -> parsing.parser.Module do
+            module_name := string.join(module1, ".");
             @p.print("loading: " + module_name);
-            lib := @f.exists((string.join(["./lib"] + module, "/") + ".plst").encode_utf8());
+            lib := @f.exists((string.join(["./lib"] + module1, "/") + ".plst").encode_utf8());
             if (lib)
                 dir := "./lib";
             end
-            fd := @f.open((string.join([dir] + module, "/") + ".plst").encode_utf8(), 0);
+            fd := @f.open((string.join([dir] + module1, "/") + ".plst").encode_utf8(), 0);
             source := @f.read(fd, 102400).decode_utf8();
             if (source.length() == 102400)
                 debug("too large");

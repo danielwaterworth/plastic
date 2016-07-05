@@ -1,0 +1,7 @@
+import typing.type
+
+define sys_call(name : String) -> (List(typing.type.TType), typing.type.TType) do
+    if (name == "print_string")
+        return ([typing.type.string_type()], typing.type.void_type());
+    end
+end

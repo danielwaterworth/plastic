@@ -38,7 +38,30 @@ define check_statement(
             statement : parsing.code_block.Statement
         )
         -> (typing.type.Context, TStatement) do
-    debug("check_statement");
+    match (statement)
+        assignment(pattern, exp) do
+            typing.expr.check_expression(context, exp, typing.type.nothing_ttype());
+            debug("assignment");
+        end
+        if_(exp, true_block, tail) do
+            typing.expr.check_expression(context, exp, typing.type.nothing_ttype());
+            debug("if");
+        end
+        do_while(block, exp) do
+            debug("do while");
+        end
+        for_(name, exp, block) do
+            typing.expr.check_expression(context, exp, typing.type.nothing_ttype());
+            debug("for");
+        end
+        match_(exp, clauses) do
+            typing.expr.check_expression(context, exp, typing.type.nothing_ttype());
+            debug("match");
+        end
+        exp_(exp) do
+            return (context, exp_(typing.expr.check_expression(context, exp, typing.type.nothing_ttype())));
+        end
+    end
 end
 
 define check_terminator(
@@ -50,10 +73,12 @@ define check_terminator(
         no_terminator do
             return no_terminator();
         end
-        return_(expr) do
-            debug("return");
+        return_(exp) do
+            debug("TODO: missing return type in context");
+            expected := typing.type.nothing_ttype();
+            return return_(typing.expr.check_expression(context, exp, expected));
         end
-        throw_(expr) do
+        throw_(exp) do
             debug("throw");
         end
     end

@@ -1,34 +1,30 @@
+import iter
+import module
 import parsing.type
 
 enum FunctionSignature
-    function_signature(List(TType), TType)
+    function_signature(List(TType), TType) |
+    coroutine_signature(List(TType), TType, TType)
 end
 
-enum EnumSignature
-    enum_signature(List(String), List((String, List(TType))))
-end
-
-enum InterfaceSignature
-    interface_signature(List(String), List((String, FunctionSignature)))
-end
-
-enum ServiceSignature
+enum TypeSignature
+    enum_signature(List(String), List((String, List(TType)))) |
+    interface_signature(List(String), List((String, FunctionSignature))) |
     service_signature
 end
 
 enum ModuleSignature
     module_signature(
         List((String, FunctionSignature)),
-        List((String, EnumSignature)),
-        List((String, InterfaceSignature)),
-        List((String, ServiceSignature))
+        List((String, TypeSignature))
     )
 end
 
 enum ModuleContext
     module_context(
         List((List(String), ModuleSignature)),
-        ModuleSignature
+        ModuleSignature,
+        List(String)
     )
 end
 
@@ -40,7 +36,9 @@ enum TType
     void_type |
     quantified(String) |
     list_type(TType) |
-    coroutine_type(TType, TType)
+    tuple_type(List(TType)) |
+    coroutine_type(TType, TType) |
+    instantiation(List(String), String, List(TType))
 end
 
 enum MaybeTType
@@ -63,8 +61,61 @@ enum TypeContext
     )
 end
 
+define lookup_variable(
+            context : Context,
+            name: String
+        )
+        -> TType do
+    match (context)
+        context(module_context, dependencies, attrs, variables) do
+            for x in iter.l(variables) do
+                name1, v := x;
+                if (name == name1)
+                    return v;
+                end
+            end
+        end
+    end
+end
+
 define empty_type_context() -> TypeContext do
     return type_context([] : (List((String, TType))));
+end
+
+define lookup_type_on_signature(
+            context : ModuleSignature,
+            name : String
+        )
+        -> TypeSignature do
+    match (context)
+        module_signature(functions, types) do
+        end
+    end
+
+    for v in iter.l(types) do
+        name1, m := v;
+        if (name1 == name)
+            return m;
+        end
+    end
+end
+
+define lookup_type(
+            context : ModuleContext,
+            module_name : List(String),
+            name : String
+        )
+        -> TypeSignature do
+    match (context)
+        module_context(modules, mod, current_module_name) do
+        end
+    end
+
+    if (module_name.length() != 0)
+        mod := module.lookup(module_name, modules);
+    end
+
+    return lookup_type_on_signature(mod, name);
 end
 
 define resolve_type(
@@ -73,16 +124,59 @@ define resolve_type(
             t : parsing.type.Type
         )
         -> (TypeContext, TType) do
+    match (context)
+        module_context(modules, current_module, current_module_name) do
+        end
+    end
+
     match (t)
         quantified(name) do
             debug("resolve_type quantified");
         end
-        named_type(module, name, parameters) do
-            if (module.length() == 0)
-                debug(("resolve_type local named_type", name, parameters));
-            else
-                debug("resolve_type imported named_type");
+        named_type(mod, name, parameters) do
+            if (mod.length() == 0)
+                if (name == "String")
+                    return (quantifiers, string_type());
+                elsif (name == "Void")
+                    return (quantifiers, void_type());
+                elsif (name == "UInt")
+                    return (quantifiers, uint_type());
+                end
             end
+
+            type := lookup_type(context, mod, name);
+            match (type)
+                enum_signature(types, constructors) do
+                    if (types.length() != parameters.length())
+                        debug("wrong number of parameters for " + name);
+                        throw void;
+                    end
+                end
+                interface_signature(types, signatures) do
+                    if (types.length() != parameters.length())
+                        debug("wrong number of parameters for " + name);
+                        throw void;
+                    end
+                end
+                service_signature do
+                    if (parameters.length() != 0)
+                        debug("wrong number of parameters for " + name);
+                        throw void;
+                    end
+                end
+            end
+
+            parameters1 := [] : (List(TType));
+            for param in iter.l(parameters) do
+                quantifiers, param1 := resolve_type(context, quantifiers, param);
+                parameters1 := parameters1.append(param1);
+            end
+
+            if (mod.length() == 0)
+                mod := current_module_name;
+            end
+
+            return (quantifiers, instantiation(mod, name, parameters1));
         end
         tuple(types) do
             debug("resolve_type tuple");

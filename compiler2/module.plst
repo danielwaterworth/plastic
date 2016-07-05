@@ -1,0 +1,56 @@
+import iter
+
+define eq(a : List(String), b : List(String)) -> Bool do
+    if (a.length() != b.length())
+        return false;
+    end
+    for i in iter.zip(iter.l(a), iter.l(b)) do
+        x, y := i;
+        if (x != y)
+            return false;
+        end
+    end
+    return true;
+end
+
+define has(module : List(String), modules : List((List(String), a))) -> Bool do
+    for m in iter.l(modules) do
+        m1, m2 := m;
+        if (eq(m1, module))
+            return true;
+        end
+    end
+    return false;
+end
+
+define has_any(a : List(List(String)), b : List((List(String), a))) -> Bool do
+    for module in iter.l(a) do
+        if (has(module, b))
+            return true;
+        end
+    end
+    return false;
+end
+
+define lookup(module : List(String), modules : List((List(String), a))) -> a do
+    for m in iter.l(modules) do
+        m1, m2 := m;
+        if (eq(m1, module))
+            return m2;
+        end
+    end
+    throw void;
+end
+
+define remove(module : List(String), modules : List((List(String), a))) -> List((List(String), a)) do
+    output := [] : (List((List(String), a)));
+
+    for m in iter.l(modules) do
+        name, mod := m;
+        if (not eq(name, module))
+            output := output.append(m);
+        end
+    end
+
+    return output;
+end
