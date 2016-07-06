@@ -4,19 +4,13 @@ import parsing.code_block
 import typing.type
 import typing.expr
 
-enum TIfTail
-    end_ |
-    else_(TBlock) |
-    elsif_(typing.expr.TExpression, TBlock, TIfTail)
-end
-
 enum TClause
     clause(String, List(String), TBlock)
 end
 
 enum TStatement
     assignment(parsing.code_block.Destructure, typing.expr.TExpression) |
-    if_(typing.expr.TExpression, TBlock, TIfTail) |
+    if_(typing.expr.TExpression, TBlock, TBlock) |
     do_while(TBlock, typing.expr.TExpression) |
     for_(String, typing.expr.TExpression, TBlock) |
     match_(typing.expr.TExpression, List(TClause)) |
@@ -43,8 +37,10 @@ define check_statement(
             typing.expr.check_expression(context, exp, typing.type.nothing_ttype());
             debug("assignment");
         end
-        if_(exp, true_block, tail) do
+        if_(exp, true_block, false_block) do
             typing.expr.check_expression(context, exp, typing.type.nothing_ttype());
+            true_context, t_true_block := check_block(context, true_block);
+            false_context, t_false_block := check_block(context, false_block);
             debug("if");
         end
         do_while(block, exp) do

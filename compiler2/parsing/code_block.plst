@@ -2,12 +2,6 @@ import parsing.lex
 import parsing.ts
 import parsing.expr
 
-enum IfTail
-    end_ |
-    else_(Block) |
-    elsif_(parsing.expr.Expression, Block, IfTail)
-end
-
 enum Clause
     clause(String, List(String), Block)
 end
@@ -25,7 +19,7 @@ end
 
 enum Statement
     assignment(Destructure, parsing.expr.Expression) |
-    if_(parsing.expr.Expression, Block, IfTail) |
+    if_(parsing.expr.Expression, Block, Block) |
     do_while(Block, parsing.expr.Expression) |
     for_(String, parsing.expr.Expression, Block) |
     match_(parsing.expr.Expression, List(Clause)) |
@@ -45,21 +39,22 @@ end
 define parse_if_tail(
             tokens : List(parsing.lex.Token)
         )
-        -> (IfTail, List(parsing.lex.Token)) do
+        -> (Block, List(parsing.lex.Token)) do
     k, tokens := parsing.ts.assert_is_keyword(tokens);
     if (k == "end")
-        return (end_(), tokens);
+        return (block([] : (List(Statement)), no_terminator()), tokens);
     elsif (k == "else")
         block, tokens := parse_code_block(tokens);
         tokens := parsing.ts.assert_keyword(tokens, "end");
-        return (else_(block), tokens);
+        return (block, tokens);
     elsif (k == "elsif")
         tokens := parsing.ts.assert_symbol(tokens, "(");
         exp, tokens := parsing.expr.parse_expression(tokens);
         tokens := parsing.ts.assert_symbol(tokens, ")");
         block, tokens := parse_code_block(tokens);
         tail, tokens := parse_if_tail(tokens);
-        return (elsif_(exp, block, tail), tokens);
+        statement := if_(exp, block, tail);
+        return (block([statement], no_terminator()), tokens);
     end
     throw void;
 end

@@ -76,7 +76,6 @@ define unify(
             expected : typing.type.MaybeTType
         )
         -> Void do
-    debug((t, expected));
     match (expected)
         just_ttype(expected1) do
             match (t)
@@ -209,7 +208,7 @@ define check_expression(
             rhs_t := expr_type(rhs1);
 
             unify(lhs_t, typing.type.just_ttype(rhs_t));
-            debug("bin_op");
+            return bin_op(lhs1, operator, rhs1);
         end
         not_(exp) do
             t_exp := check_expression(context, exp, typing.type.just_ttype(typing.type.bool_type()));
