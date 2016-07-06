@@ -26,6 +26,32 @@ enum TExpression
     attr_lookup(String)
 end
 
+define expr_type(
+            exp : TExpression
+        )
+        -> typing.type.TType do
+    match (exp)
+        bool_literal(b) do
+            return typing.type.bool_type();
+        end
+        num_literal(b) do
+            return typing.type.uint_type();
+        end
+        char_literal(b) do
+            return typing.type.char_type();
+        end
+        string_literal(b) do
+            return typing.type.string_type();
+        end
+        void_literal do
+            return typing.type.void_type();
+        end
+        variable(name, t) do
+            return t;
+        end
+    end
+end
+
 define check_arguments(
             context : typing.type.Context,
             parameters : List(typing.type.TType),
@@ -50,10 +76,74 @@ define unify(
             expected : typing.type.MaybeTType
         )
         -> Void do
+    debug((t, expected));
     match (expected)
         just_ttype(expected1) do
-            debug("TODO: unify");
-            return void;
+            match (t)
+                bool_type do
+                    match(expected1)
+                        bool_type do
+                            return void;
+                        end
+                    end
+                end
+                uint_type do
+                    match(expected1)
+                        uint_type do
+                            return void;
+                        end
+                    end
+                end
+                char_type do
+                    match(expected1)
+                        char_type do
+                            return void;
+                        end
+                    end
+                end
+                string_type do
+                    match(expected1)
+                        string_type do
+                            return void;
+                        end
+                    end
+                end
+                void_type do
+                    match(expected1)
+                        void_type do
+                            return void;
+                        end
+                    end
+                end
+                quantified(name) do
+                    match(expected1)
+                        quantified(name1) do
+                            if (name == name1)
+                                return void;
+                            end
+                        end
+                    end
+                end
+                list_type(t) do
+                    match(expected1)
+                        list_type(t1) do
+                            unify(t, typing.type.just_ttype(t1));
+                        end
+                    end
+                end
+                tuple_type(types) do
+                    debug("tuple");
+                    throw void;
+                end
+                coroutine_type(receive_type, yield_type) do
+                    debug("coroutine");
+                    throw void;
+                end
+                instantiation(module, name, parameters) do
+                    debug("instantiation");
+                    throw void;
+                end
+            end
         end
         nothing_ttype do
             return void;
@@ -70,19 +160,19 @@ define check_expression(
     match (expr)
         bool_literal(b) do
             unify(typing.type.bool_type(), expected);
-            return void_literal();
+            return bool_literal(b);
         end
         num_literal(n) do
             unify(typing.type.uint_type(), expected);
-            return void_literal();
+            return num_literal(n);
         end
         char_literal(c) do
             unify(typing.type.char_type(), expected);
-            return void_literal();
+            return char_literal(c);
         end
         string_literal(s) do
             unify(typing.type.string_type(), expected);
-            return void_literal();
+            return string_literal(s);
         end
         list_literal(exprs) do
             debug("list literal");
@@ -112,10 +202,18 @@ define check_expression(
             debug("call");
         end
         bin_op(lhs, operator, rhs) do
+            lhs1 := check_expression(context, lhs, typing.type.nothing_ttype());
+            lhs_t := expr_type(lhs1);
+
+            rhs1 := check_expression(context, rhs, typing.type.nothing_ttype());
+            rhs_t := expr_type(rhs1);
+
+            unify(lhs_t, typing.type.just_ttype(rhs_t));
             debug("bin_op");
         end
-        not_(expr) do
-            debug("not");
+        not_(exp) do
+            t_exp := check_expression(context, exp, typing.type.just_ttype(typing.type.bool_type()));
+            return not_(t_exp);
         end
         annotated(expr, t) do
             debug("annotated");

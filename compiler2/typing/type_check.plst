@@ -112,8 +112,15 @@ define type_check_entry(
             block : parsing.code_block.Block
         )
         -> TTopLevel do
-    debug("type_check_entry");
-    throw void;
+    ctx1 :=
+        typing.type.context(
+            module_context,
+            [] : (List((String, typing.type.TType))),
+            [] : (List((String, typing.type.TType))),
+            [] : (List((String, typing.type.TType)))
+        );
+    ctx1, block1 := typing.code_block.check_block(ctx1, block);
+    return t_entry(block1);
 end
 
 define type_check_service(
