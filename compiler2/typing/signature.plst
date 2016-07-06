@@ -1,6 +1,7 @@
 import iter
 import parsing.parser
 import typing.type
+import module
 
 enum TypeInterface
     enum_interface(UInt) |
@@ -10,6 +11,14 @@ end
 
 enum ModuleInterface
     module_interface(List((String, TypeInterface)))
+end
+
+enum ModuleInterfaceContext
+    module_interface_context(
+        List((List(String), ModuleInterface)),
+        ModuleInterface,
+        List(String)
+    )
 end
 
 define construct_module_interface(
@@ -44,41 +53,124 @@ define construct_module_interface(
     return module_interface(type_interfaces);
 end
 
-define check_type(
-            modules : List((List(String), ModuleInterface)),
-            current_module : ModuleInterface,
-            t : parsing.type.Type
+define lookup_type_on_interface(
+            context : ModuleInterface,
+            name : String
         )
-        -> typing.type.TType do
-    match (t)
-        quantified(name) do
-            debug("check quantified type");
+        -> TypeInterface do
+    match (context)
+        module_interface(types) do
         end
-        named_type(module, name, parameters) do
-            if (module.length() == 0)
-                if (name == "String")
-                    return typing.type.string_type();
-                elsif (name == "Void")
-                    return typing.type.void_type();
-                elsif (name == "UInt")
-                    return typing.type.uint_type();
-                else
-                    debug(name);
-                    debug("check named type");
-                end
-            else
-                debug("check imported named type");
-            end
-        end
-        tuple(types) do
-            debug("check tuple type");
+    end
+
+    for v in iter.l(types) do
+        name1, m := v;
+        if (name1 == name)
+            return m;
         end
     end
 end
 
-define construct_interface_signature(
+define lookup_type(
             modules : List((List(String), ModuleInterface)),
-            current_module : ModuleInterface,
+            mod : ModuleInterface,
+            module_name : List(String),
+            name : String
+        )
+        -> TypeInterface do
+    if (module_name.length() != 0)
+        mod := module.lookup(module_name, modules);
+    end
+
+    return lookup_type_on_interface(mod, name);
+end
+
+define resolve_type(
+            context : ModuleInterfaceContext,
+            quantifiers : typing.type.TypeContext,
+            t : parsing.type.Type
+        )
+        -> (typing.type.TypeContext, typing.type.TType) do
+    match(context)
+        module_interface_context(modules, current_module, current_module_name) do
+        end
+    end
+
+    match (t)
+        quantified(name) do
+            debug("resolve_type quantified");
+        end
+        named_type(mod, name, parameters) do
+            if (mod.length() == 0)
+                if (name == "String")
+                    return (quantifiers, typing.type.string_type());
+                elsif (name == "Void")
+                    return (quantifiers, typing.type.void_type());
+                elsif (name == "UInt")
+                    return (quantifiers, typing.type.uint_type());
+                end
+            end
+
+            type := lookup_type(modules, current_module, mod, name);
+            match (type)
+                enum_interface(n) do
+                    if (n != parameters.length())
+                        debug("wrong number of parameters for " + name);
+                        throw void;
+                    end
+                end
+                interface_interface(n) do
+                    if (n != parameters.length())
+                        debug("wrong number of parameters for " + name);
+                        throw void;
+                    end
+                end
+                service_interface do
+                    if (parameters.length() != 0)
+                        debug("wrong number of parameters for " + name);
+                        throw void;
+                    end
+                end
+            end
+
+            parameters1 := [] : (List(typing.type.TType));
+            for param in iter.l(parameters) do
+                quantifiers, param1 := resolve_type(context, quantifiers, param);
+                parameters1 := parameters1.append(param1);
+            end
+
+            if (mod.length() == 0)
+                mod := current_module_name;
+            end
+
+            return (quantifiers, typing.type.instantiation(mod, name, parameters1));
+        end
+        tuple(types) do
+            debug("resolve_type tuple");
+        end
+    end
+end
+
+define template_type(
+            quantifier : typing.type.TypeContext,
+            t : typing.type.TType
+        )
+        -> typing.type.TType do
+    debug("template_type");
+end
+
+define check_type(
+            context : ModuleInterfaceContext,
+            t : parsing.type.Type
+        )
+        -> typing.type.TType do
+    ctx := typing.type.empty_type_context();
+    ctx, t1 := resolve_type(context, ctx, t);
+    return t1;
+end
+
+define construct_interface_signature(
+            context : ModuleInterfaceContext,
             types : List(String),
             signatures : List((String, List(parsing.type.Type), parsing.type.Type))
         )
@@ -89,18 +181,17 @@ define construct_interface_signature(
 
         argument_types1 := [] : (List(typing.type.TType));
         for arg in iter.l(argument_types) do
-            argument_types1.append(check_type(modules, current_module, arg));
+            argument_types1.append(check_type(context, arg));
         end
 
-        return_type1 := check_type(modules, current_module, return_type);
+        return_type1 := check_type(context, return_type);
     end
 
     return typing.type.interface_signature(types, signatures1);
 end
 
 define construct_service_signature(
-            modules : List((List(String), ModuleInterface)),
-            current_module : ModuleInterface,
+            context : ModuleInterfaceContext,
             decls : List(parsing.parser.ServiceDecl)
         )
         -> typing.type.TypeSignature do
@@ -108,8 +199,7 @@ define construct_service_signature(
 end
 
 define construct_function_signature(
-            modules : List((List(String), ModuleInterface)),
-            current_module : ModuleInterface,
+            context : ModuleInterfaceContext,
             f : parsing.parser.Function
         )
         -> (String, typing.type.FunctionSignature) do
@@ -118,21 +208,21 @@ define construct_function_signature(
             argument_types1 := [] : (List(typing.type.TType));
             for param in iter.l(parameters) do
                 param_name, arg := param;
-                argument_types1.append(check_type(modules, current_module, arg));
+                argument_types1.append(check_type(context, arg));
             end
 
-            return_type1 := check_type(modules, current_module, return_type);
+            return_type1 := check_type(context, return_type);
             return (name, typing.type.function_signature(argument_types1, return_type1));
         end
         coroutine_(name, parameters, receive_type, yield_type, body) do
             argument_types1 := [] : (List(typing.type.TType));
             for param in iter.l(parameters) do
                 param_name, arg := param;
-                argument_types1.append(check_type(modules, current_module, arg));
+                argument_types1.append(check_type(context, arg));
             end
 
-            receive_type1 := check_type(modules, current_module, receive_type);
-            yield_type1 := check_type(modules, current_module, yield_type);
+            receive_type1 := check_type(context, receive_type);
+            yield_type1 := check_type(context, yield_type);
             return (name, typing.type.coroutine_signature(argument_types1, receive_type1, yield_type1));
         end
     end
@@ -140,8 +230,7 @@ define construct_function_signature(
 end
 
 define construct_module_signatures(
-            modules : List((List(String), ModuleInterface)),
-            current_module : ModuleInterface,
+            context : ModuleInterfaceContext,
             mod : parsing.parser.Module
         )
         -> typing.type.ModuleSignature do
@@ -160,17 +249,17 @@ define construct_module_signatures(
                 throw void;
             end
             service_(name, dependencies, service_decls) do
-                serv := construct_service_signature(modules, current_module, service_decls);
+                serv := construct_service_signature(context, service_decls);
                 types := types.append((name, serv));
             end
             interface_(name, parameters, signatures) do
-                int := construct_interface_signature(modules, current_module, parameters, signatures);
+                int := construct_interface_signature(context, parameters, signatures);
                 types := types.append((name, int));
             end
             entry_(block) do
             end
             fun_(f) do
-                fun := construct_function_signature(modules, current_module, f);
+                fun := construct_function_signature(context, f);
                 functions := functions.append(fun);
             end
         end

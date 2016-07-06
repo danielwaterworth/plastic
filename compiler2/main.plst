@@ -55,13 +55,14 @@ service Main(
 
                 @p.print("creating signatures: " + string_name);
 
-                module_signature := typing.signature.construct_module_signatures(module_interfaces, module_interface, mod);
+                int_ctx := typing.signature.module_interface_context(module_interfaces, module_interface, name);
+                module_signature := typing.signature.construct_module_signatures(int_ctx, mod);
                 module_signatures := module_signatures.append((name, module_signature));
 
                 @p.print("type checking: " + string_name);
 
-                ctx := typing.type.module_context(module_signatures, module_signature, name);
-                mod1 := typing.type_check.type_check_module(ctx, mod);
+                sig_ctx := typing.type.module_context(module_signatures, module_signature, name);
+                mod1 := typing.type_check.type_check_module(int_ctx, sig_ctx, mod);
 
                 @p.print("code gen: " + string_name);
 

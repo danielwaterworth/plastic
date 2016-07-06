@@ -49,6 +49,7 @@ enum TTopLevel
 end
 
 define type_check_function(
+            module_inteface_context : typing.signature.ModuleInterfaceContext,
             module_context : typing.type.ModuleContext,
             function : parsing.parser.Function
         )
@@ -65,6 +66,7 @@ define type_check_function(
 end
 
 define type_check_entry(
+            module_inteface_context : typing.signature.ModuleInterfaceContext,
             module_context : typing.type.ModuleContext,
             block : parsing.code_block.Block
         )
@@ -74,6 +76,7 @@ define type_check_entry(
 end
 
 define type_check_service(
+            module_interface_context : typing.signature.ModuleInterfaceContext,
             module_context : typing.type.ModuleContext,
             service_name : String,
             dependencies : List((String, parsing.type.Type)),
@@ -84,7 +87,7 @@ define type_check_service(
     for d in iter.l(dependencies) do
         name, t := d;
         ctx := typing.type.empty_type_context();
-        ctx, t1 := typing.type.resolve_type(module_context, ctx, t);
+        ctx, t1 := typing.signature.resolve_type(module_interface_context, ctx, t);
         dependencies1 := dependencies1.append((name, t1));
     end
 
@@ -93,7 +96,7 @@ define type_check_service(
         match(decl)
             attr_(name, t) do
                 ctx := typing.type.empty_type_context();
-                ctx, t1 := typing.type.resolve_type(module_context, ctx, t);
+                ctx, t1 := typing.signature.resolve_type(module_interface_context, ctx, t);
                 attrs := attrs.append((name, t1));
             end
             constructor_(name, parameters, block) do
@@ -117,7 +120,7 @@ define type_check_service(
                 for parameter in iter.l(parameters) do
                     name, t := parameter;
                     ctx := typing.type.empty_type_context();
-                    ctx, t1 := typing.type.resolve_type(module_context, ctx, t);
+                    ctx, t1 := typing.signature.resolve_type(module_interface_context, ctx, t);
                     parameters1 := parameters1.append((name, t1));
                 end
 
@@ -134,7 +137,7 @@ define type_check_service(
             end
             implements_(interface_, functions) do
                 ctx := typing.type.empty_type_context();
-                ctx, t_interface := typing.type.resolve_type(module_context, ctx, interface_);
+                ctx, t_interface := typing.signature.resolve_type(module_interface_context, ctx, interface_);
 
                 functions1 := [] : (List((String, List((String, typing.type.TType)), typing.type.TType, typing.code_block.TBlock)));
                 for function in iter.l(functions) do
@@ -143,11 +146,11 @@ define type_check_service(
                             parameters1 := [] : (List((String, typing.type.TType)));
                             for parameter in iter.l(parameters) do
                                 name, p := parameter;
-                                ctx, parameter1 := typing.type.resolve_type(module_context, ctx, p);
+                                ctx, parameter1 := typing.signature.resolve_type(module_interface_context, ctx, p);
                                 parameters1 := parameters1.append((name, parameter1));
                             end
 
-                            ctx, return_type1 := typing.type.resolve_type(module_context, ctx, return_type);
+                            ctx, return_type1 := typing.signature.resolve_type(module_interface_context, ctx, return_type);
 
                             body_context :=
                                 typing.type.context(
@@ -188,6 +191,7 @@ define type_check_service(
 end
 
 define type_check_top_level(
+            module_interface_context : typing.signature.ModuleInterfaceContext,
             module_context : typing.type.ModuleContext,
             decl : parsing.parser.TopLevel
         )
@@ -197,21 +201,22 @@ define type_check_top_level(
             return [] : (List(TTopLevel));
         end
         service_(name, dependencies, service_decls) do
-            return [type_check_service(module_context, name, dependencies, service_decls)];
+            return [type_check_service(module_interface_context, module_context, name, dependencies, service_decls)];
         end
         interface_(name, types, signatures) do
             return [] : (List(TTopLevel));
         end
         entry_(block) do
-            return [type_check_entry(module_context, block)];
+            return [type_check_entry(module_interface_context, module_context, block)];
         end
         fun_(f) do
-            return [type_check_function(module_context, f)];
+            return [type_check_function(module_interface_context, module_context, f)];
         end
     end
 end
 
 define type_check_module(
+            module_interface_context : typing.signature.ModuleInterfaceContext,
             module_context : typing.type.ModuleContext,
             mod : parsing.parser.Module
         )
@@ -223,7 +228,7 @@ define type_check_module(
 
     output := [] : (List(TTopLevel));
     for decl in iter.l(decls) do
-        output := output.extend(type_check_top_level(module_context, decl));
+        output := output.extend(type_check_top_level(module_interface_context, module_context, decl));
     end
 
     return t_module(output);
