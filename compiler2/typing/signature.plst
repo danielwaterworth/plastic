@@ -69,6 +69,8 @@ define lookup_type_on_interface(
             return m;
         end
     end
+
+    debug(name);
 end
 
 define lookup_type(
@@ -98,9 +100,25 @@ define resolve_type(
 
     match (t)
         quantified(name) do
-            debug("resolve_type quantified");
+            match(quantifiers)
+                type_context(variables) do
+                    for x in iter.l(variables) do
+                        name1, v := x;
+                        if (name == name1)
+                            return (quantifiers, v);
+                        end
+                    end
+                end
+            end
+            return (quantifiers, typing.type.quantified(name));
         end
         named_type(mod, name, parameters) do
+            parameters1 := [] : (List(typing.type.TType));
+            for param in iter.l(parameters) do
+                quantifiers, param1 := resolve_type(context, quantifiers, param);
+                parameters1 := parameters1.append(param1);
+            end
+
             if (mod.length() == 0)
                 if (name == "String")
                     return (quantifiers, typing.type.string_type());
@@ -108,6 +126,18 @@ define resolve_type(
                     return (quantifiers, typing.type.void_type());
                 elsif (name == "UInt")
                     return (quantifiers, typing.type.uint_type());
+                elsif (name == "List")
+                    if (parameters.length() == 1)
+                        return (quantifiers, typing.type.list_type(parameters1.index(0)));
+                    end
+                    throw void;
+                elsif (name == "Coroutine")
+                    if (parameters.length() == 2)
+                        receive_type := parameters1.index(0);
+                        yield_type := parameters1.index(1);
+                        return (quantifiers, typing.type.coroutine_type(receive_type, yield_type));
+                    end
+                    throw void;
                 end
             end
 
@@ -133,12 +163,6 @@ define resolve_type(
                 end
             end
 
-            parameters1 := [] : (List(typing.type.TType));
-            for param in iter.l(parameters) do
-                quantifiers, param1 := resolve_type(context, quantifiers, param);
-                parameters1 := parameters1.append(param1);
-            end
-
             if (mod.length() == 0)
                 mod := current_module_name;
             end
@@ -146,7 +170,12 @@ define resolve_type(
             return (quantifiers, typing.type.instantiation(mod, name, parameters1));
         end
         tuple(types) do
-            debug("resolve_type tuple");
+            parameters1 := [] : (List(typing.type.TType));
+            for param in iter.l(types) do
+                quantifiers, param1 := resolve_type(context, quantifiers, param);
+                parameters1 := parameters1.append(param1);
+            end
+            return (quantifiers, typing.type.tuple_type(parameters1));
         end
     end
 end

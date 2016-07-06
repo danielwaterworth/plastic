@@ -9,8 +9,8 @@ enum TModule
 end
 
 enum TFunction
-    t_function_(String, List((String, typing.type.TType)), typing.type.TType, typing.code_block.TBlock) |
-    t_coroutine_(String, List((String, typing.type.TType)), typing.type.TType, typing.type.TType, typing.code_block.TBlock)
+    t_function(String, List((String, typing.type.TType)), typing.type.TType, typing.code_block.TBlock) |
+    t_coroutine(String, List((String, typing.type.TType)), typing.type.TType, typing.type.TType, typing.code_block.TBlock)
 end
 
 enum Implements
@@ -49,17 +49,58 @@ enum TTopLevel
 end
 
 define type_check_function(
-            module_inteface_context : typing.signature.ModuleInterfaceContext,
+            module_interface_context : typing.signature.ModuleInterfaceContext,
             module_context : typing.type.ModuleContext,
             function : parsing.parser.Function
         )
         -> TTopLevel do
     match (function)
         function_(name, parameters, return_type, body) do
-            debug("type_check_function");
+            parameters1 := [] : (List((String, typing.type.TType)));
+            for parameter in iter.l(parameters) do
+                name, t := parameter;
+                ctx := typing.type.empty_type_context();
+                ctx, t1 := typing.signature.resolve_type(module_interface_context, ctx, t);
+                parameters1 := parameters1.append((name, t1));
+            end
+
+            ctx := typing.type.empty_type_context();
+            ctx, return_type1 := typing.signature.resolve_type(module_interface_context, ctx, return_type);
+
+            ctx1 :=
+                typing.type.context(
+                    module_context,
+                    [] : (List((String, typing.type.TType))),
+                    [] : (List((String, typing.type.TType))),
+                    parameters1
+                );
+            ctx1, body1 := typing.code_block.check_block(ctx1, body);
+            return t_fun(t_function(name, parameters1, return_type1, body1));
         end
         coroutine_(name, parameters, receive_type, yield_type, body) do
-            debug("type_check_function");
+            parameters1 := [] : (List((String, typing.type.TType)));
+            for parameter in iter.l(parameters) do
+                name, t := parameter;
+                ctx := typing.type.empty_type_context();
+                ctx, t1 := typing.signature.resolve_type(module_interface_context, ctx, t);
+                parameters1 := parameters1.append((name, t1));
+            end
+
+            ctx := typing.type.empty_type_context();
+            ctx, receive_type1 := typing.signature.resolve_type(module_interface_context, ctx, receive_type);
+
+            ctx := typing.type.empty_type_context();
+            ctx, yield_type1 := typing.signature.resolve_type(module_interface_context, ctx, yield_type);
+
+            ctx1 :=
+                typing.type.context(
+                    module_context,
+                    [] : (List((String, typing.type.TType))),
+                    [] : (List((String, typing.type.TType))),
+                    parameters1
+                );
+            ctx1, body1 := typing.code_block.check_block(ctx1, body);
+            return t_fun(t_coroutine(name, parameters1, receive_type1, yield_type1, body1));
         end
     end
     throw void;
