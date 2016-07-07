@@ -80,3 +80,90 @@ end
 define empty_type_context() -> TypeContext do
     return type_context([] : (List((String, TType))));
 end
+
+define variables(context : Context) -> List((String, TType)) do
+    match (context)
+        context(m, d, a, x) do
+            return x;
+        end
+    end
+end
+
+define unify(
+            t : TType,
+            expected : MaybeTType
+        )
+        -> Void do
+    match (expected)
+        just_ttype(expected1) do
+            match (t)
+                bool_type do
+                    match(expected1)
+                        bool_type do
+                            return void;
+                        end
+                    end
+                end
+                uint_type do
+                    match(expected1)
+                        uint_type do
+                            return void;
+                        end
+                    end
+                end
+                char_type do
+                    match(expected1)
+                        char_type do
+                            return void;
+                        end
+                    end
+                end
+                string_type do
+                    match(expected1)
+                        string_type do
+                            return void;
+                        end
+                    end
+                end
+                void_type do
+                    match(expected1)
+                        void_type do
+                            return void;
+                        end
+                    end
+                end
+                quantified(name) do
+                    match(expected1)
+                        quantified(name1) do
+                            if (name == name1)
+                                return void;
+                            end
+                        end
+                    end
+                end
+                list_type(t) do
+                    match(expected1)
+                        list_type(t1) do
+                            unify(t, typing.type.just_ttype(t1));
+                        end
+                    end
+                end
+                tuple_type(types) do
+                    debug("tuple");
+                    throw void;
+                end
+                coroutine_type(receive_type, yield_type) do
+                    debug("coroutine");
+                    throw void;
+                end
+                instantiation(module, name, parameters) do
+                    debug("instantiation");
+                    throw void;
+                end
+            end
+        end
+        nothing_ttype do
+            return void;
+        end
+    end
+end

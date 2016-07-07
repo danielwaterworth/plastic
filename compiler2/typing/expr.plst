@@ -71,85 +71,6 @@ define check_arguments(
     return output;
 end
 
-define unify(
-            t : typing.type.TType,
-            expected : typing.type.MaybeTType
-        )
-        -> Void do
-    match (expected)
-        just_ttype(expected1) do
-            match (t)
-                bool_type do
-                    match(expected1)
-                        bool_type do
-                            return void;
-                        end
-                    end
-                end
-                uint_type do
-                    match(expected1)
-                        uint_type do
-                            return void;
-                        end
-                    end
-                end
-                char_type do
-                    match(expected1)
-                        char_type do
-                            return void;
-                        end
-                    end
-                end
-                string_type do
-                    match(expected1)
-                        string_type do
-                            return void;
-                        end
-                    end
-                end
-                void_type do
-                    match(expected1)
-                        void_type do
-                            return void;
-                        end
-                    end
-                end
-                quantified(name) do
-                    match(expected1)
-                        quantified(name1) do
-                            if (name == name1)
-                                return void;
-                            end
-                        end
-                    end
-                end
-                list_type(t) do
-                    match(expected1)
-                        list_type(t1) do
-                            unify(t, typing.type.just_ttype(t1));
-                        end
-                    end
-                end
-                tuple_type(types) do
-                    debug("tuple");
-                    throw void;
-                end
-                coroutine_type(receive_type, yield_type) do
-                    debug("coroutine");
-                    throw void;
-                end
-                instantiation(module, name, parameters) do
-                    debug("instantiation");
-                    throw void;
-                end
-            end
-        end
-        nothing_ttype do
-            return void;
-        end
-    end
-end
-
 define check_expression(
             context : typing.type.Context,
             expr : parsing.expr.Expression,
@@ -158,19 +79,19 @@ define check_expression(
         -> TExpression do
     match (expr)
         bool_literal(b) do
-            unify(typing.type.bool_type(), expected);
+            typing.type.unify(typing.type.bool_type(), expected);
             return bool_literal(b);
         end
         num_literal(n) do
-            unify(typing.type.uint_type(), expected);
+            typing.type.unify(typing.type.uint_type(), expected);
             return num_literal(n);
         end
         char_literal(c) do
-            unify(typing.type.char_type(), expected);
+            typing.type.unify(typing.type.char_type(), expected);
             return char_literal(c);
         end
         string_literal(s) do
-            unify(typing.type.string_type(), expected);
+            typing.type.unify(typing.type.string_type(), expected);
             return string_literal(s);
         end
         list_literal(exprs) do
@@ -180,12 +101,12 @@ define check_expression(
             debug("tuple literal");
         end
         void_literal do
-            unify(typing.type.void_type(), expected);
+            typing.type.unify(typing.type.void_type(), expected);
             return void_literal();
         end
         variable(name) do
             t := typing.type.lookup_variable(context, name);
-            unify(t, expected);
+            typing.type.unify(t, expected);
             return variable(name, t);
         end
         type_name(name) do
@@ -207,7 +128,7 @@ define check_expression(
             rhs1 := check_expression(context, rhs, typing.type.nothing_ttype());
             rhs_t := expr_type(rhs1);
 
-            unify(lhs_t, typing.type.just_ttype(rhs_t));
+            typing.type.unify(lhs_t, typing.type.just_ttype(rhs_t));
             return bin_op(lhs1, operator, rhs1);
         end
         not_(exp) do

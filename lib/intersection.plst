@@ -1,0 +1,17 @@
+import iter
+
+define intersect(a : List((String, a)), b : List((String, b))) -> List((String, (a, b))) do
+    output := [] : (List((String, (a, b))));
+
+    for x in iter.l(a) do
+        x_name, x_val := x;
+        for y in iter.l(b) do
+            y_name, y_val := y;
+            if (x_name == y_name)
+                output := output.append((x_name, (x_val, y_val)));
+            end
+        end
+    end
+
+    return output;
+end

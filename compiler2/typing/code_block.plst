@@ -1,4 +1,5 @@
 import iter
+import intersection
 import parsing.expr
 import parsing.code_block
 import typing.type
@@ -38,10 +39,28 @@ define check_statement(
             debug("assignment");
         end
         if_(exp, true_block, false_block) do
-            typing.expr.check_expression(context, exp, typing.type.nothing_ttype());
+            t_exp := typing.expr.check_expression(context, exp, typing.type.nothing_ttype());
             true_context, t_true_block := check_block(context, true_block);
             false_context, t_false_block := check_block(context, false_block);
-            debug("if");
+
+            true_variables := typing.type.variables(true_context);
+            false_variables := typing.type.variables(false_context);
+
+            merged := intersection.intersect(true_variables, false_variables);
+            merged_variables := [] : (List((String, typing.type.TType)));
+            for x in iter.l(merged) do
+                name, t := x;
+                a, b := t;
+                typing.type.unify(a, typing.type.just_ttype(b));
+                merged_variables := merged_variables.append((name, a));
+            end
+
+            match (context)
+                context(module_context, dependencies, attrs, v) do
+                    context := typing.type.context(module_context, dependencies, attrs, merged_variables);
+                    return (context, if_(t_exp, t_true_block, t_false_block));
+                end
+            end
         end
         do_while(block, exp) do
             debug("do while");
